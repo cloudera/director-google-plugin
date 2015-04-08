@@ -47,6 +47,10 @@ import static junit.framework.Assert.assertNotNull;
 
 public class GoogleTest {
 
+  // These two values need to be customized prior to running the test.
+  private static final String JSON_KEY_PATH = "";
+  private static final String GCP_PROJECT_ID = "scratch-project";
+
   private static final int POLLING_INTERVAL_SECONDS = 5;
 
   private static String PROJECT_ID;
@@ -54,8 +58,8 @@ public class GoogleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = "shared-cloudera";
-    JSON_KEY = readFile("Shared Cloudera-41d9a850cd47.json", Charset.defaultCharset());
+    PROJECT_ID = GCP_PROJECT_ID;
+    JSON_KEY = readFile(JSON_KEY_PATH, Charset.defaultCharset());
   }
 
   @Test

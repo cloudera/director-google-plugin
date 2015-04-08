@@ -123,6 +123,7 @@ public class GoogleComputeProvider
       attachedDiskInitializeParams.setSourceImage(sourceImageUrl);
       AttachedDisk bootDisk = new AttachedDisk();
       bootDisk.setBoot(true);
+      bootDisk.setAutoDelete(true);
       bootDisk.setInitializeParams(attachedDiskInitializeParams);
 
       // Compose the network url.

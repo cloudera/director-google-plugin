@@ -173,17 +173,17 @@ public class GoogleTest {
 
     // Query the instance state again the instance status is RUNNING.
 
-    pollInstanceState(compute, instanceIds, InstanceStatus.RUNNING);
+    pollInstanceState(compute, template, instanceIds, InstanceStatus.RUNNING);
 
     // Delete the resources.
 
     System.out.println("About to delete an instance...");
 
-    compute.delete(instanceIds);
+    compute.delete(template, instanceIds);
 
     // Query the instance state again until the instance status is UNKNOWN.
 
-    pollInstanceState(compute, instanceIds, InstanceStatus.UNKNOWN);
+    pollInstanceState(compute, template, instanceIds, InstanceStatus.UNKNOWN);
 
     // Verify that the instance has been deleted.
 
@@ -192,15 +192,16 @@ public class GoogleTest {
     assertEquals(0, found.size());
   }
 
-  private static void pollInstanceState(ComputeProvider<ComputeInstance<ComputeInstanceTemplate>,
-                                        ComputeInstanceTemplate> compute,
-                                        List<String> instanceIds,
-                                        InstanceStatus desiredStatus) throws InterruptedException {
+  private static void pollInstanceState(
+          ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute,
+          ComputeInstanceTemplate template,
+          List<String> instanceIds,
+          InstanceStatus desiredStatus) throws InterruptedException {
     // Query the instance state until the instance status matches desiredStatus.
 
     System.out.println("About to query instance state until " + desiredStatus + "...");
 
-    Map<String, InstanceState> idToInstanceStateMap = compute.getInstanceState(instanceIds);
+    Map<String, InstanceState> idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
     assertEquals(1, idToInstanceStateMap.size());
 
@@ -214,7 +215,7 @@ public class GoogleTest {
 
       System.out.println("Polling...");
 
-      idToInstanceStateMap = compute.getInstanceState(instanceIds);
+      idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
       for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
         System.out.println(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(Locale.getDefault()));

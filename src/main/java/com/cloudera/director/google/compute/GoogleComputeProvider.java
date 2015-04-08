@@ -209,16 +209,14 @@ public class GoogleComputeProvider
   }
 
   @Override
-  public Map<String, InstanceState> getInstanceState(Collection<String> instanceIds) {
-    // TODO(duftler): Add template parameter to getInstanceState().
-    String INSTANCE_NAME_PREFIX = "director";
-
+  public Map<String, InstanceState> getInstanceState(GoogleComputeInstanceTemplate template,
+                                                     Collection<String> instanceIds) {
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
       String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
-      String decoratedInstanceName = INSTANCE_NAME_PREFIX + "-" + currentId;
+      String decoratedInstanceName = decorateInstanceName(template, currentId);
 
       try {
         // TODO(duftler): Might want to store the entire instance representation in the InstanceState object.
@@ -244,15 +242,13 @@ public class GoogleComputeProvider
   }
 
   @Override
-  public void delete(Collection<String> instanceIds) throws InterruptedException {
-    // TODO(duftler): Add template parameter to delete().
-    String INSTANCE_NAME_PREFIX = "director";
-
+  public void delete(GoogleComputeInstanceTemplate template,
+                     Collection<String> instanceIds) throws InterruptedException {
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
       String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
-      String decoratedInstanceName = INSTANCE_NAME_PREFIX + "-" + currentId;
+      String decoratedInstanceName = decorateInstanceName(template, currentId);
 
       try {
         compute.instances().delete(projectId, zone, decoratedInstanceName).execute();

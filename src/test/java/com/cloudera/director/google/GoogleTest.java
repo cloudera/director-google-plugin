@@ -175,7 +175,17 @@ public class GoogleTest {
 
     assertEquals(1, found.size());
 
-    // Query the instance state again the instance status is RUNNING.
+    // Use the template to request creation of the same resource again.
+
+    System.out.println("About to provision the same instance again...");
+
+    instances = compute.allocate(template, instanceIds, 1);
+    assertEquals(1, instances.size());
+
+    instance = instances.iterator().next();
+    assertEquals(instanceIds.get(0), instance.getId());
+
+    // Query the instance state until the instance status is RUNNING.
 
     pollInstanceState(compute, template, instanceIds, InstanceStatus.RUNNING);
 

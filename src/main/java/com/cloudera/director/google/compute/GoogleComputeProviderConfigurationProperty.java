@@ -32,8 +32,6 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
    */
   ZONE("zone", true, "", "Zone to target for deployment");
 
-  // TODO: Think about how we can remove all the boilerplate code below.
-
   private final String configKey;
   private final boolean required;
   private final String defaultValue;

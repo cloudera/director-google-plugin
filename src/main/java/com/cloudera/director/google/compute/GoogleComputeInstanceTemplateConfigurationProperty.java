@@ -24,8 +24,6 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
 
   NETWORK("network", false, null, "Network identifier (not used)");
 
-  // TODO: Think about how we can remove all the boilerplate code below.
-
   private final String configKey;
   private final boolean required;
   private final String defaultValue;

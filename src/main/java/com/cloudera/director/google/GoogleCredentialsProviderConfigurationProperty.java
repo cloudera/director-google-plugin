@@ -28,8 +28,6 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
   PROJECTID("projectId", "Google cloud provider project id", false),
   JSONKEY("jsonKey", "Google cloud provider service account json key", true);
 
-  // TODO: Think about how we can remove all the boilerplate code below.
-
   private final String configKey;
   private final String description;
   private final boolean sensitive;

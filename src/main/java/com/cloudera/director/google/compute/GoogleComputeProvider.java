@@ -127,7 +127,8 @@ public class GoogleComputeProvider
       bootDisk.setInitializeParams(attachedDiskInitializeParams);
 
       // Compose the network url.
-      String networkName = template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.NETWORK);
+      String networkName = template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME);
       String networkUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
                           "/global/networks/" + networkName;
 

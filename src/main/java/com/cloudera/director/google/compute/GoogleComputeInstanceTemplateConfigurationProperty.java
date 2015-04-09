@@ -22,7 +22,7 @@ import java.util.Locale;
 
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationProperty {
 
-  NETWORK("network", false, null, "Network identifier (not used)");
+  NETWORKNAME("networkName", false, null, "Network identifier");
 
   private final String configKey;
   private final boolean required;

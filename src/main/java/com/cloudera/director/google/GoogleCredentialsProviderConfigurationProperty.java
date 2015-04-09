@@ -25,7 +25,7 @@ import java.util.Locale;
  */
 public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationProperty {
 
-  PROJECTID("projectid", "google cloud provider project id", false),
+  PROJECTID("projectId", "google cloud provider project id", false),
   JSONKEY("jsonKey", "google cloud provider service account json key", true);
 
   // TODO: Think about how we can remove all the boilerplate code below.

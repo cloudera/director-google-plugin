@@ -25,15 +25,16 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
+        <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
         <junit.version>4.12</junit.version>
-        <director-spi.version>1.0.0-SNAPSHOT</director-spi.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.cloudera.director</groupId>
             <artifactId>director-spi-v1</artifactId>
-            <version>${director-spi.version}</version>
+            <version>${director-spi-v1.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

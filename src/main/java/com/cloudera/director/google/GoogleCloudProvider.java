@@ -41,7 +41,7 @@ public class GoogleCloudProvider implements CloudProvider {
 
   protected static final CloudProviderMetadata METADATA = new SimpleCloudProviderMetadataBuilder()
       .id(ID)
-      .name("Google Cloud Platform (GCP)")
+      .name("Google Cloud Platform")
       .description("A provider implementation that provisions virtual resources on Google Cloud Platform.")
       .configurationProperties(Collections.<ConfigurationProperty>emptyList())
       .credentialsProviderMetadata(GoogleCredentialsProvider.METADATA)

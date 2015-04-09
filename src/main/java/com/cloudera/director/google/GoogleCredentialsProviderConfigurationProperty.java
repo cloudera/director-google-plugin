@@ -26,7 +26,7 @@ import java.util.Locale;
 public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationProperty {
 
   PROJECTID("projectId", "Google cloud provider project id", false),
-  JSONKEY("jsonKey", "Google cloud provider service account json key", true);
+  JSONKEY("jsonKey", "Google cloud provider service account JSON key", true);
 
   private final String configKey;
   private final String description;

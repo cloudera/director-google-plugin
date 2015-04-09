@@ -156,8 +156,7 @@ public class GoogleComputeProvider
       try {
         compute.instances().insert(projectId, zone, instance).execute();
       } catch (IOException e) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
 
       result.add(new GoogleComputeInstance(template, instanceId, null));

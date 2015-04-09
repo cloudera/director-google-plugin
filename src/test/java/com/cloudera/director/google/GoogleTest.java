@@ -39,7 +39,7 @@ import java.util.*;
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
-import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.ZONE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.TYPE;
 import static junit.framework.Assert.assertEquals;

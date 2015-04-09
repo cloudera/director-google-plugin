@@ -22,7 +22,8 @@ import java.util.Locale;
 
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationProperty {
 
-  NETWORKNAME("networkName", false, null, "Network identifier");
+  NETWORKNAME("networkName", false, null, "Network identifier"),
+  ZONE("zone", true, "", "Zone to target for deployment");
 
   private final String configKey;
   private final boolean required;

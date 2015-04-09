@@ -22,15 +22,8 @@ import java.util.Locale;
 
 public enum GoogleComputeProviderConfigurationProperty implements ConfigurationProperty {
 
-  /**
-   * A GCE zone to target for deployment of instances.
-   * <p/>
-   * Example: "us-central1-a"
-   *
-   * TODO(duftler): Feels a bit off to specify this on the compute provider, but it's not really a property of the
-   * instance template either. Revisit this.
-   */
-  ZONE("zone", true, "", "Zone to target for deployment");
+  // This lone semicolon indicates the end of the initializer list for this enum.
+  ;
 
   private final String configKey;
   private final boolean required;

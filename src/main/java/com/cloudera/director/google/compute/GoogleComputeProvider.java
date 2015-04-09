@@ -64,7 +64,7 @@ public class GoogleComputeProvider
 
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
-    String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
+    String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
 
     // Throws GoogleJsonResponseException if the zone cannot be located.
     // Note: Not all projects have access to the same zones.
@@ -105,7 +105,7 @@ public class GoogleComputeProvider
     for (String instanceId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
+      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
       String decoratedInstanceName = decorateInstanceName(template, instanceId);
 
       // Resolve the source image.
@@ -176,7 +176,7 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
+      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
       String decoratedInstanceName = decorateInstanceName(template, currentId);
 
       try {
@@ -217,7 +217,7 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
+      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
       String decoratedInstanceName = decorateInstanceName(template, currentId);
 
       try {
@@ -249,7 +249,7 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeProviderConfigurationProperty.ZONE);
+      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
       String decoratedInstanceName = decorateInstanceName(template, currentId);
 
       try {

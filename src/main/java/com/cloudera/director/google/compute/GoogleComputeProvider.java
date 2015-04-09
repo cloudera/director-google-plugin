@@ -116,6 +116,8 @@ public class GoogleComputeProvider
       }
 
       // Compose the boot disk.
+      // TODO(duftler): Add support for attaching local ssd drives.
+      // https://github.com/cloudera/director-google-plugin/issues/3
       AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
       attachedDiskInitializeParams.setSourceImage(sourceImageUrl);
       AttachedDisk bootDisk = new AttachedDisk();

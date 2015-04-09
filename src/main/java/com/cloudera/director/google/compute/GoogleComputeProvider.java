@@ -71,13 +71,11 @@ public class GoogleComputeProvider
     try {
       compute.zones().get(projectId, zone).execute();
     } catch (GoogleJsonResponseException e) {
-      // TODO(duftler): Determine the proper way to propagate this exception.
       if (e.getStatusCode() == 404) {
-        System.out.println("Zone '" + zone + "' not found.");
+        throw new IllegalArgumentException("Zone '" + zone + "' not found.");
       }
     } catch (IOException e) {
-      // TODO(duftler): Determine the proper way to propagate this exception.
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
@@ -114,7 +112,6 @@ public class GoogleComputeProvider
       String sourceImageUrl = GoogleComputeProviderDefaults.IMAGE_ALIAS_TO_RESOURCE_MAP.get(imageAlias);
 
       if (sourceImageUrl == null) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
         throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");
       }
 
@@ -187,12 +184,10 @@ public class GoogleComputeProvider
         if (e.getStatusCode() == 404) {
           LOG.info("Instance '" + decoratedInstanceName + "' not found.");
         } else {
-          // TODO(duftler): Determine the proper way to propagate this exception.
-          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       } catch (IOException e) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
     return result;
@@ -232,12 +227,10 @@ public class GoogleComputeProvider
 
           result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
         } else {
-          // TODO(duftler): Determine the proper way to propagate this exception.
-          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       } catch (IOException e) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
     return result;
@@ -255,8 +248,7 @@ public class GoogleComputeProvider
       try {
         compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
       } catch (IOException e) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
   }

@@ -21,6 +21,7 @@ import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CredentialsProvider;
 import com.cloudera.director.spi.v1.provider.util.AbstractLauncher;
+import com.google.api.services.compute.Compute;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class GoogleLauncher extends AbstractLauncher {
   public CloudProvider createCloudProvider(String cloudProviderId, Configured configuration) {
 
     if (!GoogleCloudProvider.ID.equals(cloudProviderId)) {
-      throw new NoSuchElementException("Cloud provider not found: " + cloudProviderId);
+      throw new IllegalArgumentException("Cloud provider not found: " + cloudProviderId);
     }
 
     // At this point the configuration object will already contain
@@ -44,18 +45,19 @@ public class GoogleLauncher extends AbstractLauncher {
 
     CredentialsProvider<GoogleCredentials> provider = new GoogleCredentialsProvider();
     GoogleCredentials credentials = provider.createCredentials(configuration);
+    Compute compute = credentials.getCompute();
 
-    if (credentials.getCompute() == null) {
-      throw new IllegalArgumentException("Invalid cloud provider credentials");
+    if (compute == null) {
+      throw new IllegalArgumentException("Invalid cloud provider credentials.");
     } else {
+      String projectId = credentials.getProjectId();
+
       try {
         // Attempt GCP api call to verify credentials.
-        credentials.getCompute().regions().list(credentials.getProjectId()).execute();
+        compute.regions().list(projectId).execute();
       } catch (IOException e) {
-        // TODO(duftler): Determine the proper way to propagate this exception.
-        e.printStackTrace();
-
-        throw new IllegalArgumentException("Invalid cloud provider credentials");
+        throw new IllegalArgumentException(
+                "Invalid cloud provider credentials for project '" + projectId + "'.", e);
       }
     }
 

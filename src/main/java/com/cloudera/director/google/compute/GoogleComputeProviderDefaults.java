@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 // TODO(duftler): Externalize these defaults.
+// https://github.com/cloudera/director-google-plugin/issues/2
 public class GoogleComputeProviderDefaults {
   public static Map<String, String> IMAGE_ALIAS_TO_RESOURCE_MAP = new HashMap<String, String>();
 

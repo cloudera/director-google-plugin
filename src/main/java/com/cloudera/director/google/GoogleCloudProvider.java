@@ -25,6 +25,7 @@ import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleCloudProviderMetadataBuilder;
+import com.typesafe.config.Config;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +39,7 @@ public class GoogleCloudProvider implements CloudProvider {
       Collections.singletonList(GoogleComputeProvider.METADATA);
 
   private GoogleCredentials credentials;
+  private Config googleConfig;
 
   protected static final CloudProviderMetadata METADATA = new SimpleCloudProviderMetadataBuilder()
       .id(ID)
@@ -48,8 +50,9 @@ public class GoogleCloudProvider implements CloudProvider {
       .resourceProviderMetadata(RESOURCE_PROVIDER_METADATA)
       .build();
 
-  public GoogleCloudProvider(GoogleCredentials credentials) {
+  public GoogleCloudProvider(GoogleCredentials credentials, Config googleConfig) {
     this.credentials = credentials;
+    this.googleConfig = googleConfig;
   }
 
   @Override
@@ -61,7 +64,7 @@ public class GoogleCloudProvider implements CloudProvider {
   public ResourceProvider createResourceProvider(String resourceProviderId, Configured configuration) {
 
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
-      return new GoogleComputeProvider(configuration, credentials);
+      return new GoogleComputeProvider(configuration, credentials, googleConfig);
     }
 
     throw new NoSuchElementException("Invalid provider id: " + resourceProviderId);

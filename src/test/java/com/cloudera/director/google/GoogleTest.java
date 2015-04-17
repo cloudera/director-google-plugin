@@ -39,6 +39,7 @@ import java.util.*;
 
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE;
@@ -134,8 +135,9 @@ public class GoogleTest {
 
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.getConfigKey(), "ubuntu");
-    templateConfig.put(TYPE.getConfigKey(), "f1-micro");
+    templateConfig.put(TYPE.getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.getConfigKey(), "default");
+    templateConfig.put(LOCALSSDCOUNT.getConfigKey(), "2");
 
     ComputeInstanceTemplate template = (ComputeInstanceTemplate)
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),

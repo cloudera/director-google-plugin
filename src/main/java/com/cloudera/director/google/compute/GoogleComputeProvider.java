@@ -42,6 +42,7 @@ public class GoogleComputeProvider
         extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
 
   private static final Logger LOG = Logger.getLogger(GoogleComputeProvider.class.getName());
+  private static final int MAX_LOCAL_SSD_COUNT = 4;
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asList(GoogleComputeProviderConfigurationProperty.values());
@@ -118,15 +119,40 @@ public class GoogleComputeProvider
         throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");
       }
 
+      // Compose attached disks.
+      List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
+
       // Compose the boot disk.
-      // TODO(duftler): Add support for attaching local ssd drives.
-      // https://github.com/cloudera/director-google-plugin/issues/3
-      AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
-      attachedDiskInitializeParams.setSourceImage(sourceImageUrl);
+      AttachedDiskInitializeParams bootDiskInitializeParams = new AttachedDiskInitializeParams();
+      bootDiskInitializeParams.setSourceImage(sourceImageUrl);
       AttachedDisk bootDisk = new AttachedDisk();
       bootDisk.setBoot(true);
       bootDisk.setAutoDelete(true);
-      bootDisk.setInitializeParams(attachedDiskInitializeParams);
+      bootDisk.setInitializeParams(bootDiskInitializeParams);
+      attachedDiskList.add(bootDisk);
+
+      // Attach local SSD drives.
+      String localSSDDiskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
+                                   "/zones/" + zone +
+                                   "/diskTypes/local-ssd";
+      int localSSDCount = Integer.parseInt(template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
+
+      if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
+        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
+                "Number of local SSD drives must be between 0 and 4 inclusive.");
+      }
+
+      for (int i = 0; i < localSSDCount; i++) {
+        AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
+        attachedDiskInitializeParams.setDiskType(localSSDDiskTypeUrl);
+        AttachedDisk attachedDisk = new AttachedDisk();
+        attachedDisk.setType("SCRATCH");
+        attachedDisk.setAutoDelete(true);
+        attachedDisk.setInitializeParams(attachedDiskInitializeParams);
+        attachedDiskList.add(attachedDisk);
+      }
+
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(
@@ -155,7 +181,7 @@ public class GoogleComputeProvider
       Instance instance = new Instance();
       instance.setName(decoratedInstanceName);
       instance.setMachineType(machineTypeUrl);
-      instance.setDisks(Arrays.asList(new AttachedDisk[]{bootDisk}));
+      instance.setDisks(attachedDiskList);
       instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
 
       try {

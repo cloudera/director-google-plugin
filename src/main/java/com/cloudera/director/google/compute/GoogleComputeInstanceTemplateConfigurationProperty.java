@@ -61,7 +61,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
 
   @Override
   public String getMissingValueErrorMessage() {
-    return null;
+    return "'" + configKey + "' is a required property.";
   }
 
   @Override

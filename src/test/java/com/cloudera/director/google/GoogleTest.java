@@ -39,6 +39,7 @@ import java.util.*;
 
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
@@ -137,6 +138,7 @@ public class GoogleTest {
     templateConfig.put(IMAGE.getConfigKey(), "ubuntu");
     templateConfig.put(TYPE.getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.getConfigKey(), "default");
+    templateConfig.put(BOOTDISKSIZEGB.getConfigKey(), "30");
     templateConfig.put(LOCALSSDCOUNT.getConfigKey(), "2");
 
     ComputeInstanceTemplate template = (ComputeInstanceTemplate)

@@ -24,6 +24,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
 
   NETWORKNAME("networkName", false, "default", "Network identifier"),
   ZONE("zone", true, null, "Zone to target for deployment"),
+  BOOTDISKSIZEGB("bootDiskSizeGb", true, null, "Size of boot disk in GB"),
   LOCALSSDCOUNT("localSSDCount", true, null, "Number of local ssd drives to create");
 
   private final String configKey;

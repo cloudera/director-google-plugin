@@ -22,8 +22,8 @@ import java.util.Locale;
 
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationProperty {
 
-  NETWORKNAME("networkName", false, null, "Network identifier"),
-  ZONE("zone", true, "", "Zone to target for deployment"),
+  NETWORKNAME("networkName", false, "default", "Network identifier"),
+  ZONE("zone", true, null, "Zone to target for deployment"),
   LOCALSSDCOUNT("localSSDCount", true, null, "Number of local ssd drives to create");
 
   private final String configKey;

@@ -33,6 +33,8 @@ import java.util.Collections;
 
 public class GoogleLauncher extends AbstractLauncher {
 
+  private static final String GOOGLE_CONFIG_FILENAME = "google.conf";
+
   private Config googleConfig = null;
 
   public GoogleLauncher() {
@@ -40,16 +42,32 @@ public class GoogleLauncher extends AbstractLauncher {
   }
 
   /**
-   * This method presently ignores the configurationDirectory parameter. The config is loaded from a google.conf
-   * file on the classpath.
+   * The config is loaded from a google.conf file on the classpath. If a google.conf file also exists in the
+   * configuration directory, its values will override the values defined in the google.conf file on the
+   * classpath.
    */
   @Override
   public void initialize(File configurationDirectory) {
     try {
-      googleConfig = parseConfigFromClasspath("google.conf");
+      googleConfig = parseConfigFromClasspath(GOOGLE_CONFIG_FILENAME);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    // Check if an additional google.conf file exists in the configuration directory.
+    File configFile = new File(configurationDirectory, GOOGLE_CONFIG_FILENAME);
+
+    if (configFile.canRead()) {
+      try {
+        Config configFromFile = parseConfigFromFile(configFile);
+
+        // Merge the two configurations, with values in configFromFile overriding values in googleConfig.
+        googleConfig = configFromFile.withFallback(googleConfig);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
   }
 
   /**
@@ -64,6 +82,20 @@ public class GoogleLauncher extends AbstractLauncher {
             .setAllowMissing(false);
 
     return ConfigFactory.parseResourcesAnySyntax(configPath, options);
+  }
+
+  /**
+   * Parses the specified configuration file.
+   *
+   * @param configFile the configuration file
+   * @return the parsed configuration
+   */
+  private static Config parseConfigFromFile(File configFile) {
+    ConfigParseOptions options = ConfigParseOptions.defaults()
+            .setSyntax(ConfigSyntax.CONF)
+            .setAllowMissing(false);
+
+    return ConfigFactory.parseFileAnySyntax(configFile, options);
   }
 
   @Override

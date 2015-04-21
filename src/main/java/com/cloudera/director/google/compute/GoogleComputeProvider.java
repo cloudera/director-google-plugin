@@ -30,6 +30,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.*;
 import com.google.api.services.compute.model.Instance;
+import com.typesafe.config.Config;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -56,11 +57,13 @@ public class GoogleComputeProvider
       .build();
 
   private GoogleCredentials credentials;
+  private Config googleConfig;
 
-  public GoogleComputeProvider(Configured configuration, GoogleCredentials credentials) {
+  public GoogleComputeProvider(Configured configuration, GoogleCredentials credentials, Config googleConfig) {
     super(configuration);
 
     this.credentials = credentials;
+    this.googleConfig = googleConfig;
 
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
@@ -109,7 +112,7 @@ public class GoogleComputeProvider
       // Resolve the source image.
       String imageAlias = template.getConfigurationValue(
               ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE);
-      String sourceImageUrl = GoogleComputeProviderDefaults.IMAGE_ALIAS_TO_RESOURCE_MAP.get(imageAlias);
+      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
 
       if (sourceImageUrl == null) {
         throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");

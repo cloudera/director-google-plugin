@@ -30,6 +30,7 @@ import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -68,6 +69,8 @@ public class GoogleTest {
     // After a plugin is discovered and validated we get an instance of the Launcher.
 
     Launcher launcher = new GoogleLauncher();
+
+    launcher.initialize(new File("."));
 
     // We register all the available providers based on metadata.
 

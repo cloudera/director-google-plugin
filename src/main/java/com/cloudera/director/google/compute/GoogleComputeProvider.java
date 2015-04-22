@@ -123,8 +123,11 @@ public class GoogleComputeProvider
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
 
       // Compose the boot disk.
+      long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB));
       AttachedDiskInitializeParams bootDiskInitializeParams = new AttachedDiskInitializeParams();
       bootDiskInitializeParams.setSourceImage(sourceImageUrl);
+      bootDiskInitializeParams.setDiskSizeGb(bootDiskSizeGb);
       AttachedDisk bootDisk = new AttachedDisk();
       bootDisk.setBoot(true);
       bootDisk.setAutoDelete(true);

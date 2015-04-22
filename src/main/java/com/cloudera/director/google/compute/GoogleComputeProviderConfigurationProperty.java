@@ -60,7 +60,7 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
 
   @Override
   public String getMissingValueErrorMessage() {
-    return null;
+    return "'" + configKey + "' is a required property.";
   }
 
   @Override

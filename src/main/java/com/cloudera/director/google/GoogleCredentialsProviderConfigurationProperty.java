@@ -61,7 +61,7 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
 
   @Override
   public String getMissingValueErrorMessage() {
-    return null;
+    return "'" + configKey + "' is a required property.";
   }
 
   @Override

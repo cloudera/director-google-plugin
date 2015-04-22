@@ -110,17 +110,34 @@ public class GoogleComputeProvider
       String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE);
       String decoratedInstanceName = decorateInstanceName(template, instanceId);
 
+      // Compose attached disks.
+      List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
+
+      // We need to consider local SSD requirements in determining source image.
+      int localSSDCount = Integer.parseInt(template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
+      String localSSDInterfaceType =
+              template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE);
+
+      if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
+        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
+                "Number of local SSD drives must be between 0 and 4 inclusive.");
+      }
+
       // Resolve the source image.
       String imageAlias = template.getConfigurationValue(
               ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE);
+
+      // Override the source image if necessary.
+      if (localSSDCount > 0 && localSSDInterfaceType.equals("NVME")) {
+        imageAlias = "nvmeDebian";
+      }
+
       String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
 
       if (sourceImageUrl == null) {
         throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");
       }
-
-      // Compose attached disks.
-      List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
 
       // Compose the boot disk.
       long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
@@ -138,24 +155,17 @@ public class GoogleComputeProvider
       String localSSDDiskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
                                    "/zones/" + zone +
                                    "/diskTypes/local-ssd";
-      int localSSDCount = Integer.parseInt(template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
-
-      if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
-        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
-                "Number of local SSD drives must be between 0 and 4 inclusive.");
-      }
 
       for (int i = 0; i < localSSDCount; i++) {
         AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
         attachedDiskInitializeParams.setDiskType(localSSDDiskTypeUrl);
         AttachedDisk attachedDisk = new AttachedDisk();
         attachedDisk.setType("SCRATCH");
+        attachedDisk.setInterface(localSSDInterfaceType);
         attachedDisk.setAutoDelete(true);
         attachedDisk.setInitializeParams(attachedDiskInitializeParams);
         attachedDiskList.add(attachedDisk);
       }
-
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(

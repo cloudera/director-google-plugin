@@ -29,6 +29,8 @@ import com.cloudera.director.spi.v1.provider.Launcher;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import static com.cloudera.director.google.GoogleCredentialsProviderConfiguratio
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE;
@@ -48,6 +51,7 @@ import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.Compu
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 
+@RunWith(Parameterized.class)
 public class GoogleTest {
 
   // These two values need to be customized prior to running the test.
@@ -63,6 +67,20 @@ public class GoogleTest {
   public static void beforeClass() throws IOException {
     PROJECT_ID = GCP_PROJECT_ID;
     JSON_KEY = readFile(JSON_KEY_PATH, Charset.defaultCharset());
+  }
+
+  private String localSSDInterfaceType;
+
+  public GoogleTest(String localSSDInterfaceType) {
+    this.localSSDInterfaceType = localSSDInterfaceType;
+  }
+
+  @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}")
+  public static Iterable<Object[]> data1() {
+    return Arrays.asList(new Object[][] {
+            { "SCSI" },
+            { "NVME" }
+    });
   }
 
   @Test
@@ -140,6 +158,7 @@ public class GoogleTest {
     templateConfig.put(NETWORKNAME.getConfigKey(), "default");
     templateConfig.put(BOOTDISKSIZEGB.getConfigKey(), "30");
     templateConfig.put(LOCALSSDCOUNT.getConfigKey(), "2");
+    templateConfig.put(LOCALSSDINTERFACETYPE.getConfigKey(), localSSDInterfaceType);
 
     ComputeInstanceTemplate template = (ComputeInstanceTemplate)
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),

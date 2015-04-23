@@ -70,16 +70,18 @@ public class GoogleTest {
   }
 
   private String localSSDInterfaceType;
+  private String image;
 
-  public GoogleTest(String localSSDInterfaceType) {
+  public GoogleTest(String localSSDInterfaceType, String image) {
     this.localSSDInterfaceType = localSSDInterfaceType;
+    this.image = image;
   }
 
-  @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}")
+  @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}, image={1}")
   public static Iterable<Object[]> data1() {
     return Arrays.asList(new Object[][] {
-            { "SCSI" },
-            { "NVME" }
+            { "SCSI", "ubuntu" },
+            { "NVME", "nvmeDebian" }
     });
   }
 
@@ -153,7 +155,7 @@ public class GoogleTest {
     }
 
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.getConfigKey(), "ubuntu");
+    templateConfig.put(IMAGE.getConfigKey(), image);
     templateConfig.put(TYPE.getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.getConfigKey(), "default");
     templateConfig.put(BOOTDISKSIZEGB.getConfigKey(), "30");

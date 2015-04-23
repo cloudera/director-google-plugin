@@ -140,6 +140,8 @@ public class GoogleComputeProvider
                                    "/diskTypes/local-ssd";
       int localSSDCount = Integer.parseInt(template.getConfigurationValue(
               GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
+      String localSSDInterfaceType =
+              template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE);
 
       if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
         throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
@@ -151,11 +153,11 @@ public class GoogleComputeProvider
         attachedDiskInitializeParams.setDiskType(localSSDDiskTypeUrl);
         AttachedDisk attachedDisk = new AttachedDisk();
         attachedDisk.setType("SCRATCH");
+        attachedDisk.setInterface(localSSDInterfaceType);
         attachedDisk.setAutoDelete(true);
         attachedDisk.setInitializeParams(attachedDiskInitializeParams);
         attachedDiskList.add(attachedDisk);
       }
-
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(

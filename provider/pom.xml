@@ -25,6 +25,7 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
+        <launcher-class>com.cloudera.director.google.GoogleLauncher</launcher-class>
         <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
         <google-api-services-compute.version>v1-rev54-1.20.0</google-api-services-compute.version>
         <typesafe-config.version>1.2.0</typesafe-config.version>
@@ -69,6 +70,19 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Cloudera-Director-SPI-Version>v1</Cloudera-Director-SPI-Version>
+                            <Cloudera-Director-Launcher-Class>${launcher-class}</Cloudera-Director-Launcher-Class>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

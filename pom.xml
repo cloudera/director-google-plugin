@@ -18,45 +18,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.cloudera.director</groupId>
-    <artifactId>google-provider</artifactId>
+    <artifactId>google</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-    <properties>
-        <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
-        <junit.version>4.12</junit.version>
-        <typesafe-config.version>1.2.0</typesafe-config.version>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.cloudera.director</groupId>
-            <artifactId>director-spi-v1</artifactId>
-            <version>${director-spi-v1.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-compute</artifactId>
-            <version>v1-rev54-1.20.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>${typesafe-config.version}</version>
-        </dependency>
-
-        <!-- test dependencies -->
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>provider</module>
+        <module>tests</module>
+    </modules>
 </project>

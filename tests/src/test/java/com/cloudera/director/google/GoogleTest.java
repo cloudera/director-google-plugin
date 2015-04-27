@@ -56,7 +56,7 @@ public class GoogleTest {
 
   // These two values need to be customized prior to running the test.
   private static final String JSON_KEY_PATH = "";
-  private static final String GCP_PROJECT_ID = "scratch-project";
+  private static final String GCP_PROJECT_ID = "shared-project";
 
   private static final int POLLING_INTERVAL_SECONDS = 5;
 

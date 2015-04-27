@@ -33,7 +33,7 @@ import java.util.Collections;
 
 public class GoogleLauncher extends AbstractLauncher {
 
-  private static final String GOOGLE_CONFIG_FILENAME = "google.conf";
+  private static final String GOOGLE_CONFIG_FILENAME = "/com/cloudera/director/google/google.conf";
 
   private Config googleConfig = null;
 
@@ -81,7 +81,7 @@ public class GoogleLauncher extends AbstractLauncher {
             .setSyntax(ConfigSyntax.CONF)
             .setAllowMissing(false);
 
-    return ConfigFactory.parseResourcesAnySyntax(configPath, options);
+    return ConfigFactory.parseResourcesAnySyntax(GoogleLauncher.class, configPath, options);
   }
 
   /**

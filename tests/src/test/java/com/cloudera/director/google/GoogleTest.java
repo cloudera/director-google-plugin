@@ -158,8 +158,6 @@ public class GoogleTest {
     templateConfig.put(IMAGE.getConfigKey(), image);
     templateConfig.put(TYPE.getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.getConfigKey(), "default");
-    templateConfig.put(BOOTDISKSIZEGB.getConfigKey(), "30");
-    templateConfig.put(LOCALSSDCOUNT.getConfigKey(), "2");
     templateConfig.put(LOCALSSDINTERFACETYPE.getConfigKey(), localSSDInterfaceType);
 
     ComputeInstanceTemplate template = (ComputeInstanceTemplate)

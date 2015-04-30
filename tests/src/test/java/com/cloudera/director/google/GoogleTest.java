@@ -89,6 +89,8 @@ public class GoogleTest {
   @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}, image={1}")
   public static Iterable<Object[]> data1() {
     return Arrays.asList(new Object[][]{
+        {"SCSI", "centos"},
+        {"SCSI", "rhel"},
         {"SCSI", "ubuntu"},
         {"NVME", "nvmeDebian"}
     });

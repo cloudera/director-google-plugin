@@ -23,12 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GoogleComputeInstance
-    extends AbstractComputeInstance<GoogleComputeInstanceTemplate> {
+    extends AbstractComputeInstance<GoogleComputeInstanceTemplate, Object> {
 
   public static final Type TYPE = new ResourceType("GoogleComputeInstance");
 
   protected GoogleComputeInstance(GoogleComputeInstanceTemplate template,
-                                  String identifier, InetAddress privateIpAddress) {
+      String identifier, InetAddress privateIpAddress) {
     super(template, identifier, privateIpAddress);
   }
 

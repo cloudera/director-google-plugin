@@ -16,6 +16,9 @@
 
 package com.cloudera.director.google;
 
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.Configured;
@@ -24,11 +27,7 @@ import com.cloudera.director.spi.v1.provider.CredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleCredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 
-import java.io.IOException;
 import java.util.List;
-
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
 
 /**
  * Convert a configuration to a cloud provider specific credentials object.
@@ -36,7 +35,8 @@ import static com.cloudera.director.google.GoogleCredentialsProviderConfiguratio
 public class GoogleCredentialsProvider implements CredentialsProvider<GoogleCredentials> {
 
   private static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
-      ConfigurationPropertiesUtil.asList(GoogleCredentialsProviderConfigurationProperty.values());
+      ConfigurationPropertiesUtil.asConfigurationPropertyList(
+          GoogleCredentialsProviderConfigurationProperty.values());
 
   public static CredentialsProviderMetadata METADATA =
       new SimpleCredentialsProviderMetadata(CONFIGURATION_PROPERTIES);

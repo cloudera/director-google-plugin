@@ -17,55 +17,47 @@
 package com.cloudera.director.google;
 
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
-
-import java.util.Locale;
+import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
+import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
 /**
  * An enum of properties required for building credentials.
  */
-public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationProperty {
+public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationPropertyToken {
 
-  PROJECTID("projectId", "Google cloud provider project id", false),
-  JSONKEY("jsonKey", "Google cloud provider service account JSON key", true);
+  PROJECTID(new SimpleConfigurationPropertyBuilder()
+      .configKey("projectId")
+      .name("Project ID")
+      .defaultDescription("Google Cloud Project ID")
+      .required(true)
+      .build()),
 
-  private final String configKey;
-  private final String description;
-  private final boolean sensitive;
+  JSONKEY(new SimpleConfigurationPropertyBuilder()
+      .configKey("jsonKey")
+      .name("Client ID JSON Key")
+      .defaultDescription("Google cloud provider service account JSON key")
+      .widget(ConfigurationProperty.Widget.FILE)
+      .required(true)
+      .sensitive(true)
+      .build());
 
-  private GoogleCredentialsProviderConfigurationProperty(String configKey,
-                                                         String description, boolean sensitive) {
-    this.configKey = configKey;
-    this.description = description;
-    this.sensitive = sensitive;
+  /**
+   * The configuration property.
+   */
+  private final ConfigurationProperty configurationProperty;
+
+  /**
+   * Creates a configuration property token with the specified parameters.
+   *
+   * @param configurationProperty the configuration property
+   */
+  private GoogleCredentialsProviderConfigurationProperty(
+      ConfigurationProperty configurationProperty) {
+    this.configurationProperty = configurationProperty;
   }
 
   @Override
-  public String getConfigKey() {
-    return configKey;
-  }
-
-  @Override
-  public boolean isRequired() {
-    return true;
-  }
-
-  @Override
-  public String getDefaultValue() {
-    return null;
-  }
-
-  @Override
-  public String getDescription(Locale locale) {
-    return description;
-  }
-
-  @Override
-  public String getMissingValueErrorMessage() {
-    return "'" + configKey + "' is a required property.";
-  }
-
-  @Override
-  public boolean isSensitive() {
-    return sensitive;
+  public ConfigurationProperty unwrap() {
+    return configurationProperty;
   }
 }

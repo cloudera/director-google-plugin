@@ -17,54 +17,29 @@
 package com.cloudera.director.google.compute;
 
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 
-import java.util.Locale;
-
-public enum GoogleComputeProviderConfigurationProperty implements ConfigurationProperty {
+public enum GoogleComputeProviderConfigurationProperty implements ConfigurationPropertyToken {
 
   // This lone semicolon indicates the end of the initializer list for this enum.
   ;
 
-  private final String configKey;
-  private final boolean required;
-  private final String defaultValue;
-  private final String description;
+  /**
+   * The configuration property.
+   */
+  private final ConfigurationProperty configurationProperty;
 
-  private GoogleComputeProviderConfigurationProperty(String configKey, boolean required,
-                                                     String defaultValue, String description) {
-    this.configKey = configKey;
-    this.required = required;
-    this.defaultValue = defaultValue;
-    this.description = description;
+  /**
+   * Creates a configuration property token with the specified parameters.
+   *
+   * @param configurationProperty the configuration property
+   */
+  private GoogleComputeProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
+    this.configurationProperty = configurationProperty;
   }
 
   @Override
-  public String getConfigKey() {
-    return configKey;
-  }
-
-  @Override
-  public boolean isRequired() {
-    return required;
-  }
-
-  @Override
-  public String getDefaultValue() {
-    return defaultValue;
-  }
-
-  @Override
-  public String getDescription(Locale locale) {
-    return description;
-  }
-
-  @Override
-  public String getMissingValueErrorMessage() {
-    return "'" + configKey + "' is a required property.";
-  }
-
-  @Override
-  public boolean isSensitive() {
-    return false;
+  public ConfigurationProperty unwrap() {
+    return configurationProperty;
   }
 }

@@ -32,7 +32,8 @@ public class GoogleComputeInstanceTemplate extends ComputeInstanceTemplate {
   private static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.merge(
           ComputeInstanceTemplate.getConfigurationProperties(),
-          ConfigurationPropertiesUtil.asList(GoogleComputeInstanceTemplateConfigurationProperty.values())
+          ConfigurationPropertiesUtil.asConfigurationPropertyList(
+              GoogleComputeInstanceTemplateConfigurationProperty.values())
       );
 
   public static List<ConfigurationProperty> getConfigurationProperties() {

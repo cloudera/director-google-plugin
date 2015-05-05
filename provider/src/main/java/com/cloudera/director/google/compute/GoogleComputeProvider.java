@@ -20,32 +20,45 @@ import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
-import com.cloudera.director.spi.v1.model.*;
+import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.Configured;
+import com.cloudera.director.spi.v1.model.InstanceState;
+import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.InstanceTemplate;
+import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.util.SimpleInstanceState;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleResourceProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
-import com.google.api.services.compute.model.*;
+import com.google.api.services.compute.model.AccessConfig;
+import com.google.api.services.compute.model.AttachedDisk;
+import com.google.api.services.compute.model.AttachedDiskInitializeParams;
 import com.google.api.services.compute.model.Instance;
+import com.google.api.services.compute.model.NetworkInterface;
 import com.typesafe.config.Config;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class GoogleComputeProvider
-        extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
+    extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
 
   private static final Logger LOG = Logger.getLogger(GoogleComputeProvider.class.getName());
   private static final int MAX_LOCAL_SSD_COUNT = 4;
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
-      ConfigurationPropertiesUtil.asList(GoogleComputeProviderConfigurationProperty.values());
+      ConfigurationPropertiesUtil.asConfigurationPropertyList(
+          GoogleComputeProviderConfigurationProperty.values());
 
   public static final String ID = "compute";
 
@@ -54,7 +67,9 @@ public class GoogleComputeProvider
       .name("Google Compute Provider")
       .description("Provisions VM's on Google Compute Engine")
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
-      .resourceTemplateConfigurationProperties(GoogleComputeInstanceTemplate.getConfigurationProperties())
+      .resourceTemplateConfigurationProperties(
+          GoogleComputeInstanceTemplate.getConfigurationProperties())
+      .providerClass(GoogleComputeProvider.class)
       .build();
 
   private GoogleCredentials credentials;
@@ -100,9 +115,8 @@ public class GoogleComputeProvider
   }
 
   @Override
-  public Collection<GoogleComputeInstance> allocate(GoogleComputeInstanceTemplate template,
+  public void allocate(GoogleComputeInstanceTemplate template,
       Collection<String> instanceIds, int minCount) throws InterruptedException {
-    List<GoogleComputeInstance> result = new ArrayList<GoogleComputeInstance>();
 
     for (String instanceId : instanceIds) {
       Compute compute = credentials.getCompute();
@@ -112,7 +126,7 @@ public class GoogleComputeProvider
 
       // Resolve the source image.
       String imageAlias = template.getConfigurationValue(
-              ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE);
+          ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE);
       String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
 
       if (sourceImageUrl == null) {
@@ -124,7 +138,7 @@ public class GoogleComputeProvider
 
       // Compose the boot disk.
       long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB));
+          GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB));
       AttachedDiskInitializeParams bootDiskInitializeParams = new AttachedDiskInitializeParams();
       bootDiskInitializeParams.setSourceImage(sourceImageUrl);
       bootDiskInitializeParams.setDiskSizeGb(bootDiskSizeGb);
@@ -136,16 +150,16 @@ public class GoogleComputeProvider
 
       // Attach local SSD drives.
       String localSSDDiskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-                                   "/zones/" + zone +
-                                   "/diskTypes/local-ssd";
+          "/zones/" + zone +
+          "/diskTypes/local-ssd";
       int localSSDCount = Integer.parseInt(template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
+          GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT));
       String localSSDInterfaceType =
-              template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE);
+          template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE);
 
       if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
         throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
-                "Number of local SSD drives must be between 0 and 4 inclusive.");
+            "Number of local SSD drives must be between 0 and 4 inclusive.");
       }
 
       for (int i = 0; i < localSSDCount; i++) {
@@ -161,9 +175,9 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME);
+          GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME);
       String networkUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-                          "/global/networks/" + networkName;
+          "/global/networks/" + networkName;
 
       // Compose the network interface.
       String accessConfigName = "External NAT";
@@ -177,10 +191,10 @@ public class GoogleComputeProvider
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(
-              ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.TYPE);
+          ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE);
       String machineTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-                              "/zones/" + zone +
-                              "/machineTypes/" + machineTypeName;
+          "/zones/" + zone +
+          "/machineTypes/" + machineTypeName;
 
       // Compose the instance.
       Instance instance = new Instance();
@@ -194,11 +208,7 @@ public class GoogleComputeProvider
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-
-      result.add(new GoogleComputeInstance(template, instanceId, null));
     }
-
-    return result;
   }
 
   @Override
@@ -242,7 +252,7 @@ public class GoogleComputeProvider
 
   @Override
   public Map<String, InstanceState> getInstanceState(GoogleComputeInstanceTemplate template,
-                                                     Collection<String> instanceIds) {
+      Collection<String> instanceIds) {
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
@@ -273,7 +283,7 @@ public class GoogleComputeProvider
 
   @Override
   public void delete(GoogleComputeInstanceTemplate template,
-                     Collection<String> instanceIds) throws InterruptedException {
+      Collection<String> instanceIds) throws InterruptedException {
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
@@ -290,7 +300,7 @@ public class GoogleComputeProvider
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId) {
     return template.getConfigurationValue(
-            InstanceTemplate.InstanceTemplateConfigurationProperty.INSTANCE_NAME_PREFIX) + "-" + currentId;
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX) + "-" + currentId;
   }
 
   private static InstanceStatus convertGCEInstanceStatusToDirectorInstanceStatus(String gceInstanceStatus) {

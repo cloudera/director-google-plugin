@@ -45,21 +45,20 @@ public class GoogleCredentials {
     try {
       JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
       HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+
       GoogleCredential credential = GoogleCredential.fromStream(
-              new ByteArrayInputStream(jsonKey.getBytes()),httpTransport, JSON_FACTORY)
-              .createScoped(Collections.singleton(ComputeScopes.COMPUTE));
+          new ByteArrayInputStream(jsonKey.getBytes()), httpTransport, JSON_FACTORY)
+          .createScoped(Collections.singleton(ComputeScopes.COMPUTE));
 
       return new Compute.Builder(httpTransport,
-              JSON_FACTORY,
-              null)
-              .setApplicationName(APPLICATION_NAME)
-              .setHttpRequestInitializer(credential)
-              .build();
-    } catch (Exception e) {
-      // TODO(duftler): Propagate this exception.
-      e.printStackTrace();
+          JSON_FACTORY,
+          null)
+          .setApplicationName(APPLICATION_NAME)
+          .setHttpRequestInitializer(credential)
+          .build();
 
-      return null;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -71,7 +70,9 @@ public class GoogleCredentials {
     return jsonKey;
   }
 
-  public Compute getCompute() { return compute; }
+  public Compute getCompute() {
+    return compute;
+  }
 
   public boolean match(String projectId, String jsonKey) {
     return projectId.equals(this.projectId) &&

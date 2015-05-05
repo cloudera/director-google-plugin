@@ -16,40 +16,46 @@
 
 package com.cloudera.director.google;
 
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+
 import com.cloudera.director.spi.v1.compute.ComputeInstance;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.ComputeProvider;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
+import com.cloudera.director.spi.v1.model.util.DefaultLocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.Launcher;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
-import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationProperty.TYPE;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class GoogleTest {
@@ -57,6 +63,9 @@ public class GoogleTest {
   // These two values need to be customized prior to running the test.
   private static final String JSON_KEY_PATH = "";
   private static final String GCP_PROJECT_ID = "shared-project";
+
+  private static final DefaultLocalizationContext DEFAULT_LOCALE =
+      new DefaultLocalizationContext(Locale.getDefault(), "");
 
   private static final int POLLING_INTERVAL_SECONDS = 5;
 
@@ -79,9 +88,9 @@ public class GoogleTest {
 
   @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}, image={1}")
   public static Iterable<Object[]> data1() {
-    return Arrays.asList(new Object[][] {
-            { "SCSI", "ubuntu" },
-            { "NVME", "nvmeDebian" }
+    return Arrays.asList(new Object[][]{
+        {"SCSI", "ubuntu"},
+        {"NVME", "nvmeDebian"}
     });
   }
 
@@ -119,8 +128,8 @@ public class GoogleTest {
     // (we expect them to be eagerly validated on cloud provider creation).
 
     Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECTID.getConfigKey(), PROJECT_ID);
-    environmentConfig.put(JSONKEY.getConfigKey(), JSON_KEY);
+    environmentConfig.put(PROJECTID.unwrap().getConfigKey(), PROJECT_ID);
+    environmentConfig.put(JSONKEY.unwrap().getConfigKey(), JSON_KEY);
 
     CloudProvider provider = launcher.createCloudProvider(
         GoogleCloudProvider.ID, new SimpleConfiguration(environmentConfig));
@@ -140,7 +149,7 @@ public class GoogleTest {
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
     // Do we want to enhance ConfigurationProperty to support querying provider for a set of values to choose from?
     Map<String, String> computeConfig = new HashMap<String, String>();
-    computeConfig.put(ZONE.getConfigKey(), "us-central1-a");
+    computeConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
 
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
         (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)
@@ -155,10 +164,10 @@ public class GoogleTest {
     }
 
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.getConfigKey(), image);
-    templateConfig.put(TYPE.getConfigKey(), "n1-standard-1");
-    templateConfig.put(NETWORKNAME.getConfigKey(), "default");
-    templateConfig.put(LOCALSSDINTERFACETYPE.getConfigKey(), localSSDInterfaceType);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
+    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
+    templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
 
     ComputeInstanceTemplate template = (ComputeInstanceTemplate)
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),
@@ -171,12 +180,7 @@ public class GoogleTest {
     System.out.println("About to provision an instance...");
 
     List<String> instanceIds = Arrays.asList(UUID.randomUUID().toString());
-    Collection<ComputeInstance<ComputeInstanceTemplate>> instances =
-        compute.allocate(template, instanceIds, 1);
-    assertEquals(1, instances.size());
-
-    ComputeInstance instance = instances.iterator().next();
-    assertEquals(instanceIds.get(0), instance.getId());
+    compute.allocate(template, instanceIds, 1);
 
     // Run a find by ID.
 
@@ -196,16 +200,25 @@ public class GoogleTest {
 
     for (ComputeInstance foundInstance : found) {
       System.out.println("Found instance '" + foundInstance.getId() + "' with private ip " +
-                         foundInstance.getPrivateIpAddress() + ".");
+          foundInstance.getPrivateIpAddress() + ".");
     }
 
     assertEquals(1, found.size());
 
     // Use the template to request creation of the same resource again.
 
+    Collection<ComputeInstance<ComputeInstanceTemplate>> instances =
+        compute.find(template, instanceIds);
+    assertEquals(1, instances.size());
+
+    ComputeInstance instance = instances.iterator().next();
+    assertEquals(instanceIds.get(0), instance.getId());
+
+
     System.out.println("About to provision the same instance again...");
 
-    instances = compute.allocate(template, instanceIds, 1);
+    compute.allocate(template, instanceIds, 1);
+    instances = compute.find(template, instanceIds);
     assertEquals(1, instances.size());
 
     instance = instances.iterator().next();
@@ -233,10 +246,10 @@ public class GoogleTest {
   }
 
   private static void pollInstanceState(
-          ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute,
-          ComputeInstanceTemplate template,
-          List<String> instanceIds,
-          InstanceStatus desiredStatus) throws InterruptedException {
+      ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute,
+      ComputeInstanceTemplate template,
+      List<String> instanceIds,
+      InstanceStatus desiredStatus) throws InterruptedException {
     // Query the instance state until the instance status matches desiredStatus.
 
     System.out.println("About to query instance state until " + desiredStatus + "...");
@@ -246,11 +259,12 @@ public class GoogleTest {
     assertEquals(1, idToInstanceStateMap.size());
 
     for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
-      System.out.println(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(Locale.getDefault()));
+      System.out.printf("%s -> %s%n", entry.getKey(),
+          entry.getValue().getInstanceStateDescription(DEFAULT_LOCALE));
     }
 
     while (idToInstanceStateMap.size() == 1
-            && idToInstanceStateMap.values().toArray(new InstanceState[1])[0].getInstanceStatus() != desiredStatus) {
+        && idToInstanceStateMap.values().toArray(new InstanceState[1])[0].getInstanceStatus() != desiredStatus) {
       Thread.sleep(POLLING_INTERVAL_SECONDS * 1000);
 
       System.out.println("Polling...");
@@ -258,7 +272,8 @@ public class GoogleTest {
       idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
       for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
-        System.out.println(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(Locale.getDefault()));
+        System.out.printf("%s -> %s%n", entry.getKey(),
+            entry.getValue().getInstanceStateDescription(DEFAULT_LOCALE));
       }
     }
   }

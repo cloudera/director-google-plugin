@@ -115,13 +115,13 @@ public class GoogleTest {
     System.out.println("Configurations required for credentials:");
     for (ConfigurationProperty property :
         metadata.getCredentialsProviderMetadata().getCredentialsConfigurationProperties()) {
-      System.out.println(property);
+      System.out.println(property.getName(DEFAULT_LOCALE));
     }
 
     System.out.println("Other provider level configurations:");
     for (ConfigurationProperty property :
         metadata.getProviderConfigurationProperties()) {
-      System.out.println(property);
+      System.out.println(property.getName(DEFAULT_LOCALE));
     }
 
     // In order to create a cloud provider we need to configure credentials
@@ -143,7 +143,7 @@ public class GoogleTest {
     System.out.println("Configurations required for 'compute' resource provider:");
     for (ConfigurationProperty property :
         computeMetadata.getProviderConfigurationProperties()) {
-      System.out.println(property);
+      System.out.println(property.getName(DEFAULT_LOCALE));
     }
 
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
@@ -160,7 +160,7 @@ public class GoogleTest {
     System.out.println("Configurations required for template:");
     for (ConfigurationProperty property :
         computeMetadata.getResourceTemplateConfigurationProperties()) {
-      System.out.println(property);
+      System.out.println(property.getName(DEFAULT_LOCALE));
     }
 
     Map<String, String> templateConfig = new HashMap<String, String>();

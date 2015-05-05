@@ -186,34 +186,29 @@ public class GoogleTest {
 
     System.out.println("About to lookup an instance...");
 
-    Collection<ComputeInstance<ComputeInstanceTemplate>> found = compute.find(template, instanceIds);
+    Collection<ComputeInstance<ComputeInstanceTemplate>> instances = compute.find(template, instanceIds);
 
     // Loop until found.
 
-    while (found.size() == 0) {
+    while (instances.size() == 0) {
       Thread.sleep(POLLING_INTERVAL_SECONDS * 1000);
 
       System.out.println("Polling...");
 
-      found = compute.find(template, instanceIds);
+      instances = compute.find(template, instanceIds);
     }
 
-    for (ComputeInstance foundInstance : found) {
+    for (ComputeInstance foundInstance : instances) {
       System.out.println("Found instance '" + foundInstance.getId() + "' with private ip " +
           foundInstance.getPrivateIpAddress() + ".");
     }
 
-    assertEquals(1, found.size());
-
-    // Use the template to request creation of the same resource again.
-
-    Collection<ComputeInstance<ComputeInstanceTemplate>> instances =
-        compute.find(template, instanceIds);
     assertEquals(1, instances.size());
 
     ComputeInstance instance = instances.iterator().next();
     assertEquals(instanceIds.get(0), instance.getId());
 
+    // Use the template to request creation of the same resource again.
 
     System.out.println("About to provision the same instance again...");
 
@@ -240,9 +235,9 @@ public class GoogleTest {
 
     // Verify that the instance has been deleted.
 
-    found = compute.find(template, instanceIds);
+    instances = compute.find(template, instanceIds);
 
-    assertEquals(0, found.size());
+    assertEquals(0, instances.size());
   }
 
   private static void pollInstanceState(

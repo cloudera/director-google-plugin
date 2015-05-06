@@ -224,7 +224,7 @@ public class GoogleComputeProvider
       try {
         Instance instance = compute.instances().get(projectId, zone, decoratedInstanceName).execute();
 
-        result.add(new GoogleComputeInstance(template, instance.getName(), getInetAddressFromInstance(instance)));
+        result.add(new GoogleComputeInstance(template, currentId, getInetAddressFromInstance(instance)));
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           LOG.info("Instance '" + decoratedInstanceName + "' not found.");

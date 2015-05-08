@@ -45,14 +45,32 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(false)
       .build()),
 
-  LOCALSSDCOUNT(new SimpleConfigurationPropertyBuilder()
-      .configKey("localSSDCount")
-      .name("Local SSD Count")
-      .defaultDescription("Number of local SSD drives to create")
+  DATADISKCOUNT(new SimpleConfigurationPropertyBuilder()
+      .configKey("dataDiskCount")
+      .name("Data Disk Count")
+      .defaultDescription("Number of data disks to create")
       .defaultValue("2")
       .required(false)
       .build()),
 
+  DATADISKTYPE(new SimpleConfigurationPropertyBuilder()
+      .configKey("dataDiskType")
+      .name("Data Disk Type")
+      .defaultDescription("Type of data disks to create (LocalSSD, SSD, Standard)")
+      .defaultValue("LocalSSD")
+      .required(false)
+      .build()),
+
+  // This property is ignored when dataDiskType == 'LocalSSD'.
+  DATADISKSIZEGB(new SimpleConfigurationPropertyBuilder()
+      .configKey("dataDiskSizeGb")
+      .name("Data Disk Size")
+      .defaultDescription("Size of data disks in GB")
+      .defaultValue("375")
+      .required(false)
+      .build()),
+
+  // This property is ignored when dataDiskType != 'LocalSSD'.
   LOCALSSDINTERFACETYPE(new SimpleConfigurationPropertyBuilder()
       .configKey("localSSDInterfaceType")
       .name("Local SSD Interface Type")

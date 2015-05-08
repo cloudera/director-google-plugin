@@ -44,9 +44,11 @@ import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.AccessConfig;
 import com.google.api.services.compute.model.AttachedDisk;
 import com.google.api.services.compute.model.AttachedDiskInitializeParams;
+import com.google.api.services.compute.model.Disk;
 import com.google.api.services.compute.model.Instance;
 import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
+import com.google.api.services.compute.model.Operation;
 import com.typesafe.config.Config;
 
 import java.io.IOException;
@@ -183,30 +185,72 @@ public class GoogleComputeProvider
       bootDisk.setInitializeParams(bootDiskInitializeParams);
       attachedDiskList.add(bootDisk);
 
-      // Attach local SSD drives.
-      String localSSDDiskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-          "/zones/" + zone +
-          "/diskTypes/local-ssd";
-      int localSSDCount = Integer.parseInt(template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDCOUNT,
+      // Attach data disks.
+      int dataDiskCount = Integer.parseInt(template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT,
           templateLocalizationContext));
-      String localSSDInterfaceType =
-          template.getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE,
-              templateLocalizationContext);
+      String dataDiskType = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
+          templateLocalizationContext);
+      String dataDiskTypeUrl = getDiskTypeURL(projectId, zone, dataDiskType);
+      boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
+      long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB,
+          templateLocalizationContext));
+      String localSSDInterfaceType = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE,
+          templateLocalizationContext);
 
-      if (localSSDCount < 0 || localSSDCount > MAX_LOCAL_SSD_COUNT) {
-        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + localSSDCount + "'. " +
+      if (dataDiskCount < 0) {
+        throw new IllegalArgumentException("Invalid number of data disks specified: '" + dataDiskCount + "'. " +
+            "Number of data disks must not be negative.");
+      } else if (dataDisksAreLocalSSD && dataDiskCount > MAX_LOCAL_SSD_COUNT) {
+        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + dataDiskCount + "'. " +
             "Number of local SSD drives must be between 0 and 4 inclusive.");
       }
 
-      for (int i = 0; i < localSSDCount; i++) {
-        AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
-        attachedDiskInitializeParams.setDiskType(localSSDDiskTypeUrl);
+      // Use this list to collect the names of operations that must complete prior to provisioning the instance.
+      List<String> pendingOperationNames = new ArrayList<String>();
+
+      for (int i = 0; i < dataDiskCount; i++) {
         AttachedDisk attachedDisk = new AttachedDisk();
-        attachedDisk.setType("SCRATCH");
-        attachedDisk.setInterface(localSSDInterfaceType);
+
+        if (dataDisksAreLocalSSD) {
+          AttachedDiskInitializeParams attachedDiskInitializeParams = new AttachedDiskInitializeParams();
+          attachedDiskInitializeParams.setDiskType(dataDiskTypeUrl);
+
+          attachedDisk.setType("SCRATCH");
+          attachedDisk.setInterface(localSSDInterfaceType);
+          attachedDisk.setInitializeParams(attachedDiskInitializeParams);
+        } else {
+          // Data disks other than LocalSSD must first be provisioned before they can be attached.
+          Disk persistentDisk = new Disk();
+          persistentDisk.setName(decoratedInstanceName + "-pd-" + i);
+          persistentDisk.setType(dataDiskTypeUrl);
+          persistentDisk.setSizeGb(dataDiskSizeGb);
+
+          try {
+            // This is an async operation. We must poll until it completes to confirm the disk exists.
+            Operation diskCreationOperation = compute.disks().insert(projectId, zone, persistentDisk).execute();
+
+            pendingOperationNames.add(diskCreationOperation.getName());
+          } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 409) {
+              LOG.info("Disk '" + persistentDisk.getName() + "' already exists.");
+            } else {
+              throw new RuntimeException(e);
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+
+          String persistentDiskUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
+                  "/zones/" + zone + "/disks/" + persistentDisk.getName();
+          attachedDisk.setType("PERSISTENT");
+          attachedDisk.setSource(persistentDiskUrl);
+        }
+
         attachedDisk.setAutoDelete(true);
-        attachedDisk.setInitializeParams(attachedDiskInitializeParams);
         attachedDiskList.add(attachedDisk);
       }
 
@@ -251,6 +295,9 @@ public class GoogleComputeProvider
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);
       instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
+
+      // Wait for pending operations to complete before provisioning the instance.
+      pollPendingOperations(projectId, zone, pendingOperationNames, compute);
 
       try {
         compute.instances().insert(projectId, zone, instance).execute();
@@ -380,6 +427,66 @@ public class GoogleComputeProvider
       return InstanceStatus.STOPPED;
     } else {
       return InstanceStatus.UNKNOWN;
+    }
+  }
+
+  private static String getDiskTypeURL(String projectId, String zone, String dataDiskType) {
+    String diskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
+        "/zones/" + zone + "/diskTypes/";
+
+    if (dataDiskType.equals("LocalSSD")) {
+      diskTypeUrl += "local-ssd";
+    } else if (dataDiskType.equals("SSD")) {
+      diskTypeUrl += "pd-ssd";
+    } else if (dataDiskType.equals("Standard")) {
+      diskTypeUrl += "pd-standard";
+    } else {
+      throw new IllegalArgumentException("Invalid data disk type: '" + dataDiskType + "'.");
+    }
+
+    return diskTypeUrl;
+  }
+
+  // Poll until 0 pending operations remain.
+  private static void pollPendingOperations(
+      String projectId, String zone, List<String> pendingOperationNames, Compute compute) throws InterruptedException {
+    int totalTimePollingSeconds = 0;
+    int pollingTimeoutSeconds = 60;
+
+    // Fibonacci backoff in seconds.
+    int pollInterval = 1;
+    int pollIncrement = 0;
+
+    while (pendingOperationNames.size() > 0) {
+      if (totalTimePollingSeconds > pollingTimeoutSeconds) {
+        throw new IllegalArgumentException("Exceeded timeout of '" + pollingTimeoutSeconds + "' seconds while " +
+            "polling for pending operations to complete: " + pendingOperationNames);
+      }
+
+      Thread.currentThread().sleep(pollInterval * 1000);
+
+      totalTimePollingSeconds += pollInterval;
+
+      List<String> completedOperationNames = new ArrayList<String>();
+
+      for (String pendingOperationName : pendingOperationNames) {
+        try {
+          Operation pendingOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
+
+          if (pendingOperation.getStatus().equals("DONE")) {
+            completedOperationNames.add(pendingOperation.getName());
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      pendingOperationNames.removeAll(completedOperationNames);
+
+      // Update polling interval.
+      int oldIncrement = pollIncrement;
+      pollIncrement = pollInterval;
+      pollInterval += oldIncrement;
     }
   }
 }

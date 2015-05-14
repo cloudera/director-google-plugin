@@ -42,6 +42,7 @@ import com.google.api.services.compute.model.AccessConfig;
 import com.google.api.services.compute.model.AttachedDisk;
 import com.google.api.services.compute.model.AttachedDiskInitializeParams;
 import com.google.api.services.compute.model.Instance;
+import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.typesafe.config.Config;
 
@@ -231,8 +232,18 @@ public class GoogleComputeProvider
           "/zones/" + zone +
           "/machineTypes/" + machineTypeName;
 
+      // Compose the instance metadata containing the SSH public key and user name.
+      String sshUserName = template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.SSHUSERNAME);
+      String sshPublicKey = template.getConfigurationValue(
+              GoogleComputeInstanceTemplateConfigurationProperty.SSHPUBLICKEY);
+      String sshKeysValue = sshUserName + ":" + sshPublicKey;
+      Metadata.Items metadataItems = new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue);
+      Metadata metadata = new Metadata().setItems(Arrays.asList(new Metadata.Items[]{metadataItems}));
+
       // Compose the instance.
       Instance instance = new Instance();
+      instance.setMetadata(metadata);
       instance.setName(decoratedInstanceName);
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);

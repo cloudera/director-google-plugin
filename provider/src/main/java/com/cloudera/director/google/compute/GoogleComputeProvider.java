@@ -16,6 +16,9 @@
 
 package com.cloudera.director.google.compute;
 
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
+
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
@@ -233,10 +236,10 @@ public class GoogleComputeProvider
           "/machineTypes/" + machineTypeName;
 
       // Compose the instance metadata containing the SSH public key and user name.
-      String sshUserName = template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.SSHUSERNAME);
-      String sshPublicKey = template.getConfigurationValue(
-              GoogleComputeInstanceTemplateConfigurationProperty.SSHPUBLICKEY);
+      String sshUserName = template.getConfigurationValue(SSH_USERNAME,
+          templateLocalizationContext);
+      String sshPublicKey = template.getConfigurationValue(SSH_OPENSSH_PUBLIC_KEY,
+          templateLocalizationContext);
       String sshKeysValue = sshUserName + ":" + sshPublicKey;
       Metadata.Items metadataItems = new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue);
       Metadata metadata = new Metadata().setItems(Arrays.asList(new Metadata.Items[]{metadataItems}));

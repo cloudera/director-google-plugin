@@ -20,10 +20,10 @@ import static com.cloudera.director.google.GoogleCredentialsProviderConfiguratio
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SSHPUBLICKEY;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SSHUSERNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -179,10 +179,10 @@ public class GoogleTest {
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
     templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
-    templateConfig.put(SSHPUBLICKEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
-    templateConfig.put(SSHUSERNAME.unwrap().getConfigKey(), USER_NAME);
+    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
+    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
 
-    ComputeInstanceTemplate template = (ComputeInstanceTemplate)
+    ComputeInstanceTemplate template =
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),
             new HashMap<String, String>());
 

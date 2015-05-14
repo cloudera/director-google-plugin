@@ -59,20 +59,6 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .defaultDescription("Local SSD interface type (SCSI or NVME)")
       .defaultValue("SCSI")
       .required(false)
-      .build()),
-
-  SSHUSERNAME(new SimpleConfigurationPropertyBuilder()
-      .configKey("sshUserName")
-      .name("SSH User Name")
-      .defaultDescription("User name to associate with the SSH public key")
-      .required(true)
-      .build()),
-
-  SSHPUBLICKEY(new SimpleConfigurationPropertyBuilder()
-      .configKey("sshPublicKey")
-      .name("SSH Public Key")
-      .defaultDescription("SSH public key to set on newly-provisioned instance")
-      .required(true)
       .build());
 
   /**

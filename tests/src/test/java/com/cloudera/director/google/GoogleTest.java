@@ -22,6 +22,8 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -60,9 +62,11 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class GoogleTest {
 
-  // These two values need to be customized prior to running the test.
-  private static final String JSON_KEY_PATH = "";
+  // These four values need to be customized prior to running the test.
   private static final String GCP_PROJECT_ID = "shared-project";
+  private static final String JSON_KEY_PATH = "";
+  private static final String SSH_PUBLIC_KEY_PATH = "";
+  private static final String SSH_USER_NAME = "";
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -71,11 +75,15 @@ public class GoogleTest {
 
   private static String PROJECT_ID;
   private static String JSON_KEY;
+  private static String SSH_PUBLIC_KEY;
+  private static String USER_NAME;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
     PROJECT_ID = GCP_PROJECT_ID;
     JSON_KEY = readFile(JSON_KEY_PATH, Charset.defaultCharset());
+    SSH_PUBLIC_KEY = readFile(SSH_PUBLIC_KEY_PATH, Charset.defaultCharset());
+    USER_NAME = SSH_USER_NAME;
   }
 
   private String localSSDInterfaceType;
@@ -89,6 +97,8 @@ public class GoogleTest {
   @Parameterized.Parameters(name = "{index}: localSSDInterfaceType={0}, image={1}")
   public static Iterable<Object[]> data1() {
     return Arrays.asList(new Object[][]{
+        {"SCSI", "centos"},
+        {"SCSI", "rhel"},
         {"SCSI", "ubuntu"},
         {"NVME", "nvmeDebian"}
     });
@@ -169,8 +179,10 @@ public class GoogleTest {
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
     templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
+    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
+    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
 
-    ComputeInstanceTemplate template = (ComputeInstanceTemplate)
+    ComputeInstanceTemplate template =
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),
             new HashMap<String, String>());
 

@@ -22,6 +22,7 @@ import static com.cloudera.director.google.GoogleCredentialsProviderConfiguratio
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.Configured;
+import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.provider.CredentialsProvider;
 import com.cloudera.director.spi.v1.provider.CredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleCredentialsProviderMetadata;
@@ -47,10 +48,11 @@ public class GoogleCredentialsProvider implements CredentialsProvider<GoogleCred
   }
 
   @Override
-  public GoogleCredentials createCredentials(Configured configuration) {
+  public GoogleCredentials createCredentials(Configured configuration,
+      LocalizationContext localizationContext) {
     return new GoogleCredentials(
-        configuration.getConfigurationValue(PROJECTID),
-        configuration.getConfigurationValue(JSONKEY)
+        configuration.getConfigurationValue(PROJECTID, localizationContext),
+        configuration.getConfigurationValue(JSONKEY, localizationContext)
     );
   }
 }

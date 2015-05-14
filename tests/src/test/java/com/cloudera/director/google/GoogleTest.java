@@ -64,7 +64,7 @@ public class GoogleTest {
   private static final String JSON_KEY_PATH = "";
   private static final String GCP_PROJECT_ID = "shared-project";
 
-  private static final DefaultLocalizationContext DEFAULT_LOCALE =
+  private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
 
   private static final int POLLING_INTERVAL_SECONDS = 5;
@@ -115,13 +115,13 @@ public class GoogleTest {
     System.out.println("Configurations required for credentials:");
     for (ConfigurationProperty property :
         metadata.getCredentialsProviderMetadata().getCredentialsConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALE));
+      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     System.out.println("Other provider level configurations:");
     for (ConfigurationProperty property :
         metadata.getProviderConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALE));
+      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     // In order to create a cloud provider we need to configure credentials
@@ -132,7 +132,8 @@ public class GoogleTest {
     environmentConfig.put(JSONKEY.unwrap().getConfigKey(), JSON_KEY);
 
     CloudProvider provider = launcher.createCloudProvider(
-        GoogleCloudProvider.ID, new SimpleConfiguration(environmentConfig));
+        GoogleCloudProvider.ID, new SimpleConfiguration(environmentConfig),
+        DEFAULT_LOCALIZATION_CONTEXT.getLocale());
 
     assertNotNull(provider);
 
@@ -143,7 +144,7 @@ public class GoogleTest {
     System.out.println("Configurations required for 'compute' resource provider:");
     for (ConfigurationProperty property :
         computeMetadata.getProviderConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALE));
+      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
@@ -160,7 +161,7 @@ public class GoogleTest {
     System.out.println("Configurations required for template:");
     for (ConfigurationProperty property :
         computeMetadata.getResourceTemplateConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALE));
+      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     Map<String, String> templateConfig = new HashMap<String, String>();
@@ -255,7 +256,7 @@ public class GoogleTest {
 
     for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
       System.out.printf("%s -> %s%n", entry.getKey(),
-          entry.getValue().getInstanceStateDescription(DEFAULT_LOCALE));
+          entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     while (idToInstanceStateMap.size() == 1
@@ -268,7 +269,7 @@ public class GoogleTest {
 
       for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
         System.out.printf("%s -> %s%n", entry.getKey(),
-            entry.getValue().getInstanceStateDescription(DEFAULT_LOCALE));
+            entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
       }
     }
   }

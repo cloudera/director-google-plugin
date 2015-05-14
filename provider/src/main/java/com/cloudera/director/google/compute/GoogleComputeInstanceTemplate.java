@@ -19,6 +19,7 @@ package com.cloudera.director.google.compute;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.Configured;
+import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 
 import java.util.List;
@@ -40,7 +41,8 @@ public class GoogleComputeInstanceTemplate extends ComputeInstanceTemplate {
     return CONFIGURATION_PROPERTIES;
   }
 
-  public GoogleComputeInstanceTemplate(String name, Configured configuration, Map<String, String> tags) {
-    super(name, configuration, tags);
+  public GoogleComputeInstanceTemplate(String name, Configured configuration,
+      Map<String, String> tags, LocalizationContext providerLocalizationContext) {
+    super(name, configuration, tags, providerLocalizationContext);
   }
 }

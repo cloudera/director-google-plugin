@@ -20,10 +20,11 @@ import com.cloudera.director.google.compute.GoogleComputeProvider;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.Configured;
-import com.cloudera.director.spi.v1.provider.CloudProvider;
+import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
+import com.cloudera.director.spi.v1.provider.util.AbstractCloudProvider;
 import com.cloudera.director.spi.v1.provider.util.SimpleCloudProviderMetadataBuilder;
 import com.typesafe.config.Config;
 
@@ -31,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class GoogleCloudProvider implements CloudProvider {
+public class GoogleCloudProvider extends AbstractCloudProvider {
 
   public static final String ID = "google";
 
@@ -50,21 +51,19 @@ public class GoogleCloudProvider implements CloudProvider {
       .resourceProviderMetadata(RESOURCE_PROVIDER_METADATA)
       .build();
 
-  public GoogleCloudProvider(GoogleCredentials credentials, Config googleConfig) {
+  public GoogleCloudProvider(GoogleCredentials credentials, Config googleConfig,
+      LocalizationContext rootLocalizationContext) {
+    super(METADATA, rootLocalizationContext);
     this.credentials = credentials;
     this.googleConfig = googleConfig;
-  }
-
-  @Override
-  public CloudProviderMetadata getMetadata() {
-    return METADATA;
   }
 
   @Override
   public ResourceProvider createResourceProvider(String resourceProviderId, Configured configuration) {
 
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
-      return new GoogleComputeProvider(configuration, credentials, googleConfig);
+      return new GoogleComputeProvider(configuration, credentials, googleConfig,
+          getLocalizationContext());
     }
 
     throw new NoSuchElementException("Invalid provider id: " + resourceProviderId);

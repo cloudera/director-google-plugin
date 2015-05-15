@@ -98,9 +98,7 @@ public class GoogleTest {
   public static Iterable<Object[]> data1() {
     return Arrays.asList(new Object[][]{
         {"SCSI", "centos"},
-        {"SCSI", "rhel"},
-        {"SCSI", "ubuntu"},
-        {"NVME", "nvmeDebian"}
+        {"SCSI", "rhel"}
     });
   }
 

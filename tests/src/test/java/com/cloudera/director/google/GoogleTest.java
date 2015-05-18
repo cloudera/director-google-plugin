@@ -180,9 +180,12 @@ public class GoogleTest {
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
 
+    Map<String, String> tags = new HashMap<String, String>();
+    tags.put("test-tag-1", "some-value-1");
+    tags.put("test-tag-2", "some-value-2");
+
     ComputeInstanceTemplate template =
-        compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig),
-            new HashMap<String, String>());
+        compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig), tags);
 
     assertNotNull(template);
 

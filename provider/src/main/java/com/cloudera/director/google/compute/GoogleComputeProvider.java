@@ -279,14 +279,20 @@ public class GoogleComputeProvider
           "/zones/" + zone +
           "/machineTypes/" + machineTypeName;
 
-      // Compose the instance metadata containing the SSH public key and user name.
+      // Compose the instance metadata containing the SSH public key, user name and tags.
       String sshUserName = template.getConfigurationValue(SSH_USERNAME,
           templateLocalizationContext);
       String sshPublicKey = template.getConfigurationValue(SSH_OPENSSH_PUBLIC_KEY,
           templateLocalizationContext);
       String sshKeysValue = sshUserName + ":" + sshPublicKey;
-      Metadata.Items metadataItems = new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue);
-      Metadata metadata = new Metadata().setItems(Arrays.asList(new Metadata.Items[]{metadataItems}));
+      List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
+      metadataItemsList.add(new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue));
+
+      for (Map.Entry<String, String> tag : template.getTags().entrySet()) {
+        metadataItemsList.add(new Metadata.Items().setKey(tag.getKey()).setValue(tag.getValue()));
+      }
+
+      Metadata metadata = new Metadata().setItems(metadataItemsList);
 
       // Compose the instance.
       Instance instance = new Instance();

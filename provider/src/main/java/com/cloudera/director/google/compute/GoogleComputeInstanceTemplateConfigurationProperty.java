@@ -16,11 +16,35 @@
 
 package com.cloudera.director.google.compute;
 
+import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationPropertyToken {
+
+  IMAGE(new SimpleConfigurationPropertyBuilder()
+      .configKey(ComputeInstanceTemplateConfigurationPropertyToken.IMAGE.unwrap().getConfigKey())
+      .name("Image Alias")
+      .required(true)
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .addValidValues("centos", "rhel")
+      .defaultDescription("The image alias from plugin configuration.")
+      .defaultErrorMessage("Image alias is mandatory")
+      .build()),
+
+  TYPE(new SimpleConfigurationPropertyBuilder()
+      .configKey(ComputeInstanceTemplateConfigurationPropertyToken.TYPE.unwrap().getConfigKey())
+      .name("Machine Type")
+      .required(true)
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .addValidValues("f1-micro", "g1-small",
+          "n1-standard-1", "n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32",
+          "n1-highcpu-2", "n1-highcpu-4", "n1-highcpu-8", "n1-highcpu-16", "n1-highcpu-32",
+          "n1-highmem-2", "n1-highmem-4", "n1-highmem-8", "n1-highmem-16", "n1-highmem-32")
+      .defaultDescription("The machine type.")
+      .defaultErrorMessage("Machine type is mandatory")
+      .build()),
 
   NETWORKNAME(new SimpleConfigurationPropertyBuilder()
       .configKey("networkName")
@@ -42,6 +66,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Boot Disk Size (GB)")
       .defaultDescription("Size of boot disk in GB")
       .defaultValue("60")
+      .type(ConfigurationProperty.Type.INTEGER)
+      .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),
 
@@ -50,6 +76,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Data Disk Count")
       .defaultDescription("Number of data disks to create")
       .defaultValue("2")
+      .type(ConfigurationProperty.Type.INTEGER)
+      .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),
 
@@ -58,6 +86,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Data Disk Type")
       .defaultDescription("Type of data disks to create (LocalSSD, SSD, Standard)")
       .defaultValue("LocalSSD")
+      .addValidValues("LocalSSD", "SSD", "Standard")
+      .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
       .build()),
 
@@ -67,6 +97,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Data Disk Size")
       .defaultDescription("Size of data disks in GB")
       .defaultValue("375")
+      .type(ConfigurationProperty.Type.INTEGER)
+      .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),
 
@@ -76,6 +108,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Local SSD Interface Type")
       .defaultDescription("Local SSD interface type (SCSI or NVME)")
       .defaultValue("SCSI")
+      .addValidValues("SCSI", "NVME")
+      .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
       .build());
 

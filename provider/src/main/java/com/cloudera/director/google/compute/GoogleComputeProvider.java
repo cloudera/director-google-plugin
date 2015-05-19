@@ -161,7 +161,7 @@ public class GoogleComputeProvider
 
       // Resolve the source image.
       String imageAlias = template.getConfigurationValue(
-          ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE,
+          GoogleComputeInstanceTemplateConfigurationProperty.IMAGE,
           templateLocalizationContext);
       String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
 
@@ -273,7 +273,7 @@ public class GoogleComputeProvider
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(
-          ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE,
+          GoogleComputeInstanceTemplateConfigurationProperty.TYPE,
           templateLocalizationContext);
       String machineTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
           "/zones/" + zone +

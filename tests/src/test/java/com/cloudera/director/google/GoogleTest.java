@@ -175,7 +175,7 @@ public class GoogleTest {
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
-    computeConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
+    templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
     templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);

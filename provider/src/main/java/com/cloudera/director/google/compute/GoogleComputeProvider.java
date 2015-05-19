@@ -30,10 +30,8 @@ import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
-import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
-import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
+import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
-import com.cloudera.director.spi.v1.model.exception.ValidationException;
 import com.cloudera.director.spi.v1.model.util.SimpleInstanceState;
 import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
@@ -94,37 +92,21 @@ public class GoogleComputeProvider
     this.credentials = credentials;
     this.googleConfig = googleConfig;
 
-    LocalizationContext localizationContext = getLocalizationContext();
-
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
 
-    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+    // Throws GoogleJsonResponseException if no zones can be located.
 
     try {
-      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE,
-          localizationContext);
+      compute.zones().list(projectId).execute();
 
-      // Throws GoogleJsonResponseException if the zone cannot be located.
-      // Note: Not all projects have access to the same zones.
-      try {
-        compute.zones().get(projectId, zone).execute();
-      } catch (GoogleJsonResponseException e) {
-        if (e.getStatusCode() == 404) {
-          throw new IllegalArgumentException("Zone '" + zone + "' not found.");
-        }
-      } catch (IOException e) {
-        throw new TransientProviderException(e);
+    } catch (GoogleJsonResponseException e) {
+      if (e.getStatusCode() == 404) {
+        throw new InvalidCredentialsException(
+            "Unable to list zones in project: " + projectId, e);
       }
-    } catch (IllegalArgumentException e) {
-      accumulator.addError(GoogleComputeInstanceTemplateConfigurationProperty.ZONE.unwrap().getConfigKey(),
-          e.getMessage());
-    }
-
-    if (accumulator.hasError()) {
-      PluginExceptionDetails pluginExceptionDetails =
-          new PluginExceptionDetails(accumulator.getConditionsByKey());
-      throw new ValidationException("Invalid configuration", pluginExceptionDetails);
+    } catch (IOException e) {
+      throw new TransientProviderException(e);
     }
   }
 
@@ -155,8 +137,8 @@ public class GoogleComputeProvider
     for (String instanceId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE,
-          templateLocalizationContext);
+      String zone = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
 
       // Resolve the source image.
@@ -245,7 +227,7 @@ public class GoogleComputeProvider
           }
 
           String persistentDiskUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-                  "/zones/" + zone + "/disks/" + persistentDisk.getName();
+              "/zones/" + zone + "/disks/" + persistentDisk.getName();
           attachedDisk.setType("PERSISTENT");
           attachedDisk.setSource(persistentDiskUrl);
         }
@@ -324,8 +306,8 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE,
-          templateLocalizationContext);
+      String zone = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
@@ -368,8 +350,9 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE,
-          templateLocalizationContext);
+
+      String zone = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
@@ -403,8 +386,8 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = getConfigurationValue(GoogleComputeInstanceTemplateConfigurationProperty.ZONE,
-          templateLocalizationContext);
+      String zone = template.getConfigurationValue(
+          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {

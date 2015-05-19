@@ -158,7 +158,6 @@ public class GoogleTest {
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
     // Do we want to enhance ConfigurationProperty to support querying provider for a set of values to choose from?
     Map<String, String> computeConfig = new HashMap<String, String>();
-    computeConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
 
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
         (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)
@@ -176,6 +175,7 @@ public class GoogleTest {
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
+    templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
     templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);

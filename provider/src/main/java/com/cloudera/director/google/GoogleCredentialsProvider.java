@@ -27,6 +27,7 @@ import com.cloudera.director.spi.v1.provider.CredentialsProvider;
 import com.cloudera.director.spi.v1.provider.CredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleCredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
+import com.typesafe.config.Config;
 
 import java.util.List;
 
@@ -42,6 +43,12 @@ public class GoogleCredentialsProvider implements CredentialsProvider<GoogleCred
   public static CredentialsProviderMetadata METADATA =
       new SimpleCredentialsProviderMetadata(CONFIGURATION_PROPERTIES);
 
+  private Config applicationProperties;
+
+  public GoogleCredentialsProvider(Config applicationProperties) {
+    this.applicationProperties = applicationProperties;
+  }
+
   @Override
   public CredentialsProviderMetadata getMetadata() {
     return METADATA;
@@ -51,6 +58,7 @@ public class GoogleCredentialsProvider implements CredentialsProvider<GoogleCred
   public GoogleCredentials createCredentials(Configured configuration,
       LocalizationContext localizationContext) {
     return new GoogleCredentials(
+        applicationProperties,
         configuration.getConfigurationValue(PROJECTID, localizationContext),
         configuration.getConfigurationValue(JSONKEY, localizationContext)
     );

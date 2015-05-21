@@ -23,6 +23,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
+import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 import static junit.framework.Assert.assertEquals;
@@ -158,6 +159,7 @@ public class GoogleTest {
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
     // Do we want to enhance ConfigurationProperty to support querying provider for a set of values to choose from?
     Map<String, String> computeConfig = new HashMap<String, String>();
+    computeConfig.put(REGION.unwrap().getConfigKey(), "us-central1");
 
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
         (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)

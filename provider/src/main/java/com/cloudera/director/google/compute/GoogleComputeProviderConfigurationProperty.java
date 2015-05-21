@@ -18,11 +18,16 @@ package com.cloudera.director.google.compute;
 
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
+import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
 public enum GoogleComputeProviderConfigurationProperty implements ConfigurationPropertyToken {
 
-  // This lone semicolon indicates the end of the initializer list for this enum.
-  ;
+  REGION(new SimpleConfigurationPropertyBuilder()
+      .configKey("region")
+      .name("Region")
+      .defaultDescription("Region to target for deployment")
+      .required(true)
+      .build());
 
   /**
    * The configuration property.

@@ -20,7 +20,6 @@ import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.Compu
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 
 import com.cloudera.director.google.internal.GoogleCredentials;
-import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
@@ -31,7 +30,10 @@ import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
+import com.cloudera.director.spi.v1.model.exception.UnrecoverableProviderException;
 import com.cloudera.director.spi.v1.model.util.SimpleInstanceState;
 import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
@@ -65,6 +67,8 @@ public class GoogleComputeProvider
 
   private static final Logger LOG = Logger.getLogger(GoogleComputeProvider.class.getName());
   private static final int MAX_LOCAL_SSD_COUNT = 4;
+  private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
+  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
@@ -134,9 +138,13 @@ public class GoogleComputeProvider
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
+    Compute compute = credentials.getCompute();
+    String projectId = credentials.getProjectId();
+
+    // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
+    List<Operation> vmCreationOperations = new ArrayList<Operation>();
+
     for (String instanceId : instanceIds) {
-      Compute compute = credentials.getCompute();
-      String projectId = credentials.getProjectId();
       String zone = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
@@ -191,8 +199,8 @@ public class GoogleComputeProvider
             "Number of local SSD drives must be between 0 and 4 inclusive.");
       }
 
-      // Use this list to collect the names of operations that must complete prior to provisioning the instance.
-      List<String> pendingOperationNames = new ArrayList<String>();
+      // Use this list to collect the operations that must reach a DONE state prior to provisioning the instance.
+      List<Operation> diskCreationOperations = new ArrayList<Operation>();
 
       for (int i = 0; i < dataDiskCount; i++) {
         AttachedDisk attachedDisk = new AttachedDisk();
@@ -215,7 +223,7 @@ public class GoogleComputeProvider
             // This is an async operation. We must poll until it completes to confirm the disk exists.
             Operation diskCreationOperation = compute.disks().insert(projectId, zone, persistentDisk).execute();
 
-            pendingOperationNames.add(diskCreationOperation.getName());
+            diskCreationOperations.add(diskCreationOperation);
           } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 409) {
               LOG.info("Disk '" + persistentDisk.getName() + "' already exists.");
@@ -284,15 +292,22 @@ public class GoogleComputeProvider
       instance.setDisks(attachedDiskList);
       instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
 
-      // Wait for pending operations to complete before provisioning the instance.
-      pollPendingOperations(projectId, zone, pendingOperationNames, compute);
+      // Wait for operations to reach DONE state before provisioning the instance.
+      pollPendingOperations(projectId, "disk creation", diskCreationOperations, DONE_STATE, compute);
 
       try {
-        compute.instances().insert(projectId, zone, instance).execute();
+        Operation vmCreationOperation = compute.instances().insert(projectId, zone, instance).execute();
+
+        vmCreationOperations.add(vmCreationOperation);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
+
+    // Wait for operations to reach RUNNING or DONE state before returning.
+    // Quotas are verified prior to reaching the RUNNING state.
+    // This is the status of the Operations we're referring to, not of the Instances.
+    pollPendingOperations(projectId, "vm creation", vmCreationOperations, RUNNING_OR_DONE_STATES, compute);
   }
 
   @Override
@@ -383,19 +398,30 @@ public class GoogleComputeProvider
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
+    Compute compute = credentials.getCompute();
+    String projectId = credentials.getProjectId();
+
+    // Use this list to collect the operations that must reach a RUNNING or DONE state prior to delete() returning.
+    List<Operation> vmDeletionOperations = new ArrayList<Operation>();
+
     for (String currentId : instanceIds) {
-      Compute compute = credentials.getCompute();
-      String projectId = credentials.getProjectId();
       String zone = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
-        compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
+        Operation vmDeletionOperation = compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
+
+        vmDeletionOperations.add(vmDeletionOperation);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
+
+    // Wait for operations to reach RUNNING or DONE state before returning.
+    // Quotas are verified prior to reaching the RUNNING state.
+    // This is the status of the Operations we're referring to, not of the Instances.
+    pollPendingOperations(projectId, "vm deletion", vmDeletionOperations, RUNNING_OR_DONE_STATES, compute);
   }
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
@@ -436,9 +462,12 @@ public class GoogleComputeProvider
     return diskTypeUrl;
   }
 
-  // Poll until 0 pending operations remain.
-  private static void pollPendingOperations(
-      String projectId, String zone, List<String> pendingOperationNames, Compute compute) throws InterruptedException {
+  // Poll until 0 operations remain in the passed pendingOperations list.
+  // An operation is removed from the list once it reaches one of the states in acceptableStates.
+  // All arguments are required and must be non-null.
+  private static void pollPendingOperations(String projectId, String operationDescription,
+      List<Operation> pendingOperations, List<String> acceptableStates, Compute compute)
+          throws InterruptedException {
     int totalTimePollingSeconds = 0;
     int pollingTimeoutSeconds = 60;
 
@@ -446,8 +475,14 @@ public class GoogleComputeProvider
     int pollInterval = 1;
     int pollIncrement = 0;
 
-    while (pendingOperationNames.size() > 0) {
+    while (pendingOperations.size() > 0) {
       if (totalTimePollingSeconds > pollingTimeoutSeconds) {
+        List<String> pendingOperationNames = new ArrayList<String>();
+
+        for (Operation pendingOperation : pendingOperations) {
+          pendingOperationNames.add(pendingOperation.getName());
+        }
+
         throw new IllegalArgumentException("Exceeded timeout of '" + pollingTimeoutSeconds + "' seconds while " +
             "polling for pending operations to complete: " + pendingOperationNames);
       }
@@ -456,26 +491,63 @@ public class GoogleComputeProvider
 
       totalTimePollingSeconds += pollInterval;
 
-      List<String> completedOperationNames = new ArrayList<String>();
+      List<Operation> completedOperations = new ArrayList<Operation>();
+      PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
-      for (String pendingOperationName : pendingOperationNames) {
+      for (Operation pendingOperation : pendingOperations) {
         try {
-          Operation pendingOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
+          String zone = getLocalName(pendingOperation.getZone());
+          String pendingOperationName = pendingOperation.getName();
+          Operation subjectOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
+          Operation.Error error = subjectOperation.getError();
 
-          if (pendingOperation.getStatus().equals("DONE")) {
-            completedOperationNames.add(pendingOperation.getName());
+          if (error != null) {
+            List<Operation.Error.Errors> errorsList = error.getErrors();
+
+            if (errorsList != null) {
+              for (Operation.Error.Errors errors : errorsList) {
+                // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
+                if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
+                  LOG.info("Resource '" + getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
+                } else {
+                  accumulator.addError(null, errors.getMessage());
+                }
+              }
+            }
+          }
+
+          if (acceptableStates.contains(subjectOperation.getStatus())) {
+            completedOperations.add(pendingOperation);
           }
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }
 
-      pendingOperationNames.removeAll(completedOperationNames);
+      if (accumulator.hasError()) {
+        PluginExceptionDetails pluginExceptionDetails =
+            new PluginExceptionDetails(accumulator.getConditionsByKey());
+        throw new UnrecoverableProviderException(
+            "Problem with " + operationDescription + " operation.", pluginExceptionDetails);
+      }
+
+      // Remove all operations that reached an acceptable state.
+      pendingOperations.removeAll(completedOperations);
 
       // Update polling interval.
       int oldIncrement = pollIncrement;
       pollIncrement = pollInterval;
       pollInterval += oldIncrement;
     }
+  }
+
+  private static String getLocalName(String fullResourceUrl) {
+    if (fullResourceUrl == null) {
+      return null;
+    }
+
+    String[] urlParts = fullResourceUrl.split("/");
+
+    return urlParts[urlParts.length - 1];
   }
 }

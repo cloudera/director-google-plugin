@@ -202,22 +202,12 @@ public class GoogleTest {
 
     Collection<ComputeInstance<ComputeInstanceTemplate>> instances = compute.find(template, instanceIds);
 
-    // Loop until found.
-
-    while (instances.size() == 0) {
-      Thread.sleep(POLLING_INTERVAL_SECONDS * 1000);
-
-      System.out.println("Polling...");
-
-      instances = compute.find(template, instanceIds);
-    }
+    assertEquals(1, instances.size());
 
     for (ComputeInstance foundInstance : instances) {
       System.out.println("Found instance '" + foundInstance.getId() + "' with private ip " +
           foundInstance.getPrivateIpAddress() + ".");
     }
-
-    assertEquals(1, instances.size());
 
     ComputeInstance instance = instances.iterator().next();
     assertEquals(instanceIds.get(0), instance.getId());

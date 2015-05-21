@@ -18,13 +18,13 @@ package com.cloudera.director.google;
 
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
 import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
-import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.IMAGE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
-import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.TYPE;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 

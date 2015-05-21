@@ -398,19 +398,30 @@ public class GoogleComputeProvider
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
+    Compute compute = credentials.getCompute();
+    String projectId = credentials.getProjectId();
+
+    // Use this list to collect the operations that must reach a RUNNING or DONE state prior to delete() returning.
+    List<Operation> vmDeletionOperations = new ArrayList<Operation>();
+
     for (String currentId : instanceIds) {
-      Compute compute = credentials.getCompute();
-      String projectId = credentials.getProjectId();
       String zone = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
-        compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
+        Operation vmDeletionOperation = compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
+
+        vmDeletionOperations.add(vmDeletionOperation);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
+
+    // Wait for operations to reach RUNNING or DONE state before returning.
+    // Quotas are verified prior to reaching the RUNNING state.
+    // This is the status of the Operations we're referring to, not of the Instances.
+    pollPendingOperations(projectId, "vm deletion", vmDeletionOperations, RUNNING_OR_DONE_STATES, compute);
   }
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
@@ -485,7 +496,6 @@ public class GoogleComputeProvider
 
       for (Operation pendingOperation : pendingOperations) {
         try {
-
           String zone = getLocalName(pendingOperation.getZone());
           String pendingOperationName = pendingOperation.getName();
           Operation subjectOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();

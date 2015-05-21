@@ -23,6 +23,7 @@ import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
@@ -34,6 +35,7 @@ import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccu
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.cloudera.director.spi.v1.model.exception.UnrecoverableProviderException;
+import com.cloudera.director.spi.v1.model.util.CompositeConfigurationValidator;
 import com.cloudera.director.spi.v1.model.util.SimpleInstanceState;
 import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
@@ -89,6 +91,8 @@ public class GoogleComputeProvider
   private GoogleCredentials credentials;
   private Config googleConfig;
 
+  private final ConfigurationValidator resourceTemplateConfigurationValidator;
+
   public GoogleComputeProvider(Configured configuration, GoogleCredentials credentials,
       Config googleConfig, LocalizationContext cloudLocalizationContext) {
     super(configuration, METADATA, cloudLocalizationContext);
@@ -112,11 +116,20 @@ public class GoogleComputeProvider
     } catch (IOException e) {
       throw new TransientProviderException(e);
     }
+
+    this.resourceTemplateConfigurationValidator =
+        new CompositeConfigurationValidator(METADATA.getResourceTemplateConfigurationValidator(),
+            new GoogleComputeInstanceTemplateConfigurationValidator(this));
   }
 
   @Override
   public ResourceProviderMetadata getProviderMetadata() {
     return METADATA;
+  }
+
+  @Override
+  public ConfigurationValidator getResourceTemplateConfigurationValidator() {
+    return resourceTemplateConfigurationValidator;
   }
 
   @Override

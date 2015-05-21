@@ -59,14 +59,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+/**
+ * These four system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH, SSH_PUBLIC_KEY_PATH, SSH_USER_NAME.
+ */
 @RunWith(Parameterized.class)
 public class GoogleTest {
-
-  // These four values need to be customized prior to running the test.
-  private static final String GCP_PROJECT_ID = "shared-project";
-  private static final String JSON_KEY_PATH = "";
-  private static final String SSH_PUBLIC_KEY_PATH = "";
-  private static final String SSH_USER_NAME = "";
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -80,10 +77,10 @@ public class GoogleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = GCP_PROJECT_ID;
-    JSON_KEY = readFile(JSON_KEY_PATH, Charset.defaultCharset());
-    SSH_PUBLIC_KEY = readFile(SSH_PUBLIC_KEY_PATH, Charset.defaultCharset());
-    USER_NAME = SSH_USER_NAME;
+    PROJECT_ID = readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY = readFile(readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    SSH_PUBLIC_KEY = readFile(readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"), Charset.defaultCharset());
+    USER_NAME = readRequiredSystemProperty("SSH_USER_NAME");
   }
 
   private String localSSDInterfaceType;
@@ -281,5 +278,15 @@ public class GoogleTest {
     byte[] encoded = Files.readAllBytes(Paths.get(path));
 
     return new String(encoded, encoding);
+  }
+
+  private static String readRequiredSystemProperty(String systemPropertyKey) {
+    String systemPropertyValue = System.getProperty(systemPropertyKey, "");
+
+    if (!systemPropertyValue.isEmpty()) {
+      return systemPropertyValue;
+    } else {
+      throw new IllegalArgumentException("System property '" + systemPropertyKey + "' is required.");
+    }
   }
 }

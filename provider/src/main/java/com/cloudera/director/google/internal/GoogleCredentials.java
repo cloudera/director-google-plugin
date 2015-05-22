@@ -23,25 +23,26 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.ComputeScopes;
+import com.typesafe.config.Config;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
 
 public class GoogleCredentials {
 
-  private final static String APPLICATION_NAME = "Cloudera";
-
+  private final Config applicationProperties;
   private final String projectId;
   private final String jsonKey;
   private final Compute compute;
 
-  public GoogleCredentials(String projectId, String jsonKey) {
+  public GoogleCredentials(Config applicationProperties, String projectId, String jsonKey) {
+    this.applicationProperties = applicationProperties;
     this.projectId = projectId;
     this.jsonKey = jsonKey;
-    this.compute = buildCompute(jsonKey);
+    this.compute = buildCompute();
   }
 
-  private static Compute buildCompute(String jsonKey) {
+  private Compute buildCompute() {
     try {
       JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
       HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
@@ -53,7 +54,8 @@ public class GoogleCredentials {
       return new Compute.Builder(httpTransport,
           JSON_FACTORY,
           null)
-          .setApplicationName(APPLICATION_NAME)
+          .setApplicationName(applicationProperties.getString("application.name") + "/" +
+              applicationProperties.getString("application.version"))
           .setHttpRequestInitializer(credential)
           .build();
 

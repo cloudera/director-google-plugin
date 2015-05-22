@@ -37,8 +37,10 @@ import java.util.Locale;
 public class GoogleLauncher extends AbstractLauncher {
 
   private static final String GOOGLE_CONFIG_FILENAME = "/com/cloudera/director/google/google.conf";
+  private static final String APPLICATION_PROPERTIES_FILENAME = "/com/cloudera/director/google/application.properties";
 
   private Config googleConfig = null;
+  private Config applicationProperties = null;
 
   public GoogleLauncher() {
     super(Collections.singletonList(GoogleCloudProvider.METADATA), null);
@@ -53,6 +55,7 @@ public class GoogleLauncher extends AbstractLauncher {
   public void initialize(File configurationDirectory) {
     try {
       googleConfig = parseConfigFromClasspath(GOOGLE_CONFIG_FILENAME);
+      applicationProperties = parseConfigFromClasspath(APPLICATION_PROPERTIES_FILENAME);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -114,7 +117,7 @@ public class GoogleLauncher extends AbstractLauncher {
     // At this point the configuration object will already contain
     // the required data for authentication.
 
-    CredentialsProvider<GoogleCredentials> provider = new GoogleCredentialsProvider();
+    CredentialsProvider<GoogleCredentials> provider = new GoogleCredentialsProvider(applicationProperties);
     GoogleCredentials credentials = provider.createCredentials(configuration, localizationContext);
     Compute compute = credentials.getCompute();
 

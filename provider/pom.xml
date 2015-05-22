@@ -24,6 +24,8 @@
     <artifactId>google-provider</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
+    <name>Cloudera-Director-Google-Plugin</name>
+
     <properties>
         <launcher-class>com.cloudera.director.google.GoogleLauncher</launcher-class>
         <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
@@ -69,6 +71,13 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

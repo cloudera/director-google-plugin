@@ -35,6 +35,7 @@ import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccu
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.cloudera.director.spi.v1.model.exception.UnrecoverableProviderException;
+import com.cloudera.director.spi.v1.model.exception.ValidationException;
 import com.cloudera.director.spi.v1.model.util.CompositeConfigurationValidator;
 import com.cloudera.director.spi.v1.model.util.SimpleInstanceState;
 import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
@@ -51,6 +52,7 @@ import com.google.api.services.compute.model.Instance;
 import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
+import com.google.api.services.compute.model.Zone;
 import com.typesafe.config.Config;
 
 import java.io.IOException;
@@ -153,6 +155,8 @@ public class GoogleComputeProvider
 
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
+    String region = getConfigurationValue(
+        GoogleComputeProviderConfigurationProperty.REGION, templateLocalizationContext);
 
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
     List<Operation> vmCreationOperations = new ArrayList<Operation>();
@@ -160,6 +164,9 @@ public class GoogleComputeProvider
     for (String instanceId : instanceIds) {
       String zone = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
+
+      verifyZoneInRegion(zone, region, projectId, compute);
+
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
 
       // Resolve the source image.
@@ -562,5 +569,32 @@ public class GoogleComputeProvider
     String[] urlParts = fullResourceUrl.split("/");
 
     return urlParts[urlParts.length - 1];
+  }
+
+  private static void verifyZoneInRegion(String zoneName, String regionName, String projectId, Compute compute) {
+    try {
+      Zone zone = compute.zones().get(projectId, zoneName).execute();
+
+      if (!getLocalName(zone.getRegion()).equals(regionName)) {
+        PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+        accumulator.addError(GoogleComputeInstanceTemplateConfigurationProperty.ZONE.unwrap().getConfigKey(),
+            "Zone '" + zoneName + "' not found in region '" + regionName + "' for project '" + projectId + "'.");
+
+        PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
+        throw new ValidationException("Problem verifying zone is within region.", pluginExceptionDetails);
+      }
+    } catch (GoogleJsonResponseException e) {
+      if (e.getStatusCode() == 404) {
+        PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+        accumulator.addError(GoogleComputeInstanceTemplateConfigurationProperty.ZONE.unwrap().getConfigKey(),
+            e.getMessage());
+
+        PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
+        throw new ValidationException("Zone '" + zoneName + "' not found for project '" + projectId + "'.",
+            pluginExceptionDetails);
+      }
+    } catch (IOException e) {
+      throw new TransientProviderException(e);
+    }
   }
 }

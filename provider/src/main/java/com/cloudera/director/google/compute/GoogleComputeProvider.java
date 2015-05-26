@@ -380,8 +380,8 @@ public class GoogleComputeProvider
 
     // Iterate over each instance creation operation.
     for (Operation vmCreationOperation : vmCreationOperations) {
-      String zone = getLocalName(vmCreationOperation.getZone());
-      String instanceName = getLocalName(vmCreationOperation.getTargetLink());
+      String zone = Utils.getLocalName(vmCreationOperation.getZone());
+      String instanceName = Utils.getLocalName(vmCreationOperation.getTargetLink());
 
       try {
         // If any persistent disks were created, retrieve each instance representation and remove its attached disks
@@ -411,8 +411,8 @@ public class GoogleComputeProvider
 
     // Delete each persistent disk that is not attached to an instance.
     for (Operation diskCreationOperation : diskNameToCreationOperationMap.values()) {
-      String zone = getLocalName(diskCreationOperation.getZone());
-      String diskName = getLocalName(diskCreationOperation.getTargetLink());
+      String zone = Utils.getLocalName(diskCreationOperation.getZone());
+      String diskName = Utils.getLocalName(diskCreationOperation.getTargetLink());
 
       try {
         Operation tearDownOperation = compute.disks().delete(projectId, zone, diskName).execute();
@@ -568,6 +568,10 @@ public class GoogleComputeProvider
     }
   }
 
+  public GoogleCredentials getCredentials() {
+    return credentials;
+  }
+
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
       LocalizationContext templateLocalizationContext) {
     return template.getConfigurationValue(
@@ -638,7 +642,7 @@ public class GoogleComputeProvider
 
       for (Operation pendingOperation : pendingOperations) {
         try {
-          String zone = getLocalName(pendingOperation.getZone());
+          String zone = Utils.getLocalName(pendingOperation.getZone());
           String pendingOperationName = pendingOperation.getName();
           Operation subjectOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
           Operation.Error error = subjectOperation.getError();
@@ -651,7 +655,7 @@ public class GoogleComputeProvider
               for (Operation.Error.Errors errors : errorsList) {
                 // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
                 if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Resource '" + getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
+                  LOG.info("Resource '" + Utils.getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
                 } else {
                   accumulator.addError(null, errors.getMessage());
                   isActualError = true;
@@ -698,13 +702,4 @@ public class GoogleComputeProvider
     return successfulOperations;
   }
 
-  private static String getLocalName(String fullResourceUrl) {
-    if (fullResourceUrl == null) {
-      return null;
-    }
-
-    String[] urlParts = fullResourceUrl.split("/");
-
-    return urlParts[urlParts.length - 1];
-  }
 }

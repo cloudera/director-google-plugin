@@ -31,6 +31,7 @@ import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
@@ -52,6 +53,8 @@ import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
 import com.typesafe.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -62,12 +65,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class GoogleComputeProvider
     extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
 
-  private static final Logger LOG = Logger.getLogger(GoogleComputeProvider.class.getName());
+  private static final Logger LOG = LoggerFactory.getLogger(GoogleComputeProvider.class);
+
   private static final int MAX_LOCAL_SSD_COUNT = 4;
   private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
   private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
@@ -353,7 +356,24 @@ public class GoogleComputeProvider
       LOG.info("Provisioned " + successfulOperationCount + " instances out of " + instanceIds.size() +
           ". minCount is " + minCount + ".");
 
-      // TODO(duftler): How should we handle the accumulated error messages here?
+      // Even through we are not throwing an exception, we still want to log the errors.
+      if (accumulator.hasError()) {
+        Map<String, Collection<PluginExceptionCondition>> conditionsByKeyMap = accumulator.getConditionsByKey();
+
+        for (Map.Entry<String, Collection<PluginExceptionCondition>> keyToCondition : conditionsByKeyMap.entrySet()) {
+          String key = keyToCondition.getKey();
+
+          if (key != null) {
+            for (PluginExceptionCondition condition : keyToCondition.getValue()) {
+              LOG.info("({}) {}: {}", condition.getType(), key, condition.getMessage());
+            }
+          } else {
+            for (PluginExceptionCondition condition : keyToCondition.getValue()) {
+              LOG.info("({}) {}", condition.getType(), condition.getMessage());
+            }
+          }
+        }
+      }
     }
   }
 

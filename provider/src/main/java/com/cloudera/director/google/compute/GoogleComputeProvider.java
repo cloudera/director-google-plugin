@@ -71,7 +71,6 @@ public class GoogleComputeProvider
 
   private static final Logger LOG = LoggerFactory.getLogger(GoogleComputeProvider.class);
 
-  private static final int MAX_LOCAL_SSD_COUNT = 4;
   private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
   private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
 
@@ -178,10 +177,6 @@ public class GoogleComputeProvider
           templateLocalizationContext);
       String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
 
-      if (sourceImageUrl == null) {
-        throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");
-      }
-
       // Compose attached disks.
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
 
@@ -213,14 +208,6 @@ public class GoogleComputeProvider
       String localSSDInterfaceType = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE,
           templateLocalizationContext);
-
-      if (dataDiskCount < 0) {
-        throw new IllegalArgumentException("Invalid number of data disks specified: '" + dataDiskCount + "'. " +
-            "Number of data disks must not be negative.");
-      } else if (dataDisksAreLocalSSD && dataDiskCount > MAX_LOCAL_SSD_COUNT) {
-        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + dataDiskCount + "'. " +
-            "Number of local SSD drives must be between 0 and 4 inclusive.");
-      }
 
       // Use this list to collect the operations that must reach a DONE state prior to provisioning the instance.
       List<Operation> diskCreationOperations = new ArrayList<Operation>();
@@ -456,7 +443,7 @@ public class GoogleComputeProvider
 
     if (successfulTearDownOperationCount < tearDownOperationCount) {
       accumulator.addError(null, successfulTearDownOperationCount + " of the " + tearDownOperationCount +
-              " tear down operations completed successfully.");
+          " tear down operations completed successfully.");
     }
   }
 
@@ -592,6 +579,10 @@ public class GoogleComputeProvider
     return credentials;
   }
 
+  public Config getGoogleConfig() {
+    return googleConfig;
+  }
+
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
       LocalizationContext templateLocalizationContext) {
     return template.getConfigurationValue(
@@ -621,10 +612,10 @@ public class GoogleComputeProvider
       diskTypeUrl += "local-ssd";
     } else if (dataDiskType.equals("SSD")) {
       diskTypeUrl += "pd-ssd";
-    } else if (dataDiskType.equals("Standard")) {
-      diskTypeUrl += "pd-standard";
     } else {
-      throw new IllegalArgumentException("Invalid data disk type: '" + dataDiskType + "'.");
+      // The value will already have been checked by the validator.
+      // Assume 'Standard'.
+      diskTypeUrl += "pd-standard";
     }
 
     return diskTypeUrl;

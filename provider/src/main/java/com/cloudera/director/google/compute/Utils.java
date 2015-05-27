@@ -26,4 +26,19 @@ public class Utils {
 
     return urlParts[urlParts.length - 1];
   }
+
+  static String getProject(String fullResourceUrl) {
+    if (fullResourceUrl == null) {
+      return null;
+    }
+
+    String[] urlParts = fullResourceUrl.split("/");
+
+    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150325
+    if (urlParts.length < 10) {
+      throw new IllegalArgumentException("Malformed resource url '" + fullResourceUrl + "'.");
+    } else {
+      return urlParts[urlParts.length - 4];
+    }
+  }
 }

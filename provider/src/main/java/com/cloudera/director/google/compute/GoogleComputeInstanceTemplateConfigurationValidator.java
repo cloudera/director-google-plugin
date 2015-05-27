@@ -16,6 +16,13 @@
 
 package com.cloudera.director.google.compute;
 
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
@@ -29,11 +36,15 @@ import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.Zone;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Validates Google compute instance template configuration.
@@ -41,10 +52,46 @@ import java.io.IOException;
 public class GoogleComputeInstanceTemplateConfigurationValidator implements ConfigurationValidator {
 
   private static final Logger LOG =
-          LoggerFactory.getLogger(GoogleComputeInstanceTemplateConfigurationValidator.class);
+      LoggerFactory.getLogger(GoogleComputeInstanceTemplateConfigurationValidator.class);
+
+  private static final int MIN_BOOT_DISK_SIZE_GB = 10;
+  private static final int MIN_DATA_DISK_SIZE_GB = 10;
+  private static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
+  private static final int MIN_LOCAL_SSD_COUNT = 0;
+  private static final int MAX_LOCAL_SSD_COUNT = 4;
 
   private static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
   private static final String ZONE_NOT_FOUND_IN_REGION_MSG = "Zone '%s' not found in region '%s' for project '%s'.";
+
+  private static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
+  private static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
+
+  private static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
+  private static final String INVALID_BOOT_DISK_SIZE_MSG =
+      "Boot disk size must be at least '%dGB'. Current configuration: '%dGB'.";
+
+  private static final String INVALID_DATA_DISK_COUNT_FORMAT_MSG = "Data disk count must be an integer: '%s'.";
+  private static final String INVALID_DATA_DISK_COUNT_NEGATIVE_MSG =
+      "Data disk count must be non-negative. Current configuration: '%d'.";
+  private static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
+      "Data disk count when using local SSD drives must be between '%d' and '%d', inclusive. " +
+      "Current configuration: '%d'.";
+
+  private static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
+  private static final String INVALID_DATA_DISK_SIZE_MSG =
+      "Data disk size must be at least '%dGB'. Current configuration: '%dGB'.";
+  private static final String INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG =
+      "Data disk size when using local SSD drives must be exactly '%dGB'. Current configuration: '%dGB'.";
+
+  private static final List<String> DATA_DISK_TYPES = ImmutableList.of("LocalSSD", "SSD", "Standard");
+  public static final String INVALID_DATA_DISK_TYPE_MSG =
+      "Invalid data disk type '%s'. Available options: %s";
+
+  private static final String MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG =
+      "Machine type '%s' not found in zone '%s' for project '%s'.";
+
+  private static final String NETWORK_NOT_FOUND_MSG =
+      "Network '%s' not found for project '%s'.";
 
   /**
    * The Google compute provider.
@@ -64,7 +111,15 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   @Override
   public void validate(String name, Configured configuration,
       PluginExceptionConditionAccumulator accumulator, LocalizationContext localizationContext) {
+
     checkZone(configuration, accumulator, localizationContext);
+    checkImage(configuration, accumulator, localizationContext);
+    checkBootDiskSize(configuration, accumulator, localizationContext);
+    checkDataDiskCount(configuration, accumulator, localizationContext);
+    checkDataDiskType(configuration, accumulator, localizationContext);
+    checkDataDiskSize(configuration, accumulator, localizationContext);
+    checkMachineType(configuration, accumulator, localizationContext);
+    checkNetwork(configuration, accumulator, localizationContext);
   }
 
   /**
@@ -81,7 +136,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
     String zoneName = configuration.getConfigurationValue(ZONE, localizationContext);
 
     if (zoneName != null) {
-      LOG.info(">> Describing zone '{}'", zoneName);
+      LOG.info(">> Querying zone '{}'", zoneName);
 
       GoogleCredentials credentials = provider.getCredentials();
       Compute compute = credentials.getCompute();
@@ -93,12 +148,245 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
         if (!Utils.getLocalName(zone.getRegion()).equals(regionName)) {
           addError(accumulator, ZONE, localizationContext, null, ZONE_NOT_FOUND_IN_REGION_MSG,
-              new Object[]{zoneName, regionName, projectId});
+              zoneName, regionName, projectId);
         }
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           addError(accumulator, ZONE, localizationContext, null, ZONE_NOT_FOUND_MSG,
-              new Object[]{zoneName, regionName, projectId});
+              zoneName, regionName, projectId);
+        } else {
+          throw new TransientProviderException(e);
+        }
+      } catch (IOException e) {
+        throw new TransientProviderException(e);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured image.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkImage(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String imageAlias = configuration.getConfigurationValue(IMAGE, localizationContext);
+
+    if (imageAlias != null) {
+      LOG.info(">> Querying image '{}'", imageAlias);
+
+      Config googleConfig = provider.getGoogleConfig();
+      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
+
+      if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
+        GoogleCredentials credentials = provider.getCredentials();
+        Compute compute = credentials.getCompute();
+        String projectId = Utils.getProject(sourceImageUrl);
+        String imageLocalName = Utils.getLocalName(sourceImageUrl);
+
+        try {
+          compute.images().get(projectId, imageLocalName).execute();
+        } catch (GoogleJsonResponseException e) {
+          if (e.getStatusCode() == 404) {
+            addError(accumulator, IMAGE, localizationContext, null, IMAGE_NOT_FOUND_MSG, imageLocalName, projectId);
+          } else {
+            throw new TransientProviderException(e);
+          }
+        } catch (IOException e) {
+          throw new TransientProviderException(e);
+        }
+      } else {
+        addError(accumulator, IMAGE, localizationContext, null, MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND, imageAlias);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured boot disk size.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkBootDiskSize(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String bootDiskSizeGBString = configuration.getConfigurationValue(BOOTDISKSIZEGB, localizationContext);
+
+    if (bootDiskSizeGBString != null) {
+      try {
+        int bootDiskSizeGB = Integer.parseInt(bootDiskSizeGBString);
+
+        if (bootDiskSizeGB < MIN_BOOT_DISK_SIZE_GB) {
+          addError(accumulator, BOOTDISKSIZEGB, localizationContext, null, INVALID_BOOT_DISK_SIZE_MSG,
+              MIN_BOOT_DISK_SIZE_GB, bootDiskSizeGB);
+        }
+      } catch (NumberFormatException e) {
+        addError(accumulator, BOOTDISKSIZEGB, localizationContext, null, INVALID_BOOT_DISK_SIZE_FORMAT_MSG,
+            bootDiskSizeGBString);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured number of data disks.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkDataDiskCount(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String dataDiskCountString = configuration.getConfigurationValue(DATADISKCOUNT, localizationContext);
+
+    if (dataDiskCountString != null) {
+      try {
+        int dataDiskCount = Integer.parseInt(dataDiskCountString);
+        String dataDiskType = configuration.getConfigurationValue(
+            GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
+            localizationContext);
+        boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
+
+        if (dataDisksAreLocalSSD) {
+          if (dataDiskCount < MIN_LOCAL_SSD_COUNT || dataDiskCount > MAX_LOCAL_SSD_COUNT) {
+            addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
+                MIN_LOCAL_SSD_COUNT, MAX_LOCAL_SSD_COUNT, dataDiskCount);
+          }
+        } else if (dataDiskCount < 0) {
+          addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG,
+              dataDiskCount);
+        }
+      } catch (NumberFormatException e) {
+        addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_FORMAT_MSG,
+            dataDiskCountString);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured data disk type.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkDataDiskType(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String dataDiskType = configuration.getConfigurationValue(DATADISKTYPE, localizationContext);
+
+    if (dataDiskType != null && !DATA_DISK_TYPES.contains(dataDiskType)) {
+      addError(accumulator, DATADISKTYPE, localizationContext, null, INVALID_DATA_DISK_TYPE_MSG,
+          new Object[]{dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES)});
+    }
+  }
+
+  /**
+   * Validates the configured data disk size.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkDataDiskSize(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String dataDiskSizeGBString = configuration.getConfigurationValue(DATADISKSIZEGB, localizationContext);
+
+    if (dataDiskSizeGBString != null) {
+      try {
+        int dataDiskSizeGB = Integer.parseInt(dataDiskSizeGBString);
+        String dataDiskType = configuration.getConfigurationValue(
+            GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
+            localizationContext);
+        boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
+
+        if (dataDisksAreLocalSSD) {
+          if (dataDiskSizeGB != EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB) {
+            addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG,
+                EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB, dataDiskSizeGB);
+          }
+        } else if (dataDiskSizeGB < MIN_DATA_DISK_SIZE_GB) {
+          addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_DATA_DISK_SIZE_MSG,
+              MIN_DATA_DISK_SIZE_GB, dataDiskSizeGB);
+        }
+      } catch (NumberFormatException e) {
+        addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_DATA_DISK_SIZE_FORMAT_MSG,
+            dataDiskSizeGBString);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured machine type.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkMachineType(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String type = configuration.getConfigurationValue(TYPE, localizationContext);
+
+    if (type != null) {
+      LOG.info(">> Querying machine type '{}'", type);
+
+      GoogleCredentials credentials = provider.getCredentials();
+      Compute compute = credentials.getCompute();
+      String projectId = credentials.getProjectId();
+      String zoneName = configuration.getConfigurationValue(ZONE, localizationContext);
+
+      try {
+        compute.machineTypes().get(projectId, zoneName, type).execute();
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          addError(accumulator, TYPE, localizationContext, null, MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG,
+              type, zoneName, projectId);
+        } else {
+          throw new TransientProviderException(e);
+        }
+      } catch (IOException e) {
+        throw new TransientProviderException(e);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured network.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkNetwork(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String networkName = configuration.getConfigurationValue(NETWORKNAME, localizationContext);
+
+    if (networkName != null) {
+      LOG.info(">> Querying network '{}'", networkName);
+
+      GoogleCredentials credentials = provider.getCredentials();
+      Compute compute = credentials.getCompute();
+      String projectId = credentials.getProjectId();
+
+      try {
+        compute.networks().get(projectId, networkName).execute();
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          addError(accumulator, TYPE, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, projectId);
         } else {
           throw new TransientProviderException(e);
         }

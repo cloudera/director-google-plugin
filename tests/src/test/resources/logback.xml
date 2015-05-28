@@ -9,17 +9,15 @@
     <property name="FILE_LOG_PATTERN"
               value="[%date{yyyy-MM-dd HH:mm:ss}] %-5level [%thread] - %logger{36}: %msg%n"/>
 
-    <appender name="FILE"
-              class="com.cloudera.director.google.shaded.ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <encoder>
             <pattern>${FILE_LOG_PATTERN}</pattern>
         </encoder>
         <file>${MAIN_LOG_FILE}</file>
-        <rollingPolicy class="com.cloudera.director.google.shaded.ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>${MAIN_LOG_FILE}.%i</fileNamePattern>
         </rollingPolicy>
-        <triggeringPolicy
-                class="com.cloudera.director.google.shaded.ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <MaxFileSize>10MB</MaxFileSize>
         </triggeringPolicy>
     </appender>

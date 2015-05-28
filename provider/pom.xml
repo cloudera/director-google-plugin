@@ -30,8 +30,7 @@
         <launcher-class>com.cloudera.director.google.GoogleLauncher</launcher-class>
         <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
         <google-api-services-compute.version>v1-rev54-1.20.0</google-api-services-compute.version>
-        <slf4j.version>1.7.5</slf4j.version>
-        <logback.version>1.1.2</logback.version>
+        <slf4j.version>1.7.10</slf4j.version>
         <typesafe-config.version>1.2.0</typesafe-config.version>
         <junit.version>4.12</junit.version>
     </properties>
@@ -60,27 +59,13 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
             <version>${typesafe-config.version}</version>
-        </dependency>
-
-        <!-- test dependencies -->
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -145,18 +130,6 @@
                                     <pattern>javax.annotation</pattern>
                                     <shadedPattern>
                                         com.cloudera.director.google.shaded.javax.annotation
-                                    </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.slf4j</pattern>
-                                    <shadedPattern>
-                                        com.cloudera.director.google.shaded.org.slf4j
-                                    </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>ch.qos.logback</pattern>
-                                    <shadedPattern>
-                                        com.cloudera.director.google.shaded.ch.qos.logback
                                     </shadedPattern>
                                 </relocation>
                             </relocations>

@@ -3,6 +3,8 @@ target
 */target
 dependency-reduced-pom.xml
 
+*.log
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 

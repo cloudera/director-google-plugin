@@ -23,22 +23,29 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
+import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
+import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_PORT;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 
+import com.cloudera.director.google.compute.GoogleComputeProvider;
 import com.cloudera.director.spi.v1.compute.ComputeInstance;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.ComputeProvider;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.util.DefaultLocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.Launcher;
+import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 
 import java.io.File;
@@ -155,10 +162,12 @@ public class GoogleTest {
     // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
     // Do we want to enhance ConfigurationProperty to support querying provider for a set of values to choose from?
     Map<String, String> computeConfig = new HashMap<String, String>();
+    computeConfig.put(REGION.unwrap().getConfigKey(), "us-central1");
 
+    ResourceProvider resourceProvider =
+        provider.createResourceProvider("compute", new SimpleConfiguration(computeConfig));
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
-        (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)
-            provider.createResourceProvider("compute", new SimpleConfiguration(computeConfig));
+        (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)resourceProvider;
 
     // Prepare a resource template.
 
@@ -172,10 +181,11 @@ public class GoogleTest {
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
-    templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-a");
+    templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-f");
     templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
+    templateConfig.put(SSH_PORT.unwrap().getConfigKey(), "22");
 
     Map<String, String> tags = new HashMap<String, String>();
     tags.put("test-tag-1", "some-value-1");
@@ -185,6 +195,17 @@ public class GoogleTest {
         compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig), tags);
 
     assertNotNull(template);
+
+    // Validate the template configuration.
+
+    System.out.println("About to validate the template...");
+
+    ConfigurationValidator validator =
+        ((GoogleComputeProvider)resourceProvider).getResourceTemplateConfigurationValidator();
+    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+    validator.validate("instance resource template", template, accumulator, DEFAULT_LOCALIZATION_CONTEXT);
+
+    assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
     // Use the template to create one resource.
 

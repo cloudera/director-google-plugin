@@ -31,6 +31,7 @@ import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
@@ -52,6 +53,8 @@ import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
 import com.typesafe.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -62,13 +65,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class GoogleComputeProvider
     extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
 
-  private static final Logger LOG = Logger.getLogger(GoogleComputeProvider.class.getName());
-  private static final int MAX_LOCAL_SSD_COUNT = 4;
+  private static final Logger LOG = LoggerFactory.getLogger(GoogleComputeProvider.class);
+
   private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
   private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
 
@@ -112,6 +114,8 @@ public class GoogleComputeProvider
       if (e.getStatusCode() == 404) {
         throw new InvalidCredentialsException(
             "Unable to list zones in project: " + projectId, e);
+      } else {
+        throw new TransientProviderException(e);
       }
     } catch (IOException e) {
       throw new TransientProviderException(e);
@@ -147,12 +151,17 @@ public class GoogleComputeProvider
   public void allocate(GoogleComputeInstanceTemplate template,
       Collection<String> instanceIds, int minCount) throws InterruptedException {
 
+    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
+
+    // Use this list to collect successful disk creation operations in case we need to tear everything down.
+    List<Operation> successfulDiskCreationOperations = new ArrayList<Operation>();
 
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
     List<Operation> vmCreationOperations = new ArrayList<Operation>();
@@ -167,10 +176,6 @@ public class GoogleComputeProvider
           GoogleComputeInstanceTemplateConfigurationProperty.IMAGE,
           templateLocalizationContext);
       String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
-
-      if (sourceImageUrl == null) {
-        throw new IllegalArgumentException("Image for alias '" + imageAlias + "' not found.");
-      }
 
       // Compose attached disks.
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
@@ -204,16 +209,10 @@ public class GoogleComputeProvider
           GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE,
           templateLocalizationContext);
 
-      if (dataDiskCount < 0) {
-        throw new IllegalArgumentException("Invalid number of data disks specified: '" + dataDiskCount + "'. " +
-            "Number of data disks must not be negative.");
-      } else if (dataDisksAreLocalSSD && dataDiskCount > MAX_LOCAL_SSD_COUNT) {
-        throw new IllegalArgumentException("Invalid number of local SSD drives specified: '" + dataDiskCount + "'. " +
-            "Number of local SSD drives must be between 0 and 4 inclusive.");
-      }
-
       // Use this list to collect the operations that must reach a DONE state prior to provisioning the instance.
       List<Operation> diskCreationOperations = new ArrayList<Operation>();
+
+      int preExistingPersistentDiskCount = 0;
 
       for (int i = 0; i < dataDiskCount; i++) {
         AttachedDisk attachedDisk = new AttachedDisk();
@@ -240,11 +239,13 @@ public class GoogleComputeProvider
           } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 409) {
               LOG.info("Disk '" + persistentDisk.getName() + "' already exists.");
+
+              preExistingPersistentDiskCount++;
             } else {
-              throw new RuntimeException(e);
+              accumulator.addError(null, e.getMessage());
             }
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            accumulator.addError(null, e.getMessage());
           }
 
           String persistentDiskUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
@@ -306,21 +307,144 @@ public class GoogleComputeProvider
       instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
 
       // Wait for operations to reach DONE state before provisioning the instance.
-      pollPendingOperations(projectId, "disk creation", diskCreationOperations, DONE_STATE, compute);
+      List<Operation> successfulOperations = pollPendingOperations(projectId, diskCreationOperations, DONE_STATE, compute, accumulator);
 
-      try {
-        Operation vmCreationOperation = compute.instances().insert(projectId, zone, instance).execute();
+      // We need to ensure that any data disks that were successfully created are deleted in case of teardown.
+      for (Operation successfulOperation : successfulOperations) {
+        successfulDiskCreationOperations.add(successfulOperation);
+      }
 
-        vmCreationOperations.add(vmCreationOperation);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      if (dataDisksAreLocalSSD || preExistingPersistentDiskCount + successfulOperations.size() == dataDiskCount) {
+        try {
+          Operation vmCreationOperation = compute.instances().insert(projectId, zone, instance).execute();
+
+          vmCreationOperations.add(vmCreationOperation);
+        } catch (IOException e) {
+          accumulator.addError(null, e.getMessage());
+        }
       }
     }
 
-    // Wait for operations to reach RUNNING or DONE state before returning.
-    // Quotas are verified prior to reaching the RUNNING state.
+    // Wait for operations to reach DONE state before returning.
     // This is the status of the Operations we're referring to, not of the Instances.
-    pollPendingOperations(projectId, "vm creation", vmCreationOperations, RUNNING_OR_DONE_STATES, compute);
+    List<Operation> successfulOperations = pollPendingOperations(projectId, vmCreationOperations, DONE_STATE,
+        compute, accumulator);
+    int successfulOperationCount = successfulOperations.size();
+
+    if (successfulOperationCount < minCount) {
+      LOG.info("Provisioned " + successfulOperationCount + " instances out of " + instanceIds.size() +
+          ". minCount is " + minCount + ". Tearing down provisioned instances.");
+
+      tearDownResources(projectId, vmCreationOperations, successfulDiskCreationOperations, compute, accumulator);
+
+      PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
+      throw new UnrecoverableProviderException("Problem allocating instances.", pluginExceptionDetails);
+    } else if (successfulOperationCount < instanceIds.size()) {
+      LOG.info("Provisioned " + successfulOperationCount + " instances out of " + instanceIds.size() +
+          ". minCount is " + minCount + ".");
+
+      // Even through we are not throwing an exception, we still want to log the errors.
+      if (accumulator.hasError()) {
+        Map<String, Collection<PluginExceptionCondition>> conditionsByKeyMap = accumulator.getConditionsByKey();
+
+        for (Map.Entry<String, Collection<PluginExceptionCondition>> keyToCondition : conditionsByKeyMap.entrySet()) {
+          String key = keyToCondition.getKey();
+
+          if (key != null) {
+            for (PluginExceptionCondition condition : keyToCondition.getValue()) {
+              LOG.info("({}) {}: {}", condition.getType(), key, condition.getMessage());
+            }
+          } else {
+            for (PluginExceptionCondition condition : keyToCondition.getValue()) {
+              LOG.info("({}) {}", condition.getType(), condition.getMessage());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Delete all persistent disks and instances.
+  private void tearDownResources(String projectId, List<Operation> vmCreationOperations,
+      List<Operation> diskCreationOperations, Compute compute,
+      PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
+
+    // Use this map to allow for pruning the set of persistent disks that must be deleted.
+    // Disks already attached to an instance will be automatically deleted when the instance is deleted.
+    // So we don't need to delete it explicitly.
+    Map<String, Operation> diskNameToCreationOperationMap = new HashMap<String, Operation>();
+
+    // Create a mapping from full resource url to the operation for each disk created.
+    for (Operation diskCreationOperation : diskCreationOperations) {
+      diskNameToCreationOperationMap.put(diskCreationOperation.getTargetLink(), diskCreationOperation);
+    }
+
+    // Were any persistent disks created at all?
+    boolean persistentDisksMustBeDeleted = diskNameToCreationOperationMap.size() > 0;
+
+    // Use this list to keep track of all disk and instance deletion operations.
+    List<Operation> tearDownOperations = new ArrayList<Operation>();
+
+    // Iterate over each instance creation operation.
+    for (Operation vmCreationOperation : vmCreationOperations) {
+      String zone = Utils.getLocalName(vmCreationOperation.getZone());
+      String instanceName = Utils.getLocalName(vmCreationOperation.getTargetLink());
+
+      try {
+        // If any persistent disks were created, retrieve each instance representation and remove its attached disks
+        // from the set of disks that must be explicitly deleted.
+        if (persistentDisksMustBeDeleted) {
+          Instance instance = compute.instances().get(projectId, zone, instanceName).execute();
+
+          for (AttachedDisk attachedDisk : instance.getDisks()) {
+            diskNameToCreationOperationMap.remove(attachedDisk.getSource());
+          }
+        }
+
+        Operation tearDownOperation = compute.instances().delete(projectId, zone, instanceName).execute();
+
+        tearDownOperations.add(tearDownOperation);
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          // Since we try to tear down all instances, and some may not have been successfully provisioned in the first,
+          // we don't need to propagate this.
+        } else {
+          accumulator.addError(null, e.getMessage());
+        }
+      } catch (IOException e) {
+        accumulator.addError(null, e.getMessage());
+      }
+    }
+
+    // Delete each persistent disk that is not attached to an instance.
+    for (Operation diskCreationOperation : diskNameToCreationOperationMap.values()) {
+      String zone = Utils.getLocalName(diskCreationOperation.getZone());
+      String diskName = Utils.getLocalName(diskCreationOperation.getTargetLink());
+
+      try {
+        Operation tearDownOperation = compute.disks().delete(projectId, zone, diskName).execute();
+
+        tearDownOperations.add(tearDownOperation);
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          // Ignore this.
+        } else {
+          accumulator.addError(null, e.getMessage());
+        }
+      } catch (IOException e) {
+        accumulator.addError(null, e.getMessage());
+      }
+    }
+
+    List<Operation> successfulTearDownOperations = pollPendingOperations(projectId, tearDownOperations, DONE_STATE,
+        compute, accumulator);
+    int tearDownOperationCount = tearDownOperations.size();
+    int successfulTearDownOperationCount = successfulTearDownOperations.size();
+
+    if (successfulTearDownOperationCount < tearDownOperationCount) {
+      accumulator.addError(null, successfulTearDownOperationCount + " of the " + tearDownOperationCount +
+          " tear down operations completed successfully.");
+    }
   }
 
   @Override
@@ -407,6 +531,9 @@ public class GoogleComputeProvider
   @Override
   public void delete(GoogleComputeInstanceTemplate template,
       Collection<String> instanceIds) throws InterruptedException {
+
+    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
@@ -426,15 +553,34 @@ public class GoogleComputeProvider
         Operation vmDeletionOperation = compute.instances().delete(projectId, zone, decoratedInstanceName).execute();
 
         vmDeletionOperations.add(vmDeletionOperation);
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          LOG.info("Instance '" + decoratedInstanceName + "' not found.");
+        } else {
+          accumulator.addError(null, e.getMessage());
+        }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        accumulator.addError(null, e.getMessage());
       }
     }
 
     // Wait for operations to reach RUNNING or DONE state before returning.
     // Quotas are verified prior to reaching the RUNNING state.
     // This is the status of the Operations we're referring to, not of the Instances.
-    pollPendingOperations(projectId, "vm deletion", vmDeletionOperations, RUNNING_OR_DONE_STATES, compute);
+    pollPendingOperations(projectId, vmDeletionOperations, RUNNING_OR_DONE_STATES, compute, accumulator);
+
+    if (accumulator.hasError()) {
+      PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
+      throw new UnrecoverableProviderException("Problem deleting instances.", pluginExceptionDetails);
+    }
+  }
+
+  public GoogleCredentials getCredentials() {
+    return credentials;
+  }
+
+  public Config getGoogleConfig() {
+    return googleConfig;
   }
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
@@ -466,10 +612,10 @@ public class GoogleComputeProvider
       diskTypeUrl += "local-ssd";
     } else if (dataDiskType.equals("SSD")) {
       diskTypeUrl += "pd-ssd";
-    } else if (dataDiskType.equals("Standard")) {
-      diskTypeUrl += "pd-standard";
     } else {
-      throw new IllegalArgumentException("Invalid data disk type: '" + dataDiskType + "'.");
+      // The value will already have been checked by the validator.
+      // Assume 'Standard'.
+      diskTypeUrl += "pd-standard";
     }
 
     return diskTypeUrl;
@@ -477,42 +623,41 @@ public class GoogleComputeProvider
 
   // Poll until 0 operations remain in the passed pendingOperations list.
   // An operation is removed from the list once it reaches one of the states in acceptableStates.
+  // The list is cloned and not directly modified.
   // All arguments are required and must be non-null.
-  private static void pollPendingOperations(String projectId, String operationDescription,
-      List<Operation> pendingOperations, List<String> acceptableStates, Compute compute)
+  // Returns the number of operations that reached one of the acceptable states within the timeout period.
+  private static List<Operation> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
+      List<String> acceptableStates, Compute compute, PluginExceptionConditionAccumulator accumulator)
           throws InterruptedException {
-    int totalTimePollingSeconds = 0;
-    int pollingTimeoutSeconds = 60;
+    // Clone the list so we can prune it without modifying the original.
+    List<Operation> pendingOperations = new ArrayList<Operation>(origPendingOperations);
 
-    // Fibonacci backoff in seconds.
+    int totalTimePollingSeconds = 0;
+    int pollingTimeoutSeconds = 180;
+    int maxPollingIntervalSeconds = 8;
+    boolean timeoutExceeded = false;
+
+    // Fibonacci backoff in seconds, up to maxPollingIntervalSeconds interval.
     int pollInterval = 1;
     int pollIncrement = 0;
 
-    while (pendingOperations.size() > 0) {
-      if (totalTimePollingSeconds > pollingTimeoutSeconds) {
-        List<String> pendingOperationNames = new ArrayList<String>();
+    // Use this list to keep track of each operation that reached one of the acceptable states.
+    List<Operation> successfulOperations = new ArrayList<Operation>();
 
-        for (Operation pendingOperation : pendingOperations) {
-          pendingOperationNames.add(pendingOperation.getName());
-        }
-
-        throw new IllegalArgumentException("Exceeded timeout of '" + pollingTimeoutSeconds + "' seconds while " +
-            "polling for pending operations to complete: " + pendingOperationNames);
-      }
-
+    while (pendingOperations.size() > 0 && !timeoutExceeded) {
       Thread.currentThread().sleep(pollInterval * 1000);
 
       totalTimePollingSeconds += pollInterval;
 
       List<Operation> completedOperations = new ArrayList<Operation>();
-      PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
       for (Operation pendingOperation : pendingOperations) {
         try {
-          String zone = getLocalName(pendingOperation.getZone());
+          String zone = Utils.getLocalName(pendingOperation.getZone());
           String pendingOperationName = pendingOperation.getName();
           Operation subjectOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
           Operation.Error error = subjectOperation.getError();
+          boolean isActualError = false;
 
           if (error != null) {
             List<Operation.Error.Errors> errorsList = error.getErrors();
@@ -521,9 +666,10 @@ public class GoogleComputeProvider
               for (Operation.Error.Errors errors : errorsList) {
                 // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
                 if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Resource '" + getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
+                  LOG.info("Resource '" + Utils.getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
                 } else {
                   accumulator.addError(null, errors.getMessage());
+                  isActualError = true;
                 }
               }
             }
@@ -531,36 +677,40 @@ public class GoogleComputeProvider
 
           if (acceptableStates.contains(subjectOperation.getStatus())) {
             completedOperations.add(pendingOperation);
+
+            if (!isActualError) {
+              successfulOperations.add(pendingOperation);
+            }
           }
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          accumulator.addError(null, e.getMessage());
         }
-      }
-
-      if (accumulator.hasError()) {
-        PluginExceptionDetails pluginExceptionDetails =
-            new PluginExceptionDetails(accumulator.getConditionsByKey());
-        throw new UnrecoverableProviderException(
-            "Problem with " + operationDescription + " operation.", pluginExceptionDetails);
       }
 
       // Remove all operations that reached an acceptable state.
       pendingOperations.removeAll(completedOperations);
 
-      // Update polling interval.
-      int oldIncrement = pollIncrement;
-      pollIncrement = pollInterval;
-      pollInterval += oldIncrement;
+      if (pendingOperations.size() > 0 && totalTimePollingSeconds > pollingTimeoutSeconds) {
+        List<String> pendingOperationNames = new ArrayList<String>();
+
+        for (Operation pendingOperation : pendingOperations) {
+          pendingOperationNames.add(pendingOperation.getName());
+        }
+
+        accumulator.addError(null, "Exceeded timeout of '" + pollingTimeoutSeconds + "' seconds while " +
+            "polling for pending operations to complete: " + pendingOperationNames);
+
+        timeoutExceeded = true;
+      } else {
+        // Update polling interval.
+        int oldIncrement = pollIncrement;
+        pollIncrement = pollInterval;
+        pollInterval += oldIncrement;
+        pollInterval = Math.min(pollInterval, maxPollingIntervalSeconds);
+      }
     }
+
+    return successfulOperations;
   }
 
-  private static String getLocalName(String fullResourceUrl) {
-    if (fullResourceUrl == null) {
-      return null;
-    }
-
-    String[] urlParts = fullResourceUrl.split("/");
-
-    return urlParts[urlParts.length - 1];
-  }
 }

@@ -19,6 +19,7 @@ package com.cloudera.director.google.compute;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
+import com.cloudera.director.spi.v1.model.Property;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationPropertyToken {
@@ -66,7 +67,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Boot Disk Size (GB)")
       .defaultDescription("Size of boot disk in GB")
       .defaultValue("60")
-      .type(ConfigurationProperty.Type.INTEGER)
+      .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),
@@ -76,7 +77,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Data Disk Count")
       .defaultDescription("Number of data disks to create")
       .defaultValue("2")
-      .type(ConfigurationProperty.Type.INTEGER)
+      .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),
@@ -97,7 +98,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .name("Data Disk Size")
       .defaultDescription("Size of data disks in GB")
       .defaultValue("375")
-      .type(ConfigurationProperty.Type.INTEGER)
+      .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
       .required(false)
       .build()),

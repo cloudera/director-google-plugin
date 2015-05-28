@@ -17,10 +17,13 @@
 package com.cloudera.director.google;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
+import com.cloudera.director.google.compute.GoogleComputeProviderConfigurationValidator;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
+import com.cloudera.director.spi.v1.model.util.CompositeConfigurationValidator;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
@@ -56,6 +59,19 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     super(METADATA, rootLocalizationContext);
     this.credentials = credentials;
     this.googleConfig = googleConfig;
+  }
+
+  @Override
+  protected ConfigurationValidator getResourceProviderConfigurationValidator(
+      ResourceProviderMetadata resourceProviderMetadata) {
+    ConfigurationValidator providerSpecificValidator;
+    if (resourceProviderMetadata.getId().equals(GoogleComputeProvider.METADATA.getId())) {
+      providerSpecificValidator = new GoogleComputeProviderConfigurationValidator();
+    } else {
+      throw new NoSuchElementException("Invalid provider id: " + resourceProviderMetadata.getId());
+    }
+    return new CompositeConfigurationValidator(METADATA.getProviderConfigurationValidator(),
+        providerSpecificValidator);
   }
 
   @Override

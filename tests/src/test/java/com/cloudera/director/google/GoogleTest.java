@@ -35,6 +35,7 @@ import com.cloudera.director.google.compute.GoogleComputeProvider;
 import com.cloudera.director.spi.v1.compute.ComputeInstance;
 import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
 import com.cloudera.director.spi.v1.compute.ComputeProvider;
+import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.InstanceState;
@@ -164,10 +165,25 @@ public class GoogleTest {
     Map<String, String> computeConfig = new HashMap<String, String>();
     computeConfig.put(REGION.unwrap().getConfigKey(), "us-central1");
 
-    ResourceProvider resourceProvider =
-        provider.createResourceProvider("compute", new SimpleConfiguration(computeConfig));
+    Configured resourceProviderConfiguration = new SimpleConfiguration(computeConfig);
+
+    // Validate the resource provider configuration.
+
+    System.out.println("About to validate the resource provider configuration...");
+
+    ConfigurationValidator resourceProviderValidator =
+        ((GoogleCloudProvider)provider).getResourceProviderConfigurationValidator(computeMetadata);
+    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+    resourceProviderValidator.validate("resource provider configuration", resourceProviderConfiguration, accumulator,
+        DEFAULT_LOCALIZATION_CONTEXT);
+
+    assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
+
+    ResourceProvider resourceProvider = provider.createResourceProvider("compute", resourceProviderConfiguration);
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
         (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)resourceProvider;
+
+    assertNotNull(resourceProvider);
 
     // Prepare a resource template.
 
@@ -196,15 +212,15 @@ public class GoogleTest {
 
     assertNotNull(template);
 
+    System.out.println("About to validate the template configuration...");
+
     // Validate the template configuration.
 
-    System.out.println("About to validate the template...");
-
-    ConfigurationValidator validator =
+    ConfigurationValidator templateConfigurationValidator =
         ((GoogleComputeProvider)resourceProvider).getResourceTemplateConfigurationValidator();
-    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
-    validator.validate("instance resource template", template, accumulator, DEFAULT_LOCALIZATION_CONTEXT);
-
+    accumulator = new PluginExceptionConditionAccumulator();
+    templateConfigurationValidator.validate("instance resource template", template, accumulator,
+        DEFAULT_LOCALIZATION_CONTEXT);
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
     // Use the template to create one resource.

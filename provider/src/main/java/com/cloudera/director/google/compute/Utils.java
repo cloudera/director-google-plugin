@@ -16,7 +16,14 @@
 
 package com.cloudera.director.google.compute;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Utils {
+
+  public static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
+
   static String getLocalName(String fullResourceUrl) {
     if (fullResourceUrl == null) {
       return null;
@@ -40,5 +47,13 @@ public class Utils {
     } else {
       return urlParts[urlParts.length - 4];
     }
+  }
+
+  static Date getDateFromTimestamp(String timestamp) throws ParseException {
+    if (timestamp != null && !timestamp.isEmpty()) {
+      return new SimpleDateFormat(SIMPLE_DATE_FORMAT).parse(timestamp);
+    }
+
+    return null;
   }
 }

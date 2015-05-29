@@ -57,8 +57,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -464,8 +462,13 @@ public class GoogleComputeProvider
 
       try {
         Instance instance = compute.instances().get(projectId, zone, decoratedInstanceName).execute();
+        Disk bootDisk = getBootDisk(projectId, zone, instance, compute);
 
-        result.add(new GoogleComputeInstance(template, currentId, getInetAddressFromInstance(instance)));
+        if (bootDisk == null) {
+          throw new IllegalArgumentException("Boot disk not found for instance '" + instance.getName() + "'.");
+        }
+
+        result.add(new GoogleComputeInstance(template, currentId, instance, bootDisk));
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           LOG.info("Instance '" + decoratedInstanceName + "' not found.");
@@ -479,16 +482,36 @@ public class GoogleComputeProvider
     return result;
   }
 
-  private static InetAddress getInetAddressFromInstance(Instance instance) throws UnknownHostException {
-    List<NetworkInterface> networkInterfaceList = instance.getNetworkInterfaces();
-
-    if (networkInterfaceList == null || networkInterfaceList.size() == 0) {
-      LOG.info("No network interfaces found for instance '" + instance.getName() + "'.");
-
-      return null;
-    } else {
-      return InetAddress.getByName(instance.getNetworkInterfaces().get(0).getNetworkIP());
+  private Disk getBootDisk(String projectId, String zone, Instance instance, Compute compute) {
+    List<AttachedDisk> attachedDisks = instance.getDisks();
+    AttachedDisk attachedBootDisk = null;
+    if (attachedDisks != null) {
+      for (AttachedDisk attachedDisk : attachedDisks) {
+        if (attachedDisk.getBoot()) {
+          attachedBootDisk = attachedDisk;
+        }
+      }
     }
+
+    Disk bootDisk = null;
+
+    if (attachedBootDisk != null) {
+      String bootDiskName = Utils.getLocalName(attachedBootDisk.getSource());
+
+      try {
+        bootDisk = compute.disks().get(projectId, zone, bootDiskName).execute();
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          LOG.info("Boot disk '" + bootDiskName + "' not found for instance '" + instance.getName() + "'.");
+        } else {
+          throw new RuntimeException(e);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    return bootDisk;
   }
 
   @Override

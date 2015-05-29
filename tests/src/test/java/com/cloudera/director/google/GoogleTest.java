@@ -207,21 +207,24 @@ public class GoogleTest {
     tags.put("test-tag-1", "some-value-1");
     tags.put("test-tag-2", "some-value-2");
 
-    ComputeInstanceTemplate template =
-        compute.createResourceTemplate("template-1", new SimpleConfiguration(templateConfig), tags);
-
-    assertNotNull(template);
-
-    System.out.println("About to validate the template configuration...");
+    Configured templateConfiguration = new SimpleConfiguration(templateConfig);
 
     // Validate the template configuration.
+
+    System.out.println("About to validate the template configuration...");
 
     ConfigurationValidator templateConfigurationValidator =
         ((GoogleComputeProvider)resourceProvider).getResourceTemplateConfigurationValidator();
     accumulator = new PluginExceptionConditionAccumulator();
-    templateConfigurationValidator.validate("instance resource template", template, accumulator,
+    templateConfigurationValidator.validate("instance resource template", templateConfiguration, accumulator,
         DEFAULT_LOCALIZATION_CONTEXT);
+
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
+
+    ComputeInstanceTemplate template =
+        compute.createResourceTemplate("template-1", templateConfiguration, tags);
+
+    assertNotNull(template);
 
     // Use the template to create one resource.
 

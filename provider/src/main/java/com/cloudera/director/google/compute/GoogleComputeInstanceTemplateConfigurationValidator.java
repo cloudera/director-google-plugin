@@ -31,6 +31,7 @@ import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
@@ -44,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -338,6 +340,16 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LocalizationContext localizationContext) {
 
     String type = configuration.getConfigurationValue(TYPE, localizationContext);
+
+    // Machine types are a zonal resource. Only makes sense to check it if the zone itself is valid.
+    Collection<PluginExceptionCondition> zoneErrors =
+        accumulator.getConditionsByKey().get(ZONE.unwrap().getConfigKey());
+
+    if (zoneErrors != null && zoneErrors.size() > 0) {
+      LOG.info("Machine type '{}' not being checked since zone was not found.", type);
+
+      return;
+    }
 
     if (type != null) {
       LOG.info(">> Querying machine type '{}'", type);

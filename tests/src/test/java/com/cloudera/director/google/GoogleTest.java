@@ -85,10 +85,10 @@ public class GoogleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = readFile(readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
-    SSH_PUBLIC_KEY = readFile(readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"), Charset.defaultCharset());
-    USER_NAME = readRequiredSystemProperty("SSH_USER_NAME");
+    PROJECT_ID = Utils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY = Utils.readFile(Utils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    SSH_PUBLIC_KEY = Utils.readFile(Utils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"), Charset.defaultCharset());
+    USER_NAME = Utils.readRequiredSystemProperty("SSH_USER_NAME");
   }
 
   private String localSSDInterfaceType;
@@ -311,22 +311,6 @@ public class GoogleTest {
         System.out.printf("%s -> %s%n", entry.getKey(),
             entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
       }
-    }
-  }
-
-  private static String readFile(String path, Charset encoding) throws IOException {
-    byte[] encoded = Files.readAllBytes(Paths.get(path));
-
-    return new String(encoded, encoding);
-  }
-
-  private static String readRequiredSystemProperty(String systemPropertyKey) {
-    String systemPropertyValue = System.getProperty(systemPropertyKey, "");
-
-    if (!systemPropertyValue.isEmpty()) {
-      return systemPropertyValue;
-    } else {
-      throw new IllegalArgumentException("System property '" + systemPropertyKey + "' is required.");
     }
   }
 }

@@ -19,6 +19,7 @@ package com.cloudera.director.google.compute;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 
+import com.cloudera.director.google.Configurations;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
@@ -173,7 +174,7 @@ public class GoogleComputeProvider
       String imageAlias = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.IMAGE,
           templateLocalizationContext);
-      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
+      String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
 
       // Compose attached disks.
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();

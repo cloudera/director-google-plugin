@@ -27,6 +27,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
+import com.cloudera.director.google.Configurations;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
@@ -182,7 +183,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LOG.info(">> Querying image '{}'", imageAlias);
 
       Config googleConfig = provider.getGoogleConfig();
-      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
+      String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
 
       if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
         GoogleCredentials credentials = provider.getCredentials();

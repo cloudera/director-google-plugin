@@ -152,7 +152,7 @@ public class GoogleTest {
 
     // Get the provider for compute instances.
 
-    ResourceProviderMetadata computeMetadata = metadata.getResourceProviderMetadata("compute");
+    ResourceProviderMetadata computeMetadata = metadata.getResourceProviderMetadata(GoogleComputeProvider.ID);
 
     System.out.println("Configurations required for 'compute' resource provider:");
     for (ConfigurationProperty property :
@@ -179,7 +179,8 @@ public class GoogleTest {
 
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
-    ResourceProvider resourceProvider = provider.createResourceProvider("compute", resourceProviderConfiguration);
+    ResourceProvider resourceProvider =
+        provider.createResourceProvider(GoogleComputeProvider.ID, resourceProviderConfiguration);
     ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
         (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)resourceProvider;
 

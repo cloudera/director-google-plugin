@@ -77,7 +77,10 @@ public class GoogleComputeProvider
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
           GoogleComputeProviderConfigurationProperty.values());
 
-  public static final String ID = "compute";
+  /**
+   * The resource provider ID.
+   */
+  public static final String ID = GoogleComputeProvider.class.getCanonicalName();
 
   public static final ResourceProviderMetadata METADATA = SimpleResourceProviderMetadata.builder()
       .id(ID)

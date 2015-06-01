@@ -27,24 +27,24 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   IMAGE(new SimpleConfigurationPropertyBuilder()
       .configKey(ComputeInstanceTemplateConfigurationPropertyToken.IMAGE.unwrap().getConfigKey())
       .name("Image Alias")
-      .required(true)
-      .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues("centos", "rhel")
       .defaultDescription("The image alias from plugin configuration.")
       .defaultErrorMessage("Image alias is mandatory")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .required(true)
       .build()),
 
   TYPE(new SimpleConfigurationPropertyBuilder()
       .configKey(ComputeInstanceTemplateConfigurationPropertyToken.TYPE.unwrap().getConfigKey())
       .name("Machine Type")
-      .required(true)
-      .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues("f1-micro", "g1-small",
           "n1-standard-1", "n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32",
           "n1-highcpu-2", "n1-highcpu-4", "n1-highcpu-8", "n1-highcpu-16", "n1-highcpu-32",
           "n1-highmem-2", "n1-highmem-4", "n1-highmem-8", "n1-highmem-16", "n1-highmem-32")
       .defaultDescription("The machine type.")
       .defaultErrorMessage("Machine type is mandatory")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .required(true)
       .build()),
 
   NETWORKNAME(new SimpleConfigurationPropertyBuilder()
@@ -59,6 +59,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .configKey("zone")
       .name("Zone")
       .defaultDescription("Zone to target for deployment.")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
       .required(true)
       .build()),
 
@@ -85,9 +86,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   DATADISKTYPE(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskType")
       .name("Data Disk Type")
+      .addValidValues("LocalSSD", "SSD", "Standard")
       .defaultDescription("Type of data disks to create (LocalSSD, SSD, Standard).")
       .defaultValue("LocalSSD")
-      .addValidValues("LocalSSD", "SSD", "Standard")
       .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
       .build()),
@@ -107,9 +108,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   LOCALSSDINTERFACETYPE(new SimpleConfigurationPropertyBuilder()
       .configKey("localSSDInterfaceType")
       .name("Local SSD Interface Type")
+      .addValidValues("SCSI", "NVME")
       .defaultDescription("Local SSD interface type (SCSI or NVME).")
       .defaultValue("SCSI")
-      .addValidValues("SCSI", "NVME")
       .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
       .build());

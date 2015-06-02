@@ -39,13 +39,11 @@ import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
 import com.cloudera.director.google.internal.GoogleCredentials;
-
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
 import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.Compute;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Zone;
-
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;

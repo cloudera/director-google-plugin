@@ -16,12 +16,16 @@
 
 package com.cloudera.director.google;
 
+import com.cloudera.director.google.shaded.com.typesafe.config.Config;
+import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Utils {
+public class TestUtils {
 
   public static String readFile(String path, Charset encoding) throws IOException {
     byte[] encoded = Files.readAllBytes(Paths.get(path));
@@ -37,5 +41,15 @@ public class Utils {
     } else {
       throw new IllegalArgumentException("System property '" + systemPropertyKey + "' is required.");
     }
+  }
+
+  public static Config buildGoogleConfig() throws IOException {
+    Map<String, String> googleConfig = new HashMap<String, String>();
+    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "centos",
+            "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325");
+    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "rhel",
+            "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150325");
+
+    return ConfigFactory.parseMap(googleConfig);
   }
 }

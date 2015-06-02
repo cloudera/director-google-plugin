@@ -54,8 +54,8 @@ public class GoogleLauncherTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = Utils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = Utils.readFile(Utils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
   }
 
   @Rule

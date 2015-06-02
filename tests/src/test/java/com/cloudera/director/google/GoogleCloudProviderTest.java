@@ -55,8 +55,8 @@ public class GoogleCloudProviderTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = Utils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = Utils.readFile(Utils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
   }
 
   @Rule
@@ -96,7 +96,7 @@ public class GoogleCloudProviderTest {
     assertEquals("Cloudera-Director-Google-Plugin/1.0.0-SNAPSHOT",
             googleCredentials.getCompute().getApplicationName());
 
-    Config googleConfig = buildGoogleConfig();
+    Config googleConfig = TestUtils.buildGoogleConfig();
 
     GoogleCloudProvider googleProvider = new GoogleCloudProvider(googleCredentials, googleConfig,
         cloudLocalizationContext);
@@ -129,15 +129,5 @@ public class GoogleCloudProviderTest {
     applicationProperties.put("application.version", "1.0.0-SNAPSHOT");
 
     return ConfigFactory.parseMap(applicationProperties);
-  }
-
-  private Config buildGoogleConfig() throws IOException {
-    Map<String, String> googleConfig = new HashMap<String, String>();
-    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "centos",
-        "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325");
-    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "rhel",
-        "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150325");
-
-    return ConfigFactory.parseMap(googleConfig);
   }
 }

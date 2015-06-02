@@ -52,8 +52,6 @@ import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,10 +83,11 @@ public class GoogleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = Utils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = Utils.readFile(Utils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
-    SSH_PUBLIC_KEY = Utils.readFile(Utils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"), Charset.defaultCharset());
-    USER_NAME = Utils.readRequiredSystemProperty("SSH_USER_NAME");
+    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    SSH_PUBLIC_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
+        Charset.defaultCharset());
+    USER_NAME = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");
   }
 
   private String localSSDInterfaceType;

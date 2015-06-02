@@ -84,8 +84,8 @@ public class GoogleComputeProvider
 
   public static final ResourceProviderMetadata METADATA = SimpleResourceProviderMetadata.builder()
       .id(ID)
-      .name("Google Compute Provider")
-      .description("Provisions VM's on Google Compute Engine")
+      .name("Google Compute Engine")
+      .description("Google Compute Engine provider")
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
       .resourceTemplateConfigurationProperties(
           GoogleComputeInstanceTemplate.getConfigurationProperties())

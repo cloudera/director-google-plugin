@@ -59,11 +59,16 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   private static final Logger LOG =
       LoggerFactory.getLogger(GoogleComputeInstanceTemplateConfigurationValidator.class);
 
-  private static final int MIN_BOOT_DISK_SIZE_GB = 10;
-  private static final int MIN_DATA_DISK_SIZE_GB = 10;
-  private static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
-  private static final int MIN_LOCAL_SSD_COUNT = 0;
-  private static final int MAX_LOCAL_SSD_COUNT = 4;
+  @VisibleForTesting
+  static final int MIN_BOOT_DISK_SIZE_GB = 10;
+  @VisibleForTesting
+  static final int MIN_DATA_DISK_SIZE_GB = 10;
+  @VisibleForTesting
+  static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
+  @VisibleForTesting
+  static final int MIN_LOCAL_SSD_COUNT = 0;
+  @VisibleForTesting
+  static final int MAX_LOCAL_SSD_COUNT = 4;
 
   @VisibleForTesting
   static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
@@ -75,25 +80,34 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   @VisibleForTesting
   static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
 
-  private static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
-  private static final String INVALID_BOOT_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_BOOT_DISK_SIZE_MSG =
       "Boot disk size must be at least '%dGB'. Current configuration: '%dGB'.";
 
-  private static final String INVALID_DATA_DISK_COUNT_FORMAT_MSG = "Data disk count must be an integer: '%s'.";
-  private static final String INVALID_DATA_DISK_COUNT_NEGATIVE_MSG =
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_COUNT_FORMAT_MSG = "Data disk count must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_COUNT_NEGATIVE_MSG =
       "Data disk count must be non-negative. Current configuration: '%d'.";
-  private static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
+  @VisibleForTesting
+  static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
       "Data disk count when using local SSD drives must be between '%d' and '%d', inclusive. " +
       "Current configuration: '%d'.";
 
-  private static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
-  private static final String INVALID_DATA_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_SIZE_MSG =
       "Data disk size must be at least '%dGB'. Current configuration: '%dGB'.";
-  private static final String INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG =
       "Data disk size when using local SSD drives must be exactly '%dGB'. Current configuration: '%dGB'.";
 
-  private static final List<String> DATA_DISK_TYPES = ImmutableList.of("LocalSSD", "SSD", "Standard");
-  public static final String INVALID_DATA_DISK_TYPE_MSG =
+  @VisibleForTesting
+  static final List<String> DATA_DISK_TYPES = ImmutableList.of("LocalSSD", "SSD", "Standard");
+  static final String INVALID_DATA_DISK_TYPE_MSG =
       "Invalid data disk type '%s'. Available options: %s";
 
   @VisibleForTesting

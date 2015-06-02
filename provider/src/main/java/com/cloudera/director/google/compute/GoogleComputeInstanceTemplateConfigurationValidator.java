@@ -38,10 +38,12 @@ import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.Zone;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,11 +65,15 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   private static final int MIN_LOCAL_SSD_COUNT = 0;
   private static final int MAX_LOCAL_SSD_COUNT = 4;
 
-  private static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
-  private static final String ZONE_NOT_FOUND_IN_REGION_MSG = "Zone '%s' not found in region '%s' for project '%s'.";
+  @VisibleForTesting
+  static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String ZONE_NOT_FOUND_IN_REGION_MSG = "Zone '%s' not found in region '%s' for project '%s'.";
 
-  private static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
-  private static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
+  @VisibleForTesting
+  static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
 
   private static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
   private static final String INVALID_BOOT_DISK_SIZE_MSG =
@@ -90,11 +96,12 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   public static final String INVALID_DATA_DISK_TYPE_MSG =
       "Invalid data disk type '%s'. Available options: %s";
 
-  private static final String MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG =
+  @VisibleForTesting
+  static final String MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG =
       "Machine type '%s' not found in zone '%s' for project '%s'.";
 
-  private static final String NETWORK_NOT_FOUND_MSG =
-      "Network '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String NETWORK_NOT_FOUND_MSG = "Network '%s' not found for project '%s'.";
 
   /**
    * The Google compute provider.
@@ -156,7 +163,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           addError(accumulator, ZONE, localizationContext, null, ZONE_NOT_FOUND_MSG,
-              zoneName, regionName, projectId);
+              zoneName, projectId);
         } else {
           throw new TransientProviderException(e);
         }
@@ -183,7 +190,14 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LOG.info(">> Querying image '{}'", imageAlias);
 
       Config googleConfig = provider.getGoogleConfig();
-      String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
+      String sourceImageUrl = null;
+
+      try {
+        sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
+      } catch (ConfigException e) {
+        // We don't need to propagate this message since we check sourceImageUrl directly below.
+        LOG.info(e.getMessage());
+      }
 
       if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
         GoogleCredentials credentials = provider.getCredentials();

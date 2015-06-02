@@ -75,7 +75,7 @@ public class GoogleCloudProviderTest {
     assertTrue(credentialsConfigurationProperties.contains(PROJECTID.unwrap()));
     assertTrue(credentialsConfigurationProperties.contains(JSONKEY.unwrap()));
 
-    Config applicationPropertiesConfig = buildApplicationPropertiesConfig();
+    Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
     GoogleCredentialsProvider googleCredentialsProvider = new GoogleCredentialsProvider(applicationPropertiesConfig);
     assertNotNull(googleCredentialsProvider);
 
@@ -121,13 +121,5 @@ public class GoogleCloudProviderTest {
         googleProvider.createResourceProvider(GoogleComputeProvider.ID,
             new SimpleConfiguration(Collections.<String, String>emptyMap()));
     Assert.assertEquals(GoogleComputeProvider.class, computeResourceProvider.getClass());
-  }
-
-  private Config buildApplicationPropertiesConfig() throws IOException {
-    Map<String, String> applicationProperties = new HashMap<String, String>();
-    applicationProperties.put("application.name", "Cloudera-Director-Google-Plugin");
-    applicationProperties.put("application.version", "1.0.0-SNAPSHOT");
-
-    return ConfigFactory.parseMap(applicationProperties);
   }
 }

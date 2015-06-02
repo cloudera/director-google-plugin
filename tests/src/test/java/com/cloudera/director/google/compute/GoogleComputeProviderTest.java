@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google;
+package com.cloudera.director.google.compute;
 
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
@@ -31,10 +29,9 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 
-import com.cloudera.director.google.compute.GoogleComputeProvider;
+import com.cloudera.director.google.TestUtils;
+import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.ComputeInstance;
-import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
-import com.cloudera.director.spi.v1.compute.ComputeProvider;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
@@ -43,13 +40,8 @@ import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.util.DefaultLocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
-import com.cloudera.director.spi.v1.provider.CloudProvider;
-import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
-import com.cloudera.director.spi.v1.provider.Launcher;
-import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -59,6 +51,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,7 +62,9 @@ import org.junit.runners.Parameterized;
  * These four system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH, SSH_PUBLIC_KEY_PATH, SSH_USER_NAME.
  */
 @RunWith(Parameterized.class)
-public class GoogleTest {
+public class GoogleComputeProviderTest {
+
+  private static final Logger LOG = Logger.getLogger(GoogleComputeProviderTest.class.getName());
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -93,7 +88,7 @@ public class GoogleTest {
   private String localSSDInterfaceType;
   private String image;
 
-  public GoogleTest(String localSSDInterfaceType, String image) {
+  public GoogleComputeProviderTest(String localSSDInterfaceType, String image) {
     this.localSSDInterfaceType = localSSDInterfaceType;
     this.image = image;
   }
@@ -107,92 +102,45 @@ public class GoogleTest {
   }
 
   @Test
-  public void testFullCycle() throws InterruptedException {
+  public void testFullCycle() throws InterruptedException, IOException {
 
-    // After a plugin is discovered and validated we get an instance of the Launcher.
-
-    Launcher launcher = new GoogleLauncher();
-
-    launcher.initialize(new File("."));
-
-    // We register all the available providers based on metadata.
-
-    assertEquals(1, launcher.getCloudProviderMetadata().size());
-    CloudProviderMetadata metadata = launcher.getCloudProviderMetadata().get(0);
-
-    assertEquals(GoogleCloudProvider.ID, metadata.getId());
-
-    // During environment configuration we ask the user for the following properties.
-
-    System.out.println("Configurations required for credentials:");
-    for (ConfigurationProperty property :
-        metadata.getCredentialsProviderMetadata().getCredentialsConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
-    }
-
-    System.out.println("Other provider level configurations:");
-    for (ConfigurationProperty property :
-        metadata.getProviderConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
-    }
-
-    // In order to create a cloud provider we need to configure credentials
-    // (we expect them to be eagerly validated on cloud provider creation).
-
-    Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECTID.unwrap().getConfigKey(), PROJECT_ID);
-    environmentConfig.put(JSONKEY.unwrap().getConfigKey(), JSON_KEY);
-
-    CloudProvider provider = launcher.createCloudProvider(
-        GoogleCloudProvider.ID, new SimpleConfiguration(environmentConfig),
-        DEFAULT_LOCALIZATION_CONTEXT.getLocale());
-
-    assertNotNull(provider);
-
-    // Get the provider for compute instances.
-
-    ResourceProviderMetadata computeMetadata = metadata.getResourceProviderMetadata(GoogleComputeProvider.ID);
-
-    System.out.println("Configurations required for 'compute' resource provider:");
+    // Retrieve and list out the provider configuration properties for Google compute provider.
+    ResourceProviderMetadata computeMetadata = GoogleComputeProvider.METADATA;
+    LOG.info("Configurations required for 'compute' resource provider:");
     for (ConfigurationProperty property :
         computeMetadata.getProviderConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
+      LOG.info(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
-    // TODO(duftler): The zone should really be selected by the user from a list of valid choices.
-    // Do we want to enhance ConfigurationProperty to support querying provider for a set of values to choose from?
+    // Prepare configuration for Google compute provider.
     Map<String, String> computeConfig = new HashMap<String, String>();
     computeConfig.put(REGION.unwrap().getConfigKey(), "us-central1");
-
     Configured resourceProviderConfiguration = new SimpleConfiguration(computeConfig);
 
-    // Validate the resource provider configuration.
+    // Create Google credentials for use by both the validator and the provider.
+    GoogleCredentials credentials = new GoogleCredentials(TestUtils.buildApplicationPropertiesConfig(),
+        PROJECT_ID, JSON_KEY);
 
-    System.out.println("About to validate the resource provider configuration...");
-
-    ConfigurationValidator resourceProviderValidator =
-        ((GoogleCloudProvider)provider).getResourceProviderConfigurationValidator(computeMetadata);
+    // Validate the Google compute provider configuration.
+    LOG.info("About to validate the resource provider configuration...");
+    ConfigurationValidator resourceProviderValidator = new GoogleComputeProviderConfigurationValidator(credentials);
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
     resourceProviderValidator.validate("resource provider configuration", resourceProviderConfiguration, accumulator,
         DEFAULT_LOCALIZATION_CONTEXT);
-
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
-    ResourceProvider resourceProvider =
-        provider.createResourceProvider(GoogleComputeProvider.ID, resourceProviderConfiguration);
-    ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute =
-        (ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate>)resourceProvider;
+    // Create the Google compute provider.
+    GoogleComputeProvider compute = new GoogleComputeProvider(resourceProviderConfiguration, credentials,
+        TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
 
-    assertNotNull(resourceProvider);
-
-    // Prepare a resource template.
-
-    System.out.println("Configurations required for template:");
+    // Retrieve and list out the resource template configuration properties for Google compute provider.
+    LOG.info("Configurations required for template:");
     for (ConfigurationProperty property :
         computeMetadata.getResourceTemplateConfigurationProperties()) {
-      System.out.println(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
+      LOG.info(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
+    // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
@@ -210,106 +158,90 @@ public class GoogleTest {
     Configured templateConfiguration = new SimpleConfiguration(templateConfig);
 
     // Validate the template configuration.
-
-    System.out.println("About to validate the template configuration...");
-
+    LOG.info("About to validate the template configuration...");
     ConfigurationValidator templateConfigurationValidator =
-        ((GoogleComputeProvider)resourceProvider).getResourceTemplateConfigurationValidator();
+        compute.getResourceTemplateConfigurationValidator();
     accumulator = new PluginExceptionConditionAccumulator();
     templateConfigurationValidator.validate("instance resource template", templateConfiguration, accumulator,
         DEFAULT_LOCALIZATION_CONTEXT);
-
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
-    ComputeInstanceTemplate template =
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template =
         compute.createResourceTemplate("template-1", templateConfiguration, tags);
-
     assertNotNull(template);
 
-    // Use the template to create one resource.
-
-    System.out.println("About to provision an instance...");
-
+    // Use the template to provision one resource.
+    LOG.info("About to provision an instance...");
     List<String> instanceIds = Arrays.asList(UUID.randomUUID().toString());
     compute.allocate(template, instanceIds, 1);
 
     // Run a find by ID.
-
-    System.out.println("About to lookup an instance...");
-
-    Collection<ComputeInstance<ComputeInstanceTemplate>> instances = compute.find(template, instanceIds);
-
+    LOG.info("About to lookup an instance...");
+    Collection<GoogleComputeInstance> instances = compute.find(template, instanceIds);
     assertEquals(1, instances.size());
 
     for (ComputeInstance foundInstance : instances) {
-      System.out.println("Found instance '" + foundInstance.getId() + "' with private ip " +
+      LOG.info("Found instance '" + foundInstance.getId() + "' with private ip " +
           foundInstance.getPrivateIpAddress() + ".");
     }
 
+    // Verify the id of the returned instance.
     ComputeInstance instance = instances.iterator().next();
     assertEquals(instanceIds.get(0), instance.getId());
 
     // Use the template to request creation of the same resource again.
-
-    System.out.println("About to provision the same instance again...");
-
+    LOG.info("About to provision the same instance again...");
     compute.allocate(template, instanceIds, 1);
     instances = compute.find(template, instanceIds);
     assertEquals(1, instances.size());
 
+    // Verify the id of the returned instance.
     instance = instances.iterator().next();
     assertEquals(instanceIds.get(0), instance.getId());
 
     // Query the instance state until the instance status is RUNNING.
-
     pollInstanceState(compute, template, instanceIds, InstanceStatus.RUNNING);
 
     // Delete the resources.
-
-    System.out.println("About to delete an instance...");
-
+    LOG.info("About to delete an instance...");
     compute.delete(template, instanceIds);
 
     // Query the instance state again until the instance status is UNKNOWN.
-
     pollInstanceState(compute, template, instanceIds, InstanceStatus.UNKNOWN);
 
     // Verify that the instance has been deleted.
-
     instances = compute.find(template, instanceIds);
-
     assertEquals(0, instances.size());
   }
 
   private static void pollInstanceState(
-      ComputeProvider<ComputeInstance<ComputeInstanceTemplate>, ComputeInstanceTemplate> compute,
-      ComputeInstanceTemplate template,
+      GoogleComputeProvider compute,
+      GoogleComputeInstanceTemplate template,
       List<String> instanceIds,
       InstanceStatus desiredStatus) throws InterruptedException {
-    // Query the instance state until the instance status matches desiredStatus.
 
-    System.out.println("About to query instance state until " + desiredStatus + "...");
+    // Query the instance state until the instance status matches desiredStatus.
+    LOG.info("About to query instance state until " + desiredStatus + "...");
 
     Map<String, InstanceState> idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
     assertEquals(1, idToInstanceStateMap.size());
 
     for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
-      System.out.printf("%s -> %s%n", entry.getKey(),
-          entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
+      LOG.info(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
     while (idToInstanceStateMap.size() == 1
         && idToInstanceStateMap.values().toArray(new InstanceState[1])[0].getInstanceStatus() != desiredStatus) {
       Thread.sleep(POLLING_INTERVAL_SECONDS * 1000);
 
-      System.out.println("Polling...");
+      LOG.info("Polling...");
 
       idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
       for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
-        System.out.printf("%s -> %s%n", entry.getKey(),
-            entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
+        LOG.info(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));
       }
     }
   }

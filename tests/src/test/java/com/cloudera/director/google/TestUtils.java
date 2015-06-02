@@ -43,6 +43,14 @@ public class TestUtils {
     }
   }
 
+  public static Config buildApplicationPropertiesConfig() throws IOException {
+    Map<String, String> applicationProperties = new HashMap<String, String>();
+    applicationProperties.put("application.name", "Cloudera-Director-Google-Plugin");
+    applicationProperties.put("application.version", "1.0.0-SNAPSHOT");
+
+    return ConfigFactory.parseMap(applicationProperties);
+  }
+
   public static Config buildGoogleConfig() throws IOException {
     Map<String, String> googleConfig = new HashMap<String, String>();
     googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "centos",

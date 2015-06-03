@@ -17,6 +17,7 @@
 package com.cloudera.director.google;
 
 import com.cloudera.director.google.internal.GoogleCredentials;
+import com.cloudera.director.spi.v1.common.http.HttpProxyParameters;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
@@ -52,7 +53,7 @@ public class GoogleLauncher extends AbstractLauncher {
    * classpath.
    */
   @Override
-  public void initialize(File configurationDirectory) {
+  public void initialize(File configurationDirectory, HttpProxyParameters httpProxyParameters) {
     try {
       googleConfig = parseConfigFromClasspath(Configurations.GOOGLE_CONFIG_QUALIFIED_FILENAME);
       applicationProperties = parseConfigFromClasspath(Configurations.APPLICATION_PROPERTIES_FILENAME);

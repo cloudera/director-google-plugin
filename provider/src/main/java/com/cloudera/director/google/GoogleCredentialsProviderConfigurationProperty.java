@@ -28,14 +28,18 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
   PROJECTID(new SimpleConfigurationPropertyBuilder()
       .configKey("projectId")
       .name("Project ID")
-      .defaultDescription("Google Cloud Project ID")
+      .defaultDescription("Google Cloud Project ID.")
+      .defaultErrorMessage("Project ID is mandatory")
       .required(true)
       .build()),
 
   JSONKEY(new SimpleConfigurationPropertyBuilder()
       .configKey("jsonKey")
       .name("Client ID JSON Key")
-      .defaultDescription("Google cloud provider service account JSON key")
+      .defaultDescription(
+          "Google Cloud service account JSON key.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/authentication#general'>More Information</a>")
+      .defaultErrorMessage("Service account JSON key is mandatory")
       .widget(ConfigurationProperty.Widget.FILE)
       .required(true)
       .sensitive(true)

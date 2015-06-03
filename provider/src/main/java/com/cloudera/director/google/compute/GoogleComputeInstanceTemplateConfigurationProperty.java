@@ -22,6 +22,9 @@ import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.Property;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
+/**
+ * Google Compute Engine instance template configuration properties.
+ */
 public enum GoogleComputeInstanceTemplateConfigurationProperty implements ConfigurationPropertyToken {
 
   IMAGE(new SimpleConfigurationPropertyBuilder()
@@ -37,11 +40,14 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   TYPE(new SimpleConfigurationPropertyBuilder()
       .configKey(ComputeInstanceTemplateConfigurationPropertyToken.TYPE.unwrap().getConfigKey())
       .name("Machine Type")
-      .addValidValues("f1-micro", "g1-small",
+      .addValidValues(
+          "f1-micro", "g1-small",
           "n1-standard-1", "n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32",
           "n1-highcpu-2", "n1-highcpu-4", "n1-highcpu-8", "n1-highcpu-16", "n1-highcpu-32",
           "n1-highmem-2", "n1-highmem-4", "n1-highmem-8", "n1-highmem-16", "n1-highmem-32")
-      .defaultDescription("The machine type.")
+      .defaultDescription(
+          "The machine type.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/machine-types'>More Information</a>")
       .defaultErrorMessage("Machine type is mandatory")
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .required(true)
@@ -50,7 +56,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   NETWORKNAME(new SimpleConfigurationPropertyBuilder()
       .configKey("networkName")
       .name("Network Name")
-      .defaultDescription("Network identifier.")
+      .defaultDescription(
+          "The network identifier.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/networking#networks'>More Information</a>")
       .defaultValue("default")
       .required(false)
       .build()),
@@ -58,7 +66,11 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   ZONE(new SimpleConfigurationPropertyBuilder()
       .configKey("zone")
       .name("Zone")
-      .defaultDescription("Zone to target for deployment.")
+      .defaultDescription(
+          "The zone to target for deployment. " +
+          "The zone you specify must be contained within the region you selected.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/zones'>More Information</a>")
+      .defaultErrorMessage("Zone is mandatory")
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .required(true)
       .build()),
@@ -66,7 +78,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   BOOTDISKSIZEGB(new SimpleConfigurationPropertyBuilder()
       .configKey("bootDiskSizeGb")
       .name("Boot Disk Size (GB)")
-      .defaultDescription("Size of boot disk in GB.")
+      .defaultDescription("The size of the boot disk in GB.")
       .defaultValue("60")
       .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
@@ -76,7 +88,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   DATADISKCOUNT(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskCount")
       .name("Data Disk Count")
-      .defaultDescription("Number of data disks to create.")
+      .defaultDescription("The number of data disks to create.")
       .defaultValue("2")
       .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
@@ -87,7 +99,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .configKey("dataDiskType")
       .name("Data Disk Type")
       .addValidValues("LocalSSD", "SSD", "Standard")
-      .defaultDescription("Type of data disks to create (LocalSSD, SSD, Standard).")
+      .defaultDescription(
+          "The type of data disks to create (LocalSSD, SSD, Standard).<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/disks/'>More Information</a>")
       .defaultValue("LocalSSD")
       .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
@@ -97,7 +111,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
   DATADISKSIZEGB(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskSizeGb")
       .name("Data Disk Size")
-      .defaultDescription("Size of data disks in GB.")
+      .defaultDescription(
+          "The size of the data disks in GB. If you've selected LocalSSD data disks, must be exactly " +
+          GoogleComputeInstanceTemplateConfigurationValidator.EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB + ".")
       .defaultValue("375")
       .type(Property.Type.INTEGER)
       .widget(ConfigurationProperty.Widget.NUMBER)
@@ -109,7 +125,9 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .configKey("localSSDInterfaceType")
       .name("Local SSD Interface Type")
       .addValidValues("SCSI", "NVME")
-      .defaultDescription("Local SSD interface type (SCSI or NVME).")
+      .defaultDescription(
+          "The Local SSD interface type (SCSI or NVME).<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/disks/local-ssd#performance'>More Information</a>")
       .defaultValue("SCSI")
       .widget(ConfigurationProperty.Widget.LIST)
       .required(false)

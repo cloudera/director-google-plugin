@@ -45,7 +45,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Tests {@link GoogleLauncher}.
+ * Performs 'live' test of {@link GoogleLauncher}.
+ *
+ * These two system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH.
  */
 public class GoogleLauncherTest {
 

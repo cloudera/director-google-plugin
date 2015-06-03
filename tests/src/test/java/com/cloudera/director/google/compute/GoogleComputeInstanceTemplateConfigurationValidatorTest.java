@@ -62,6 +62,9 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Tests {@link GoogleComputeInstanceTemplateConfigurationValidator}.
+ */
 public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
 
   private static final String PROJECT_ID = "some-project";

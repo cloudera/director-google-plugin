@@ -96,7 +96,6 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String DATA_DISK_SIZE_MALFORMED = "ninety";
   private static final String DATA_DISK_SIZE_LOCAL_SSD = "375";
 
-
   private GoogleComputeProvider computeProvider;
   private GoogleCredentials credentials;
   private Compute compute;

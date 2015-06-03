@@ -59,12 +59,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 /**
+ * Performs 'live' tests of the full cycle of {@link GoogleComputeProvider}: allocate, getInstanceState, find, delete.
+ *
  * These four system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH, SSH_PUBLIC_KEY_PATH, SSH_USER_NAME.
+ * This system property is optional: HALT_AFTER_ALLOCATION.
  */
 @RunWith(Parameterized.class)
-public class GoogleComputeProviderTest {
+public class GoogleComputeProviderFullCycleTest {
 
-  private static final Logger LOG = Logger.getLogger(GoogleComputeProviderTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(GoogleComputeProviderFullCycleTest.class.getName());
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -90,7 +93,7 @@ public class GoogleComputeProviderTest {
   private String localSSDInterfaceType;
   private String image;
 
-  public GoogleComputeProviderTest(String localSSDInterfaceType, String image) {
+  public GoogleComputeProviderFullCycleTest(String localSSDInterfaceType, String image) {
     this.localSSDInterfaceType = localSSDInterfaceType;
     this.image = image;
   }

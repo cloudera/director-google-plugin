@@ -65,7 +65,7 @@ public class GoogleLauncherTest {
   public void testLauncher() throws IOException {
 
     Launcher launcher = new GoogleLauncher();
-    launcher.initialize(TEMPORARY_FOLDER.getRoot());
+    launcher.initialize(TEMPORARY_FOLDER.getRoot(), null);
 
     assertEquals(1, launcher.getCloudProviderMetadata().size());
     CloudProviderMetadata metadata = launcher.getCloudProviderMetadata().get(0);
@@ -118,7 +118,7 @@ public class GoogleLauncherTest {
     printWriter.println("}");
     printWriter.close();
 
-    launcher.initialize(configDir);
+    launcher.initialize(configDir, null);
 
     // Verify that base config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325",

@@ -75,6 +75,7 @@ public class GoogleComputeProviderTest {
   private static String JSON_KEY;
   private static String SSH_PUBLIC_KEY;
   private static String USER_NAME;
+  private static boolean HALT_AFTER_ALLOCATION;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
@@ -83,6 +84,7 @@ public class GoogleComputeProviderTest {
     SSH_PUBLIC_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
         Charset.defaultCharset());
     USER_NAME = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");
+    HALT_AFTER_ALLOCATION = Boolean.parseBoolean(System.getProperty("HALT_AFTER_ALLOCATION", "false"));
   }
 
   private String localSSDInterfaceType;
@@ -202,6 +204,12 @@ public class GoogleComputeProviderTest {
 
     // Query the instance state until the instance status is RUNNING.
     pollInstanceState(compute, template, instanceIds, InstanceStatus.RUNNING);
+
+    if (HALT_AFTER_ALLOCATION) {
+      LOG.info("HALT_AFTER_ALLOCATION flag is set.");
+
+      return;
+    }
 
     // Delete the resources.
     LOG.info("About to delete an instance...");

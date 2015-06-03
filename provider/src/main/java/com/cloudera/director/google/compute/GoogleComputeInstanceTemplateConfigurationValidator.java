@@ -27,23 +27,28 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
+import com.cloudera.director.google.Configurations;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.Zone;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -54,44 +59,63 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   private static final Logger LOG =
       LoggerFactory.getLogger(GoogleComputeInstanceTemplateConfigurationValidator.class);
 
-  private static final int MIN_BOOT_DISK_SIZE_GB = 10;
-  private static final int MIN_DATA_DISK_SIZE_GB = 10;
-  private static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
-  private static final int MIN_LOCAL_SSD_COUNT = 0;
-  private static final int MAX_LOCAL_SSD_COUNT = 4;
+  @VisibleForTesting
+  static final int MIN_BOOT_DISK_SIZE_GB = 10;
+  @VisibleForTesting
+  static final int MIN_DATA_DISK_SIZE_GB = 10;
+  @VisibleForTesting
+  static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
+  @VisibleForTesting
+  static final int MIN_LOCAL_SSD_COUNT = 0;
+  @VisibleForTesting
+  static final int MAX_LOCAL_SSD_COUNT = 4;
 
-  private static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
-  private static final String ZONE_NOT_FOUND_IN_REGION_MSG = "Zone '%s' not found in region '%s' for project '%s'.";
+  @VisibleForTesting
+  static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String ZONE_NOT_FOUND_IN_REGION_MSG = "Zone '%s' not found in region '%s' for project '%s'.";
 
-  private static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
-  private static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
+  @VisibleForTesting
+  static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
 
-  private static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
-  private static final String INVALID_BOOT_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_BOOT_DISK_SIZE_MSG =
       "Boot disk size must be at least '%dGB'. Current configuration: '%dGB'.";
 
-  private static final String INVALID_DATA_DISK_COUNT_FORMAT_MSG = "Data disk count must be an integer: '%s'.";
-  private static final String INVALID_DATA_DISK_COUNT_NEGATIVE_MSG =
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_COUNT_FORMAT_MSG = "Data disk count must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_COUNT_NEGATIVE_MSG =
       "Data disk count must be non-negative. Current configuration: '%d'.";
-  private static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
+  @VisibleForTesting
+  static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
       "Data disk count when using local SSD drives must be between '%d' and '%d', inclusive. " +
       "Current configuration: '%d'.";
 
-  private static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
-  private static final String INVALID_DATA_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
+  @VisibleForTesting
+  static final String INVALID_DATA_DISK_SIZE_MSG =
       "Data disk size must be at least '%dGB'. Current configuration: '%dGB'.";
-  private static final String INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG =
+  @VisibleForTesting
+  static final String INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG =
       "Data disk size when using local SSD drives must be exactly '%dGB'. Current configuration: '%dGB'.";
 
-  private static final List<String> DATA_DISK_TYPES = ImmutableList.of("LocalSSD", "SSD", "Standard");
-  public static final String INVALID_DATA_DISK_TYPE_MSG =
+  @VisibleForTesting
+  static final List<String> DATA_DISK_TYPES = ImmutableList.of("LocalSSD", "SSD", "Standard");
+  static final String INVALID_DATA_DISK_TYPE_MSG =
       "Invalid data disk type '%s'. Available options: %s";
 
-  private static final String MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG =
+  @VisibleForTesting
+  static final String MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG =
       "Machine type '%s' not found in zone '%s' for project '%s'.";
 
-  private static final String NETWORK_NOT_FOUND_MSG =
-      "Network '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String NETWORK_NOT_FOUND_MSG = "Network '%s' not found for project '%s'.";
 
   /**
    * The Google compute provider.
@@ -153,7 +177,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           addError(accumulator, ZONE, localizationContext, null, ZONE_NOT_FOUND_MSG,
-              zoneName, regionName, projectId);
+              zoneName, projectId);
         } else {
           throw new TransientProviderException(e);
         }
@@ -180,7 +204,14 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LOG.info(">> Querying image '{}'", imageAlias);
 
       Config googleConfig = provider.getGoogleConfig();
-      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
+      String sourceImageUrl = null;
+
+      try {
+        sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
+      } catch (ConfigException e) {
+        // We don't need to propagate this message since we check sourceImageUrl directly below.
+        LOG.info(e.getMessage());
+      }
 
       if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
         GoogleCredentials credentials = provider.getCredentials();
@@ -338,6 +369,16 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LocalizationContext localizationContext) {
 
     String type = configuration.getConfigurationValue(TYPE, localizationContext);
+
+    // Machine types are a zonal resource. Only makes sense to check it if the zone itself is valid.
+    Collection<PluginExceptionCondition> zoneErrors =
+        accumulator.getConditionsByKey().get(ZONE.unwrap().getConfigKey());
+
+    if (zoneErrors != null && zoneErrors.size() > 0) {
+      LOG.info("Machine type '{}' not being checked since zone was not found.", type);
+
+      return;
+    }
 
     if (type != null) {
       LOG.info(">> Querying machine type '{}'", type);

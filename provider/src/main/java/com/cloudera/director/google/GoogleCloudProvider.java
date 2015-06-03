@@ -66,7 +66,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
       ResourceProviderMetadata resourceProviderMetadata) {
     ConfigurationValidator providerSpecificValidator;
     if (resourceProviderMetadata.getId().equals(GoogleComputeProvider.METADATA.getId())) {
-      providerSpecificValidator = new GoogleComputeProviderConfigurationValidator();
+      providerSpecificValidator = new GoogleComputeProviderConfigurationValidator(credentials);
     } else {
       throw new NoSuchElementException("Invalid provider id: " + resourceProviderMetadata.getId());
     }

@@ -24,6 +24,7 @@ import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CredentialsProvider;
 import com.cloudera.director.spi.v1.provider.util.AbstractLauncher;
 import com.google.api.services.compute.Compute;
+import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
@@ -36,11 +37,10 @@ import java.util.Locale;
 
 public class GoogleLauncher extends AbstractLauncher {
 
-  private static final String GOOGLE_CONFIG_FILENAME = "/com/cloudera/director/google/google.conf";
-  private static final String APPLICATION_PROPERTIES_FILENAME = "/com/cloudera/director/google/application.properties";
-
-  private Config googleConfig = null;
   private Config applicationProperties = null;
+
+  @VisibleForTesting
+  protected Config googleConfig = null;
 
   public GoogleLauncher() {
     super(Collections.singletonList(GoogleCloudProvider.METADATA), null);
@@ -54,14 +54,14 @@ public class GoogleLauncher extends AbstractLauncher {
   @Override
   public void initialize(File configurationDirectory) {
     try {
-      googleConfig = parseConfigFromClasspath(GOOGLE_CONFIG_FILENAME);
-      applicationProperties = parseConfigFromClasspath(APPLICATION_PROPERTIES_FILENAME);
+      googleConfig = parseConfigFromClasspath(Configurations.GOOGLE_CONFIG_QUALIFIED_FILENAME);
+      applicationProperties = parseConfigFromClasspath(Configurations.APPLICATION_PROPERTIES_FILENAME);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
     // Check if an additional google.conf file exists in the configuration directory.
-    File configFile = new File(configurationDirectory, GOOGLE_CONFIG_FILENAME);
+    File configFile = new File(configurationDirectory, Configurations.GOOGLE_CONFIG_FILENAME);
 
     if (configFile.canRead()) {
       try {

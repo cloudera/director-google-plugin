@@ -25,8 +25,13 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
   REGION(new SimpleConfigurationPropertyBuilder()
       .configKey("region")
       .name("Region")
-      .defaultDescription("Region to target for deployment")
-      .required(true)
+      .defaultValue("us-central1")
+      .defaultDescription("Region to target for deployment.")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .addValidValues(
+          "us-central1",
+          "europe-west1",
+          "asia-east1")
       .build());
 
   /**

@@ -19,6 +19,7 @@ package com.cloudera.director.google.compute;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 
+import com.cloudera.director.google.Configurations;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
@@ -57,8 +58,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,12 +77,15 @@ public class GoogleComputeProvider
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
           GoogleComputeProviderConfigurationProperty.values());
 
-  public static final String ID = "compute";
+  /**
+   * The resource provider ID.
+   */
+  public static final String ID = GoogleComputeProvider.class.getCanonicalName();
 
   public static final ResourceProviderMetadata METADATA = SimpleResourceProviderMetadata.builder()
       .id(ID)
-      .name("Google Compute Provider")
-      .description("Provisions VM's on Google Compute Engine")
+      .name("Google Compute Engine")
+      .description("Google Compute Engine provider")
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
       .resourceTemplateConfigurationProperties(
           GoogleComputeInstanceTemplate.getConfigurationProperties())
@@ -175,7 +177,7 @@ public class GoogleComputeProvider
       String imageAlias = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.IMAGE,
           templateLocalizationContext);
-      String sourceImageUrl = googleConfig.getString("google.compute.imageAliases." + imageAlias);
+      String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
 
       // Compose attached disks.
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
@@ -238,7 +240,7 @@ public class GoogleComputeProvider
             diskCreationOperations.add(diskCreationOperation);
           } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 409) {
-              LOG.info("Disk '" + persistentDisk.getName() + "' already exists.");
+              LOG.info("Disk '{}' already exists.", persistentDisk.getName());
 
               preExistingPersistentDiskCount++;
             } else {
@@ -332,16 +334,16 @@ public class GoogleComputeProvider
     int successfulOperationCount = successfulOperations.size();
 
     if (successfulOperationCount < minCount) {
-      LOG.info("Provisioned " + successfulOperationCount + " instances out of " + instanceIds.size() +
-          ". minCount is " + minCount + ". Tearing down provisioned instances.");
+      LOG.info("Provisioned {} instances out of {}. minCount is {}. Tearing down provisioned instances.",
+          successfulOperationCount, instanceIds.size(), minCount);
 
       tearDownResources(projectId, vmCreationOperations, successfulDiskCreationOperations, compute, accumulator);
 
       PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
       throw new UnrecoverableProviderException("Problem allocating instances.", pluginExceptionDetails);
     } else if (successfulOperationCount < instanceIds.size()) {
-      LOG.info("Provisioned " + successfulOperationCount + " instances out of " + instanceIds.size() +
-          ". minCount is " + minCount + ".");
+      LOG.info("Provisioned {} instances out of {}. minCount is {}.",
+          successfulOperationCount, instanceIds.size(), minCount);
 
       // Even through we are not throwing an exception, we still want to log the errors.
       if (accumulator.hasError()) {
@@ -464,11 +466,16 @@ public class GoogleComputeProvider
 
       try {
         Instance instance = compute.instances().get(projectId, zone, decoratedInstanceName).execute();
+        Disk bootDisk = getBootDisk(projectId, zone, instance, compute);
 
-        result.add(new GoogleComputeInstance(template, currentId, getInetAddressFromInstance(instance)));
+        if (bootDisk == null) {
+          throw new IllegalArgumentException("Boot disk not found for instance '" + instance.getName() + "'.");
+        }
+
+        result.add(new GoogleComputeInstance(template, currentId, instance, bootDisk));
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          LOG.info("Instance '" + decoratedInstanceName + "' not found.");
+          LOG.info("Instance '{}' not found.", decoratedInstanceName);
         } else {
           throw new RuntimeException(e);
         }
@@ -479,16 +486,36 @@ public class GoogleComputeProvider
     return result;
   }
 
-  private static InetAddress getInetAddressFromInstance(Instance instance) throws UnknownHostException {
-    List<NetworkInterface> networkInterfaceList = instance.getNetworkInterfaces();
-
-    if (networkInterfaceList == null || networkInterfaceList.size() == 0) {
-      LOG.info("No network interfaces found for instance '" + instance.getName() + "'.");
-
-      return null;
-    } else {
-      return InetAddress.getByName(instance.getNetworkInterfaces().get(0).getNetworkIP());
+  private Disk getBootDisk(String projectId, String zone, Instance instance, Compute compute) {
+    List<AttachedDisk> attachedDisks = instance.getDisks();
+    AttachedDisk attachedBootDisk = null;
+    if (attachedDisks != null) {
+      for (AttachedDisk attachedDisk : attachedDisks) {
+        if (attachedDisk.getBoot()) {
+          attachedBootDisk = attachedDisk;
+        }
+      }
     }
+
+    Disk bootDisk = null;
+
+    if (attachedBootDisk != null) {
+      String bootDiskName = Utils.getLocalName(attachedBootDisk.getSource());
+
+      try {
+        bootDisk = compute.disks().get(projectId, zone, bootDiskName).execute();
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          LOG.info("Boot disk '{}' not found for instance '{}'.", bootDiskName, instance.getName());
+        } else {
+          throw new RuntimeException(e);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    return bootDisk;
   }
 
   @Override
@@ -515,7 +542,7 @@ public class GoogleComputeProvider
         result.put(currentId, new SimpleInstanceState(instanceStatus));
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          LOG.info("Instance '" + decoratedInstanceName + "' not found.");
+          LOG.info("Instance '{}' not found.", decoratedInstanceName);
 
           result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
         } else {
@@ -555,7 +582,7 @@ public class GoogleComputeProvider
         vmDeletionOperations.add(vmDeletionOperation);
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          LOG.info("Instance '" + decoratedInstanceName + "' not found.");
+          LOG.info("Instance '{}' not found.", decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -666,7 +693,7 @@ public class GoogleComputeProvider
               for (Operation.Error.Errors errors : errorsList) {
                 // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
                 if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Resource '" + Utils.getLocalName(subjectOperation.getTargetLink()) + "' already exists.");
+                  LOG.info("Resource '{}' already exists.", Utils.getLocalName(subjectOperation.getTargetLink()));
                 } else {
                   accumulator.addError(null, errors.getMessage());
                   isActualError = true;

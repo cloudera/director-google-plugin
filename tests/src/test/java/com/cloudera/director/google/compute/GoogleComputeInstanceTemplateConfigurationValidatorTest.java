@@ -71,7 +71,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String REGION_URL_1 = BASE_URL + PROJECT_ID + "/regions/" + REGION_NAME_1;
   private static final String REGION_URL_2 = BASE_URL + PROJECT_ID + "/regions/" + REGION_NAME_2;
   private static final String ZONE_NAME = "us-central1-a";
-  private static final String IMAGE_ALIAS_CENTOS = "centos";
+  private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";
   private static final String IMAGE_PROJECT_ID = "centos-cloud";
   private static final String IMAGE_NAME = "centos-6-v20150325";

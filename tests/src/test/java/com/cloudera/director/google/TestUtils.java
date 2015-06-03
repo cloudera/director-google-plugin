@@ -54,9 +54,9 @@ public class TestUtils {
   public static Config buildGoogleConfig() throws IOException {
     Map<String, String> googleConfig = new HashMap<String, String>();
     googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "centos6",
-            "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325");
+            "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150526");
     googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "rhel6",
-            "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150325");
+            "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526");
 
     return ConfigFactory.parseMap(googleConfig);
   }

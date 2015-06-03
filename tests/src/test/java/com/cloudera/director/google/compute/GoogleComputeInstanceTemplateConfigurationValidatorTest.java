@@ -74,7 +74,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";
   private static final String IMAGE_PROJECT_ID = "centos-cloud";
-  private static final String IMAGE_NAME = "centos-6-v20150325";
+  private static final String IMAGE_NAME = "centos-6-v20150526";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
   private static final String NETWORK_NAME = "some-network";
   private static final String BOOT_DISK_SIZE = "60";

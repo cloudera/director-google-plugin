@@ -121,7 +121,7 @@ public class GoogleLauncherTest {
     launcher.initialize(configDir, null);
 
     // Verify that base config is reflected.
-    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325",
+    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150526",
         launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "centos6"));
 
     // Verify that overridden config is reflected.

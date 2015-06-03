@@ -41,7 +41,7 @@ public class Utils {
 
     String[] urlParts = fullResourceUrl.split("/");
 
-    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150325
+    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526
     if (urlParts.length < 10) {
       throw new IllegalArgumentException("Malformed resource url '" + fullResourceUrl + "'.");
     } else {

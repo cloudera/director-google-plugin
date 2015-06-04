@@ -202,7 +202,7 @@ public class GoogleComputeProvider
       String dataDiskType = template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
           templateLocalizationContext);
-      String dataDiskTypeUrl = getDiskTypeURL(projectId, zone, dataDiskType);
+      String dataDiskTypeUrl = Utils.buildDiskTypeUrl(projectId, zone, dataDiskType);
       boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
       long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB,
@@ -286,13 +286,18 @@ public class GoogleComputeProvider
           "/machineTypes/" + machineTypeName;
 
       // Compose the instance metadata containing the SSH public key, user name and tags.
+      List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
+
       String sshUserName = template.getConfigurationValue(SSH_USERNAME,
           templateLocalizationContext);
       String sshPublicKey = template.getConfigurationValue(SSH_OPENSSH_PUBLIC_KEY,
           templateLocalizationContext);
-      String sshKeysValue = sshUserName + ":" + sshPublicKey;
-      List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
-      metadataItemsList.add(new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue));
+
+      if (sshUserName != null && !sshUserName.isEmpty() && sshPublicKey != null && !sshPublicKey.isEmpty()) {
+        String sshKeysValue = sshUserName + ":" + sshPublicKey;
+
+        metadataItemsList.add(new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue));
+      }
 
       for (Map.Entry<String, String> tag : template.getTags().entrySet()) {
         metadataItemsList.add(new Metadata.Items().setKey(tag.getKey()).setValue(tag.getValue()));
@@ -629,23 +634,6 @@ public class GoogleComputeProvider
     } else {
       return InstanceStatus.UNKNOWN;
     }
-  }
-
-  private static String getDiskTypeURL(String projectId, String zone, String dataDiskType) {
-    String diskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/diskTypes/";
-
-    if (dataDiskType.equals("LocalSSD")) {
-      diskTypeUrl += "local-ssd";
-    } else if (dataDiskType.equals("SSD")) {
-      diskTypeUrl += "pd-ssd";
-    } else {
-      // The value will already have been checked by the validator.
-      // Assume 'Standard'.
-      diskTypeUrl += "pd-standard";
-    }
-
-    return diskTypeUrl;
   }
 
   // Poll until 0 operations remain in the passed pendingOperations list.

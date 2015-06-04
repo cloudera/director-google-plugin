@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google;
 
-import com.cloudera.director.google.shaded.com.typesafe.config.Config;
-import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;

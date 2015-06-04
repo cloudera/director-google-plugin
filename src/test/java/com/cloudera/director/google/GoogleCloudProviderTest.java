@@ -26,12 +26,11 @@ import static org.junit.Assert.assertTrue;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
 import com.cloudera.director.google.internal.GoogleCredentials;
-import com.cloudera.director.google.shaded.com.typesafe.config.Config;
-import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.*;
+import com.typesafe.config.Config;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;

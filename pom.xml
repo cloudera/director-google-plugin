@@ -22,12 +22,170 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.cloudera.director</groupId>
-    <artifactId>google</artifactId>
+    <artifactId>google-provider</artifactId>
+    <name>Cloudera-Director-Google-Plugin</name>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
-    <modules>
-        <module>provider</module>
-        <module>tests</module>
-    </modules>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <launcher-class>com.cloudera.director.google.GoogleLauncher</launcher-class>
+        <director-spi-v1.version>1.0.0-SNAPSHOT</director-spi-v1.version>
+        <google-api-services-compute.version>v1-rev54-1.20.0</google-api-services-compute.version>
+        <slf4j.version>1.7.10</slf4j.version>
+        <typesafe-config.version>1.2.0</typesafe-config.version>
+        <logback.version>1.1.2</logback.version>
+        <junit.version>4.12</junit.version>
+        <assertj.version>1.6.0</assertj.version>
+        <mockito.version>1.10.19</mockito.version>
+        <maven-shade-plugin.version>2.3</maven-shade-plugin.version>
+        <shade-prefix>com.cloudera.director.google.shaded</shade-prefix>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.cloudera.director</groupId>
+            <artifactId>director-spi-v1</artifactId>
+            <version>${director-spi-v1.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-compute</artifactId>
+            <version>${google-api-services-compute.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>${typesafe-config.version}</version>
+        </dependency>
+
+        <!-- test dependencies -->
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <configuration>
+                    <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.typesafe</pattern>
+                                    <shadedPattern>
+                                        ${shade-prefix}.com.typesafe
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>
+                                        ${shade-prefix}.com.google
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>
+                                        ${shade-prefix}.org.apache
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>
+                                        ${shade-prefix}.com.fasterxml
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javax.annotation</pattern>
+                                    <shadedPattern>
+                                        ${shade-prefix}.javax.annotation
+                                    </shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
+    </build>
 </project>

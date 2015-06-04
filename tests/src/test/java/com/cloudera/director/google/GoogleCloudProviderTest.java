@@ -46,7 +46,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tests {@link GoogleCloudProvider}.
+ * Performs 'live' test of {@link GoogleCloudProvider}.
+ *
+ * These two system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH.
  */
 public class GoogleCloudProviderTest {
 

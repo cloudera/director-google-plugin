@@ -20,13 +20,18 @@ import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
+/**
+ * Google Compute Engine configuration properties.
+ */
 public enum GoogleComputeProviderConfigurationProperty implements ConfigurationPropertyToken {
 
   REGION(new SimpleConfigurationPropertyBuilder()
       .configKey("region")
       .name("Region")
       .defaultValue("us-central1")
-      .defaultDescription("Region to target for deployment.")
+      .defaultDescription(
+          "Region to target for deployment.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/zones'>More Information</a>")
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues(
           "us-central1",

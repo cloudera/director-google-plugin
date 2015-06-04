@@ -63,7 +63,6 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   static final int MIN_BOOT_DISK_SIZE_GB = 10;
   @VisibleForTesting
   static final int MIN_DATA_DISK_SIZE_GB = 10;
-  @VisibleForTesting
   static final int EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB = 375;
   @VisibleForTesting
   static final int MIN_LOCAL_SSD_COUNT = 0;

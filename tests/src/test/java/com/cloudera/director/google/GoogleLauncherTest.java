@@ -45,7 +45,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Tests {@link GoogleLauncher}.
+ * Performs 'live' test of {@link GoogleLauncher}.
+ *
+ * These two system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH.
  */
 public class GoogleLauncherTest {
 
@@ -111,7 +113,7 @@ public class GoogleLauncherTest {
     printWriter.println("google {");
     printWriter.println("  compute {");
     printWriter.println("    imageAliases {");
-    printWriter.println("      rhel = \"https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150430\",");
+    printWriter.println("      rhel6 = \"https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150430\",");
     printWriter.println("      ubuntu = \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128\"");
     printWriter.println("    }");
     printWriter.println("  }");
@@ -121,12 +123,12 @@ public class GoogleLauncherTest {
     launcher.initialize(configDir, null);
 
     // Verify that base config is reflected.
-    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150325",
-        launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "centos"));
+    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150526",
+        launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "centos6"));
 
     // Verify that overridden config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150430",
-        launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "rhel"));
+        launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "rhel6"));
 
     // Verify that new config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128",

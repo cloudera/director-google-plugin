@@ -609,15 +609,15 @@ public class GoogleComputeProviderTest {
   /**
    * Verifies that the properties of the specified attached disk match the specified arguments.
    *
-   * @param attachedDisk the disk to examine. Must not be null.
-   * @param boot whether or not this is a boot disk. May be null.
-   * @param autoDelete whether or not this disk will auto-delete. May be null.
-   * @param diskType the type of the disk. May be null.
-   * @param diskSizeGb the size of the disk in GB. May be null.
-   * @param sourceImage the image from which the disk is to be created. May be null.
+   * @param attachedDisk          the disk to examine. Must not be null.
+   * @param boot                  whether or not this is a boot disk. May be null.
+   * @param autoDelete            whether or not this disk will auto-delete. May be null.
+   * @param diskType              the type of the disk. May be null.
+   * @param diskSizeGb            the size of the disk in GB. May be null.
+   * @param sourceImage           the image from which the disk is to be created. May be null.
    * @param localSSDInterfaceType the interface type, if this is a Local SSD disk. May be null.
-   * @param scratchOrPersistent either "SCRATCH" or "PERSISTENT". May be null.
-   * @param source the source disk url if this is a persistent disk. May be null.
+   * @param scratchOrPersistent   either "SCRATCH" or "PERSISTENT". May be null.
+   * @param source                the source disk url if this is a persistent disk. May be null.
    */
   private static void verifyAttachedDiskAttributes(AttachedDisk attachedDisk, Boolean boot, Boolean autoDelete,
       String diskType, Long diskSizeGb, String sourceImage, String localSSDInterfaceType,

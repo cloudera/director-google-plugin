@@ -35,6 +35,9 @@ import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
 import com.cloudera.director.google.internal.GoogleCredentials;
+import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
+import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.Compute;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.AttachedDisk;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.AttachedDiskInitializeParams;
@@ -137,7 +140,7 @@ public class GoogleComputeProviderTest {
     Compute.Instances.Insert computeInstancesInsert = mock(Compute.Instances.Insert.class);
 
     when(computeInstances.insert(
-            eq(PROJECT_ID), eq(ZONE_NAME), any(Instance.class))).thenReturn(computeInstancesInsert);
+        eq(PROJECT_ID), eq(ZONE_NAME), any(Instance.class))).thenReturn(computeInstancesInsert);
 
     return computeInstancesInsert;
   }
@@ -149,6 +152,15 @@ public class GoogleComputeProviderTest {
     when(computeInstances.delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(instanceName))).thenReturn(computeInstancesDelete);
 
     return computeInstancesDelete;
+  }
+
+  private Compute.Instances.Get mockComputeInstancesGet(
+      Compute.Instances computeInstances, String instanceName) throws IOException {
+    Compute.Instances.Get computeInstancesGet = mock(Compute.Instances.Get.class);
+
+    when(computeInstances.get(PROJECT_ID, ZONE_NAME, instanceName)).thenReturn(computeInstancesGet);
+
+    return computeInstancesGet;
   }
 
   private Compute.ZoneOperations mockComputeToZoneOperations() {
@@ -174,6 +186,16 @@ public class GoogleComputeProviderTest {
         eq(PROJECT_ID), eq(ZONE_NAME), any(Disk.class))).thenReturn(computeDisksInsert);
 
     return computeDisksInsert;
+  }
+
+  private Compute.Disks.Delete mockComputeDisksDelete(Compute.Disks computeDisks,
+      String diskName) throws IOException {
+    Compute.Disks.Delete computeDisksDelete = mock(Compute.Disks.Delete.class);
+
+    when(computeDisks.delete(
+        eq(PROJECT_ID), eq(ZONE_NAME), eq(diskName))).thenReturn(computeDisksDelete);
+
+    return computeDisksDelete;
   }
 
   @Test
@@ -360,7 +382,7 @@ public class GoogleComputeProviderTest {
     List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
     Instance deletedInstance1 = deletedInstanceList.get(0);
 
-    // Verify first instance deletion call instance name and metadata.
+    // Verify first instance deletion call instance name.
     assertThat(deletedInstance1.getName()).isEqualTo(
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName1);
@@ -368,7 +390,7 @@ public class GoogleComputeProviderTest {
     // Verify second instance deletion call was made.
     Instance deletedInstance2 = deletedInstanceList.get(1);
 
-    // Verify second instance deletion call instance name and metadata.
+    // Verify second instance deletion call instance name.
     assertThat(deletedInstance2.getName()).isEqualTo(
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName2);
@@ -514,7 +536,7 @@ public class GoogleComputeProviderTest {
 
     computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
 
-    // Verify disk insertion call was made.
+    // Verify persistent disk insertion call was made.
     ArgumentCaptor<Disk> argumentCaptor1 = ArgumentCaptor.forClass(Disk.class);
     verify(computeDisks).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor1.capture());
     Disk insertedDisk = argumentCaptor1.getValue();
@@ -522,7 +544,7 @@ public class GoogleComputeProviderTest {
     // Verify disk name, size and type.
     assertThat(insertedDisk.getName()).isEqualTo(diskName);
     assertThat(insertedDisk.getSizeGb()).isEqualTo(250);
-    assertThat(insertedDisk.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "pd-standard"));
+    assertThat(insertedDisk.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "Standard"));
 
     // Verify instance insertion call was made.
     ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
@@ -545,6 +567,219 @@ public class GoogleComputeProviderTest {
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true, null, null,
         null, null, "PERSISTENT", diskUrl);
+  }
+
+  @Test
+  public void testAllocate_SSD_CreationFails_BelowMinCount() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+    templateConfig.put(DATADISKCOUNT.unwrap().getConfigKey(), "1");
+    templateConfig.put(DATADISKTYPE.unwrap().getConfigKey(), "SSD");
+    templateConfig.put(DATADISKSIZEGB.unwrap().getConfigKey(), "500");
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+    String instanceName1 = UUID.randomUUID().toString();
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceName2 = UUID.randomUUID().toString();
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+
+    // Configure stub for first successful disk insertion operation.
+    String diskName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1 + "-pd-0";
+    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
+    Operation diskCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl1, "PENDING");
+    OngoingStubbing<Operation> ongoingDiskStub =
+        when(computeDisksInsert.execute()).thenReturn(diskCreationOperation1);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskCreationOperation1.getName())).thenReturn(computeZoneOperationsGet1);
+    when(computeZoneOperationsGet1.execute()).then(
+        new OperationAnswer(diskCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for second successful disk insertion operation.
+    String diskName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2 + "-pd-0";
+    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    Operation diskCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    ongoingDiskStub.thenReturn(diskCreationOperation2);
+    Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskCreationOperation2.getName())).thenReturn(computeZoneOperationsGet2);
+    when(computeZoneOperationsGet2.execute()).then(
+        new OperationAnswer(diskCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for successful instance insertion operation.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    OngoingStubbing<Operation> ongoingInsertionStub =
+        when(computeInstancesInsert1.execute()).thenReturn(vmCreationOperation1);
+    Compute.ZoneOperations.Get computeZoneOperationsGet3 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation1.getName())).thenReturn(computeZoneOperationsGet3);
+    when(computeZoneOperationsGet3.execute()).then(
+        new OperationAnswer(vmCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for unsuccessful instance insertion operation.
+    Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    ongoingInsertionStub.thenReturn(vmCreationOperation2);
+    Compute.ZoneOperations.Get computeZoneOperationsGet4 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation2.getName())).thenReturn(computeZoneOperationsGet4);
+    when(computeZoneOperationsGet4.execute()).then(
+        new OperationAnswer(vmCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"},
+            "SOME_ERROR_CODE", "Some error message..."));
+
+    // Now configure the expected tearDown operations.
+
+    // Configure stub for successful instance retrieval with attached persistent disk.
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, instanceName1);
+    Instance instance1 = new Instance();
+    List<AttachedDisk> diskList1 = Lists.newArrayList();
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    attachedDisk1.setSource(diskUrl1);
+    diskList1.add(attachedDisk1);
+    instance1.setDisks(diskList1);
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, instanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for successful instance deletion operation.
+    Compute.Instances.Delete computeInstancesDelete1 = mockComputeInstancesDelete(computeInstances, instanceName1);
+    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
+    Compute.ZoneOperations.Get computeZoneOperationsGet5 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation1.getName())).thenReturn(computeZoneOperationsGet5);
+    when(computeZoneOperationsGet5.execute()).then(
+        new OperationAnswer(vmDeletionOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for successful disk deletion operation.
+    // The first disk was attached to the first instance, so we rely on auto-delete for that one.
+    // The second disk was never attached to an instance since the instance creation failed. So it
+    // must be explicitly deleted.
+    Compute.Disks.Delete computeDisksDelete = mockComputeDisksDelete(computeDisks, diskName2);
+    Operation diskDeletionOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    when(computeDisksDelete.execute()).thenReturn(diskDeletionOperation);
+    Compute.ZoneOperations.Get computeZoneOperationsGet7 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskDeletionOperation.getName())).thenReturn(computeZoneOperationsGet7);
+    when(computeZoneOperationsGet7.execute()).then(
+        new OperationAnswer(diskDeletionOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    try {
+      computeProvider.allocate(template, Lists.newArrayList(instanceName1, instanceName2), 2);
+
+      fail("An exception should have been thrown when we failed to provision at least minCount instances.");
+    } catch (UnrecoverableProviderException e) {
+      LOG.info("Caught: " + e.getMessage());
+
+      assertThat(e.getMessage()).isEqualTo("Problem allocating instances.");
+      verifySingleError(e.getDetails(), "Some error message...");
+    }
+
+    // Verify persistent disk insertion call was made.
+    ArgumentCaptor<Disk> argumentCaptor1 = ArgumentCaptor.forClass(Disk.class);
+    verify(computeDisks, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor1.capture());
+    List<Disk> insertedDisks = argumentCaptor1.getAllValues();
+    Disk insertedDisk1 = insertedDisks.get(0);
+
+    // Verify first disk name, size and type.
+    assertThat(insertedDisk1.getName()).isEqualTo(diskName1);
+    assertThat(insertedDisk1.getSizeGb()).isEqualTo(500);
+    assertThat(insertedDisk1.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+
+    // Verify second persistent disk insertion call was made.
+    Disk insertedDisk2 = insertedDisks.get(1);
+
+    // Verify second disk name, size and type.
+    assertThat(insertedDisk2.getName()).isEqualTo(diskName2);
+    assertThat(insertedDisk2.getSizeGb()).isEqualTo(500);
+    assertThat(insertedDisk2.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+
+    // Verify first instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor2.capture());
+    List<Instance> insertedInstanceList = argumentCaptor2.getAllValues();
+    Instance insertedInstance1 = insertedInstanceList.get(0);
+
+    // Verify first instance name and metadata.
+    assertThat(insertedInstance1.getName()).isEqualTo(
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1);
+    assertThat(insertedInstance1.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList1 = insertedInstance1.getDisks();
+    assertThat(attachedDiskList1.size()).isEqualTo(2);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true, null, null,
+        null, null, "PERSISTENT", diskUrl1);
+
+    // Verify second instance insertion call was made.
+    Instance insertedInstance2 = insertedInstanceList.get(1);
+
+    // Verify second instance name and metadata.
+    assertThat(insertedInstance2.getName()).isEqualTo(
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2);
+    assertThat(insertedInstance2.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList2 = insertedInstance2.getDisks();
+    assertThat(attachedDiskList2.size()).isEqualTo(2);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true, null, null,
+        null, null, "PERSISTENT", diskUrl2);
+
+    // Verify disk deletion call was made (of disk two).
+    ArgumentCaptor<String> argumentCaptor3 = ArgumentCaptor.forClass(String.class);
+    verify(computeDisks).delete(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor3.capture());
+    String deletedDiskName = argumentCaptor3.getValue();
+    assertThat(deletedDiskName).isEqualTo(diskName2);
+
+    // Verify first instance deletion call was made.
+    ArgumentCaptor<Instance> deleteArgumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), deleteArgumentCaptor.capture());
+    List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
+    Instance deletedInstance1 = deletedInstanceList.get(0);
+
+    // Verify first instance deletion call instance name.
+    assertThat(deletedInstance1.getName()).isEqualTo(
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1);
+
+    // Verify second instance deletion call was made.
+    Instance deletedInstance2 = deletedInstanceList.get(1);
+
+    // Verify second instance deletion call instance name.
+    assertThat(deletedInstance2.getName()).isEqualTo(
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2);
+
   }
 
   private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {

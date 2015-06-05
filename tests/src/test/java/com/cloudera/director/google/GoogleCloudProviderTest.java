@@ -98,8 +98,10 @@ public class GoogleCloudProviderTest {
     assertNotNull(googleCredentials);
 
     // Verify the user agent header string.
-    assertEquals("Cloudera-Director-Google-Plugin/1.0.0-SNAPSHOT",
-            googleCredentials.getCompute().getApplicationName());
+    assertEquals(
+        applicationPropertiesConfig.getString("application.name") + "/" +
+        applicationPropertiesConfig.getString("application.version"),
+        googleCredentials.getCompute().getApplicationName());
 
     Config googleConfig = TestUtils.buildGoogleConfig();
 

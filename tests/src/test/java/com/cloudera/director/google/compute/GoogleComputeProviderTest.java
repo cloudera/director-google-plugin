@@ -43,6 +43,7 @@ import com.cloudera.director.google.shaded.com.google.api.services.compute.model
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.AttachedDiskInitializeParams;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Disk;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Instance;
+import com.cloudera.director.google.shaded.com.google.api.services.compute.model.NetworkInterface;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Operation;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.InstanceTemplate;
@@ -64,6 +65,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -188,8 +190,18 @@ public class GoogleComputeProviderTest {
     return computeDisksInsert;
   }
 
-  private Compute.Disks.Delete mockComputeDisksDelete(Compute.Disks computeDisks,
-      String diskName) throws IOException {
+  private Compute.Disks.Get mockComputeDisksGet(
+      Compute.Disks computeDisks, String diskName) throws IOException {
+    Compute.Disks.Get computeDisksGet = mock(Compute.Disks.Get.class);
+
+    when(computeDisks.get(
+        eq(PROJECT_ID), eq(ZONE_NAME), eq(diskName))).thenReturn(computeDisksGet);
+
+    return computeDisksGet;
+  }
+
+  private Compute.Disks.Delete mockComputeDisksDelete(
+      Compute.Disks computeDisks, String diskName) throws IOException {
     Compute.Disks.Delete computeDisksDelete = mock(Compute.Disks.Delete.class);
 
     when(computeDisks.delete(
@@ -646,10 +658,9 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance retrieval with attached persistent disk.
     Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, instanceName1);
     Instance instance1 = new Instance();
-    List<AttachedDisk> diskList1 = Lists.newArrayList();
     AttachedDisk attachedDisk1 = new AttachedDisk();
     attachedDisk1.setSource(diskUrl1);
-    diskList1.add(attachedDisk1);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
     instance1.setDisks(diskList1);
     when(computeInstancesGet1.execute()).thenReturn(instance1);
 
@@ -780,6 +791,168 @@ public class GoogleComputeProviderTest {
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName2);
 
+  }
+
+  @Test
+  public void testFind() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    String diskName1 = UUID.randomUUID().toString();
+    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    attachedDisk1.setBoot(true);
+    attachedDisk1.setSource(diskUrl1);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
+    instance1.setDisks(diskList1);
+
+    // Configure network interface.
+    NetworkInterface networkInterface1 = new NetworkInterface();
+    networkInterface1.setNetworkIP("1.2.3.4");
+    List<NetworkInterface> networkInterfaceList1 = Lists.newArrayList(networkInterface1);
+    instance1.setNetworkInterfaces(networkInterfaceList1);
+
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for second successful instance retrieval.
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    Instance instance2 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk2 = new AttachedDisk();
+    String diskName2 = UUID.randomUUID().toString();
+    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    attachedDisk2.setBoot(true);
+    attachedDisk2.setSource(diskUrl2);
+    List<AttachedDisk> diskList2 = Lists.newArrayList(attachedDisk2);
+    instance2.setDisks(diskList2);
+
+    // Configure network interface.
+    NetworkInterface networkInterface2 = new NetworkInterface();
+    networkInterface2.setNetworkIP("5.6.7.8");
+    List<NetworkInterface> networkInterfaceList2 = Lists.newArrayList(networkInterface2);
+    instance2.setNetworkInterfaces(networkInterfaceList2);
+
+    when(computeInstancesGet2.execute()).thenReturn(instance2);
+
+    // Configure stub for first successful boot disk retrieval.
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Get computeDisksGet1 = mockComputeDisksGet(computeDisks, diskName1);
+    Disk bootDisk1 = new Disk();
+    bootDisk1.setSourceImage(diskUrl1);
+    when(computeDisksGet1.execute()).thenReturn(bootDisk1);
+
+    // Configure stub for second successful boot disk retrieval.
+    Compute.Disks.Get computeDisksGet2 = mockComputeDisksGet(computeDisks, diskName2);
+    Disk bootDisk2 = new Disk();
+    bootDisk2.setSourceImage(diskUrl2);
+    when(computeDisksGet2.execute()).thenReturn(bootDisk2);
+
+    Collection<GoogleComputeInstance> foundInstances = computeProvider.find(template, instanceIds);
+
+    // Verify that both of the two requested instances were returned.
+    assertThat(foundInstances.size()).isEqualTo(2);
+
+    // Verify the properties of the first returned instance.
+    Iterator<GoogleComputeInstance> instanceIterator = foundInstances.iterator();
+    GoogleComputeInstance foundInstance1 = instanceIterator.next();
+    assertThat(foundInstance1.getId()).isEqualTo(instanceName1);
+    assertThat(foundInstance1.getBootDisk().getSourceImage()).isEqualTo(diskUrl1);
+    assertThat(foundInstance1.getPrivateIpAddress().getHostAddress()).isEqualTo("1.2.3.4");
+
+    // Verify the properties of the second returned instance.
+    GoogleComputeInstance foundInstance2 = instanceIterator.next();
+    assertThat(foundInstance2.getId()).isEqualTo(instanceName2);
+    assertThat(foundInstance2.getBootDisk().getSourceImage()).isEqualTo(diskUrl2);
+    assertThat(foundInstance2.getPrivateIpAddress().getHostAddress()).isEqualTo("5.6.7.8");
+  }
+
+  @Test
+  public void testFind_PartialSuccess() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    String diskName = UUID.randomUUID().toString();
+    String diskUrl = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    attachedDisk1.setBoot(true);
+    attachedDisk1.setSource(diskUrl);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
+    instance1.setDisks(diskList1);
+
+    // Configure network interface.
+    NetworkInterface networkInterface = new NetworkInterface();
+    networkInterface.setNetworkIP("1.2.3.4");
+    List<NetworkInterface> networkInterfaceList = Lists.newArrayList(networkInterface);
+    instance1.setNetworkInterfaces(networkInterfaceList);
+
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for successful boot disk retrieval.
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Get computeDisksGet = mockComputeDisksGet(computeDisks, diskName);
+    Disk bootDisk = new Disk();
+    bootDisk.setSourceImage(diskUrl);
+    when(computeDisksGet.execute()).thenReturn(bootDisk);
+
+    Collection<GoogleComputeInstance> foundInstances = computeProvider.find(template, instanceIds);
+
+    // Verify that exactly one of the two requested instances was returned.
+    assertThat(foundInstances.size()).isEqualTo(1);
+
+    // Verify the properties of the returned instance.
+    GoogleComputeInstance foundInstance = foundInstances.iterator().next();
+    assertThat(foundInstance.getId()).isEqualTo(instanceName1);
+    assertThat(foundInstance.getBootDisk().getSourceImage()).isEqualTo(diskUrl);
+    assertThat(foundInstance.getPrivateIpAddress().getHostAddress()).isEqualTo("1.2.3.4");
   }
 
   private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {

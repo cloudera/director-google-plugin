@@ -26,6 +26,7 @@ import com.google.api.services.compute.ComputeScopes;
 import com.typesafe.config.Config;
 
 import java.io.ByteArrayInputStream;
+import java.util.Collection;
 import java.util.Collections;
 
 public class GoogleCredentials {
@@ -46,10 +47,18 @@ public class GoogleCredentials {
     try {
       JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
       HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+      GoogleCredential credential;
 
-      GoogleCredential credential = GoogleCredential.fromStream(
-          new ByteArrayInputStream(jsonKey.getBytes()), httpTransport, JSON_FACTORY)
-          .createScoped(Collections.singleton(ComputeScopes.COMPUTE));
+      if (jsonKey != null) {
+        credential = GoogleCredential.fromStream(
+            new ByteArrayInputStream(jsonKey.getBytes()), httpTransport, JSON_FACTORY)
+            .createScoped(Collections.singleton(ComputeScopes.COMPUTE));
+      } else {
+        Collection COMPUTE_SCOPES = Collections.singletonList(ComputeScopes.COMPUTE);
+
+        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY);
+        credential = credential.createScoped(COMPUTE_SCOPES);
+      }
 
       return new Compute.Builder(httpTransport,
           JSON_FACTORY,

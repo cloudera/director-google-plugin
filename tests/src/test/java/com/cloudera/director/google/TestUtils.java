@@ -44,6 +44,14 @@ public class TestUtils {
     return systemPropertyValue;
   }
 
+  public static String readFileIfSpecified(String fileName) throws IOException {
+    if (fileName != null && !fileName.isEmpty()) {
+      return TestUtils.readFile(fileName, Charset.defaultCharset());
+    } else {
+      return null;
+    }
+  }
+
   public static Config buildApplicationPropertiesConfig() throws IOException {
     Map<String, String> applicationProperties = new HashMap<String, String>();
     applicationProperties.put("application.name", "Cloudera-Director-Google-Plugin");

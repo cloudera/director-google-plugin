@@ -38,7 +38,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +46,12 @@ import java.util.Map;
 /**
  * Performs 'live' test of {@link GoogleLauncher}.
  *
- * These two system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH.
+ * This system property is required: GCP_PROJECT_ID.
+ * This system property is optional: JSON_KEY_PATH.
+ *
+ * If JSON_KEY_PATH is not specified, Application Default Credentials will be used.
+ *
+ * @see <a href="https://developers.google.com/identity/protocols/application-default-credentials"</a>
  */
 public class GoogleLauncherTest {
 
@@ -57,8 +61,7 @@ public class GoogleLauncherTest {
   @BeforeClass
   public static void beforeClass() throws IOException {
     PROJECT_ID_VALUE = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY_VALUE = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"),
-        Charset.defaultCharset());
+    JSON_KEY_VALUE = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
   }
 
   @Rule

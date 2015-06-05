@@ -38,10 +38,9 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
       .name("Client ID JSON Key")
       .defaultDescription(
           "Google Cloud service account JSON key.<br />" +
+          "Leave unset to get Google credentials from the environment.<br />" +
           "<a target='_blank' href='https://cloud.google.com/compute/docs/authentication#general'>More Information</a>")
-      .defaultErrorMessage("Service account JSON key is mandatory")
       .widget(ConfigurationProperty.Widget.FILE)
-      .required(true)
       .sensitive(true)
       .build());
 

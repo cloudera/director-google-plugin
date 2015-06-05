@@ -56,4 +56,21 @@ public class Utils {
 
     return null;
   }
+
+  static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
+    String diskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
+        "/zones/" + zone + "/diskTypes/";
+
+    if (dataDiskType.equals("LocalSSD")) {
+      diskTypeUrl += "local-ssd";
+    } else if (dataDiskType.equals("SSD")) {
+      diskTypeUrl += "pd-ssd";
+    } else {
+      // The value will already have been checked by the validator.
+      // Assume 'Standard'.
+      diskTypeUrl += "pd-standard";
+    }
+
+    return diskTypeUrl;
+  }
 }

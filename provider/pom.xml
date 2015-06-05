@@ -33,6 +33,8 @@
         <slf4j.version>1.7.10</slf4j.version>
         <typesafe-config.version>1.2.0</typesafe-config.version>
         <junit.version>4.12</junit.version>
+        <maven-shade-plugin.version>2.3</maven-shade-plugin.version>
+        <shade-prefix>com.cloudera.director.google.shaded</shade-prefix>
     </properties>
 
     <dependencies>
@@ -81,6 +83,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
                 <configuration>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <filters>
@@ -105,31 +108,31 @@
                                 <relocation>
                                     <pattern>com.typesafe</pattern>
                                     <shadedPattern>
-                                        com.cloudera.director.google.shaded.com.typesafe
+                                        ${shade-prefix}.com.typesafe
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.google</pattern>
                                     <shadedPattern>
-                                        com.cloudera.director.google.shaded.com.google
+                                        ${shade-prefix}.com.google
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache</pattern>
                                     <shadedPattern>
-                                        com.cloudera.director.google.shaded.org.apache
+                                        ${shade-prefix}.org.apache
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.fasterxml</pattern>
                                     <shadedPattern>
-                                        com.cloudera.director.google.shaded.com.fasterxml
+                                        ${shade-prefix}.com.fasterxml
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>javax.annotation</pattern>
                                     <shadedPattern>
-                                        com.cloudera.director.google.shaded.javax.annotation
+                                        ${shade-prefix}.javax.annotation
                                     </shadedPattern>
                                 </relocation>
                             </relocations>

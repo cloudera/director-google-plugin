@@ -16,13 +16,14 @@
 
 package com.cloudera.director.google.compute;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
 import java.util.Date;
 
 public class Utils {
 
-  public static final String SIMPLE_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
+  private static final DateTimeFormatter DATE_TIME_FORMATTER_ISO8601 = ISODateTimeFormat.dateTime();
 
   static String getLocalName(String fullResourceUrl) {
     if (fullResourceUrl == null) {
@@ -49,9 +50,9 @@ public class Utils {
     }
   }
 
-  static Date getDateFromTimestamp(String timestamp) throws ParseException {
+  static Date getDateFromTimestamp(String timestamp) {
     if (timestamp != null && !timestamp.isEmpty()) {
-      return new SimpleDateFormat(SIMPLE_DATE_FORMAT).parse(timestamp);
+      return DATE_TIME_FORMATTER_ISO8601.parseDateTime(timestamp).toDate();
     }
 
     return null;

@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +125,7 @@ public class GoogleComputeInstance
             // TODO(duftler): Use appropriate date formatting.
             return creationTimestamp.toString();
           }
-        } catch (ParseException e) {
+        } catch (IllegalArgumentException e) {
           LOG.info("Problem parsing creation timestamp '{}' of instance '{}': {}",
               creationTimestampStr, instance.getName(), e.getMessage());
         }

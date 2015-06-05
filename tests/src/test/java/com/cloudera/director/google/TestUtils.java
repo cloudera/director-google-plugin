@@ -18,19 +18,18 @@ package com.cloudera.director.google;
 
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
+import com.google.common.io.Files;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TestUtils {
 
   public static String readFile(String path, Charset encoding) throws IOException {
-    byte[] encoded = Files.readAllBytes(Paths.get(path));
-
-    return new String(encoded, encoding);
+    return Files.toString(new File(path), encoding);
   }
 
   public static String readRequiredSystemProperty(String systemPropertyKey) {

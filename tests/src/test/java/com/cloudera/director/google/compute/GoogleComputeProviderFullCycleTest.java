@@ -208,6 +208,15 @@ public class GoogleComputeProviderFullCycleTest {
     // Query the instance state until the instance status is RUNNING.
     pollInstanceState(compute, template, instanceIds, InstanceStatus.RUNNING);
 
+    // List all display properties.
+    LOG.info("Display properties:");
+
+    Map<String, String> displayPropertyMap = instance.getProperties();
+
+    for (Map.Entry<String, String> keyValuePair : displayPropertyMap.entrySet()) {
+      LOG.info("  " + keyValuePair.getKey() + " -> " + keyValuePair.getValue());
+    }
+
     if (HALT_AFTER_ALLOCATION) {
       LOG.info("HALT_AFTER_ALLOCATION flag is set.");
 

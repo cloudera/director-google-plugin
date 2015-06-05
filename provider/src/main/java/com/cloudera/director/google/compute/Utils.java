@@ -73,19 +73,4 @@ public class Utils {
 
     return diskTypeUrl;
   }
-
-  static String buildImageUrl(String projectId, String image) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/global/images/" + image;
-  }
-
-  static String buildInstanceUrl(String projectId, String zone, String instanceName) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/instances/" + instanceName;
-  }
-
-  static String buildDiskUrl(String projectId, String zone, String diskName) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/disks/" + diskName;
-  }
 }

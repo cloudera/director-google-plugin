@@ -297,6 +297,12 @@ public class GoogleComputeProvider
         String sshKeysValue = sshUserName + ":" + sshPublicKey;
 
         metadataItemsList.add(new Metadata.Items().setKey("sshKeys").setValue(sshKeysValue));
+      } else {
+        LOG.info(
+            "SSH credentials not set on instance '{}'. " +
+            "More information on configuring SSH keys can be found here: " +
+            "https://cloud.google.com/compute/docs/console#sshkeys",
+            decoratedInstanceName);
       }
 
       for (Map.Entry<String, String> tag : template.getTags().entrySet()) {

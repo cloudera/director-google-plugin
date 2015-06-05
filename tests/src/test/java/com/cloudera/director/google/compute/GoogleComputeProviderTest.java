@@ -191,7 +191,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
-    String instanceUrl = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
@@ -221,7 +221,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
@@ -247,7 +247,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
-    String instanceUrl1 = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
@@ -262,7 +262,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
-    String instanceUrl2 = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -320,7 +320,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true,
@@ -344,7 +344,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true,
@@ -389,7 +389,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
-    String instanceUrl1 = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
@@ -404,7 +404,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
-    String instanceUrl2 = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -432,7 +432,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true,
@@ -456,7 +456,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true,
@@ -483,13 +483,13 @@ public class GoogleComputeProviderTest {
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName = UUID.randomUUID().toString();
-    String instanceUrl = Utils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
 
     // Configure stub for successful disk insertion operation.
     String diskName =
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName + "-pd-0";
-    String diskUrl = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    String diskUrl = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
     Operation diskCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl, "PENDING");
@@ -540,7 +540,7 @@ public class GoogleComputeProviderTest {
 
     // Verify boot disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true, null, 60L,
-        Utils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true, null, null,

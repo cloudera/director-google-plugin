@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google;
 
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSON_KEY;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECT_ID;
 
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
@@ -59,8 +59,8 @@ public class GoogleCredentialsProvider implements CredentialsProvider<GoogleCred
       LocalizationContext localizationContext) {
     return new GoogleCredentials(
         applicationProperties,
-        configuration.getConfigurationValue(PROJECTID, localizationContext),
-        configuration.getConfigurationValue(JSONKEY, localizationContext)
+        configuration.getConfigurationValue(PROJECT_ID, localizationContext),
+        configuration.getConfigurationValue(JSON_KEY, localizationContext)
     );
   }
 }

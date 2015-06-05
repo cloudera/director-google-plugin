@@ -16,6 +16,8 @@
 
 package com.cloudera.director.google;
 
+import static org.junit.Assert.fail;
+
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
 import com.google.common.io.Files;
@@ -35,11 +37,11 @@ public class TestUtils {
   public static String readRequiredSystemProperty(String systemPropertyKey) {
     String systemPropertyValue = System.getProperty(systemPropertyKey, "");
 
-    if (!systemPropertyValue.isEmpty()) {
-      return systemPropertyValue;
-    } else {
-      throw new IllegalArgumentException("System property '" + systemPropertyKey + "' is required.");
+    if (systemPropertyValue.isEmpty()) {
+      fail("System property '" + systemPropertyKey + "' is required.");
     }
+
+    return systemPropertyValue;
   }
 
   public static Config buildApplicationPropertiesConfig() throws IOException {

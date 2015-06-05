@@ -16,12 +16,12 @@
 
 package com.cloudera.director.google.compute;
 
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.DATA_DISK_TYPES;
@@ -95,11 +95,11 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String IMAGE_PROJECT_ID = "centos-cloud";
   private static final String IMAGE_NAME = "centos-6-v20150526";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
-  private static final String NETWORK_NAME = "some-network";
+  private static final String NETWORK_NAME_VALUE = "some-network";
   private static final String BOOT_DISK_SIZE = "60";
   private static final String BOOT_DISK_SIZE_MALFORMED = "sixty";
   private static final String BOOT_DISK_SIZE_TOO_SMALL = "5";
-  private static final String DATA_DISK_COUNT = "2";
+  private static final String DATA_DISK_COUNT_VALUE = "2";
   private static final String DATA_DISK_COUNT_TOO_FEW = "-1";
   private static final String DATA_DISK_COUNT_LOCAL_SSD_TOO_MANY = "5";
   private static final String DATA_DISK_COUNT_MALFORMED = "three";
@@ -239,78 +239,78 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   @Test
   public void testCheckBootDiskSize_TooSmall() {
     checkBootDiskSize(BOOT_DISK_SIZE_TOO_SMALL);
-    verifySingleError(BOOTDISKSIZEGB, INVALID_BOOT_DISK_SIZE_MSG, MIN_BOOT_DISK_SIZE_GB,
+    verifySingleError(BOOT_DISK_SIZE_GB, INVALID_BOOT_DISK_SIZE_MSG, MIN_BOOT_DISK_SIZE_GB,
         Integer.parseInt(BOOT_DISK_SIZE_TOO_SMALL));
   }
 
   @Test
   public void testCheckBootDiskSize_Malformed() {
     checkBootDiskSize(BOOT_DISK_SIZE_MALFORMED);
-    verifySingleError(BOOTDISKSIZEGB, INVALID_BOOT_DISK_SIZE_FORMAT_MSG, BOOT_DISK_SIZE_MALFORMED);
+    verifySingleError(BOOT_DISK_SIZE_GB, INVALID_BOOT_DISK_SIZE_FORMAT_MSG, BOOT_DISK_SIZE_MALFORMED);
   }
 
   @Test
   public void testCheckDataDiskCount_Standard() {
-    checkDataDiskCount(DATA_DISK_COUNT, DATA_DISK_TYPE_STANDARD);
+    checkDataDiskCount(DATA_DISK_COUNT_VALUE, DATA_DISK_TYPE_STANDARD);
     verifyClean();
   }
 
   @Test
   public void testCheckDataDiskCount_Standard_TooFew() {
     checkDataDiskCount(DATA_DISK_COUNT_TOO_FEW, DATA_DISK_TYPE_STANDARD);
-    verifySingleError(DATADISKCOUNT, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG, Integer.parseInt(DATA_DISK_COUNT_TOO_FEW));
+    verifySingleError(DATA_DISK_COUNT, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG, Integer.parseInt(DATA_DISK_COUNT_TOO_FEW));
   }
 
   @Test
   public void testCheckDataDiskCount_Standard_Malformed() {
     checkDataDiskCount(DATA_DISK_COUNT_MALFORMED, DATA_DISK_TYPE_STANDARD);
-    verifySingleError(DATADISKCOUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
+    verifySingleError(DATA_DISK_COUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
   }
 
   @Test
   public void testCheckDataDiskCount_SSD() {
-    checkDataDiskCount(DATA_DISK_COUNT, DATA_DISK_TYPE_SSD);
+    checkDataDiskCount(DATA_DISK_COUNT_VALUE, DATA_DISK_TYPE_SSD);
     verifyClean();
   }
 
   @Test
   public void testCheckDataDiskCount_SSD_TooFew() {
     checkDataDiskCount(DATA_DISK_COUNT_TOO_FEW, DATA_DISK_TYPE_SSD);
-    verifySingleError(DATADISKCOUNT, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG, Integer.parseInt(DATA_DISK_COUNT_TOO_FEW));
+    verifySingleError(DATA_DISK_COUNT, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG, Integer.parseInt(DATA_DISK_COUNT_TOO_FEW));
   }
 
   @Test
   public void testCheckDataDiskCount_SSD_Malformed() {
     checkDataDiskCount(DATA_DISK_COUNT_MALFORMED, DATA_DISK_TYPE_SSD);
-    verifySingleError(DATADISKCOUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
+    verifySingleError(DATA_DISK_COUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
   }
 
 
 
   @Test
   public void testCheckDataDiskCount_LocalSSD() {
-    checkDataDiskCount(DATA_DISK_COUNT, DATA_DISK_TYPE_LOCAL_SSD);
+    checkDataDiskCount(DATA_DISK_COUNT_VALUE, DATA_DISK_TYPE_LOCAL_SSD);
     verifyClean();
   }
 
   @Test
   public void testCheckDataDiskCount_LocalSSD_TooFew() {
     checkDataDiskCount(DATA_DISK_COUNT_TOO_FEW, DATA_DISK_TYPE_LOCAL_SSD);
-    verifySingleError(DATADISKCOUNT, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
+    verifySingleError(DATA_DISK_COUNT, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
         MIN_LOCAL_SSD_COUNT, MAX_LOCAL_SSD_COUNT, Integer.parseInt(DATA_DISK_COUNT_TOO_FEW));
   }
 
   @Test
   public void testCheckDataDiskCount_LocalSSD_TooMany() {
     checkDataDiskCount(DATA_DISK_COUNT_LOCAL_SSD_TOO_MANY, DATA_DISK_TYPE_LOCAL_SSD);
-    verifySingleError(DATADISKCOUNT, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
+    verifySingleError(DATA_DISK_COUNT, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
         MIN_LOCAL_SSD_COUNT, MAX_LOCAL_SSD_COUNT, Integer.parseInt(DATA_DISK_COUNT_LOCAL_SSD_TOO_MANY));
   }
 
   @Test
   public void testCheckDataDiskCount_LocalSSD_Malformed() {
     checkDataDiskCount(DATA_DISK_COUNT_MALFORMED, DATA_DISK_TYPE_LOCAL_SSD);
-    verifySingleError(DATADISKCOUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
+    verifySingleError(DATA_DISK_COUNT, INVALID_DATA_DISK_COUNT_FORMAT_MSG, DATA_DISK_COUNT_MALFORMED);
   }
 
   @Test
@@ -324,7 +324,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   @Test
   public void testCheckDataDiskType_NotFound() {
     checkDataDiskType(DATA_DISK_TYPE_WRONG);
-    verifySingleError(DATADISKTYPE, INVALID_DATA_DISK_TYPE_MSG,
+    verifySingleError(DATA_DISK_TYPE, INVALID_DATA_DISK_TYPE_MSG,
         new Object[]{DATA_DISK_TYPE_WRONG, Joiner.on(", ").join(DATA_DISK_TYPES)});
   }
 
@@ -337,14 +337,14 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   @Test
   public void testDataDiskSize_Standard_TooSmall() {
     checkDataDiskSize(DATA_DISK_SIZE_TOO_SMALL, DATA_DISK_TYPE_STANDARD);
-    verifySingleError(DATADISKSIZEGB, INVALID_DATA_DISK_SIZE_MSG, MIN_DATA_DISK_SIZE_GB,
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_DATA_DISK_SIZE_MSG, MIN_DATA_DISK_SIZE_GB,
         Integer.parseInt(DATA_DISK_SIZE_TOO_SMALL));
   }
 
   @Test
   public void testDataDiskSize_Standard_Malformed() {
     checkDataDiskSize(DATA_DISK_SIZE_MALFORMED, DATA_DISK_TYPE_STANDARD);
-    verifySingleError(DATADISKSIZEGB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
   }
 
   @Test
@@ -356,14 +356,14 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   @Test
   public void testDataDiskSize_SSD_TooSmall() {
     checkDataDiskSize(DATA_DISK_SIZE_TOO_SMALL, DATA_DISK_TYPE_SSD);
-    verifySingleError(DATADISKSIZEGB, INVALID_DATA_DISK_SIZE_MSG, MIN_DATA_DISK_SIZE_GB,
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_DATA_DISK_SIZE_MSG, MIN_DATA_DISK_SIZE_GB,
         Integer.parseInt(DATA_DISK_SIZE_TOO_SMALL));
   }
 
   @Test
   public void testDataDiskSize_SSD_Malformed() {
     checkDataDiskSize(DATA_DISK_SIZE_MALFORMED, DATA_DISK_TYPE_SSD);
-    verifySingleError(DATADISKSIZEGB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
   }
 
   @Test
@@ -375,14 +375,14 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   @Test
   public void testDataDiskSize_LocalSSD_WrongSize() {
     checkDataDiskSize(DATA_DISK_SIZE, DATA_DISK_TYPE_LOCAL_SSD);
-    verifySingleError(DATADISKSIZEGB, INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG, EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB,
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG, EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB,
         Integer.parseInt(DATA_DISK_SIZE));
   }
 
   @Test
   public void testDataDiskSize_LocalSSD_Malformed() {
     checkDataDiskSize(DATA_DISK_SIZE_MALFORMED, DATA_DISK_TYPE_LOCAL_SSD);
-    verifySingleError(DATADISKSIZEGB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
+    verifySingleError(DATA_DISK_SIZE_GB, INVALID_DATA_DISK_SIZE_FORMAT_MSG, DATA_DISK_SIZE_MALFORMED);
   }
 
   private Compute.MachineTypes.Get mockComputeToMachineType() throws IOException {
@@ -425,7 +425,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
     Compute.Networks.Get computeNetworksGet = mock(Compute.Networks.Get.class);
 
     when(compute.networks()).thenReturn(computeNetworks);
-    when(computeNetworks.get(PROJECT_ID, NETWORK_NAME)).thenReturn(computeNetworksGet);
+    when(computeNetworks.get(PROJECT_ID, NETWORK_NAME_VALUE)).thenReturn(computeNetworksGet);
 
     return computeNetworksGet;
   }
@@ -437,7 +437,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
     // We don't need to actually return a network, we just need to not throw a 404.
     when(computeNetworksGet.execute()).thenReturn(null);
 
-    checkNetwork(NETWORK_NAME);
+    checkNetwork(NETWORK_NAME_VALUE);
     verify(computeNetworksGet).execute();
     verifyClean();
   }
@@ -450,9 +450,9 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
         GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
     when(computeNetworksGet.execute()).thenThrow(exception);
 
-    checkNetwork(NETWORK_NAME);
+    checkNetwork(NETWORK_NAME_VALUE);
     verify(computeNetworksGet).execute();
-    verifySingleError(TYPE, NETWORK_NOT_FOUND_MSG, NETWORK_NAME, PROJECT_ID);
+    verifySingleError(TYPE, NETWORK_NOT_FOUND_MSG, NETWORK_NAME_VALUE, PROJECT_ID);
   }
 
   /**
@@ -486,7 +486,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    */
   protected void checkBootDiskSize(String bootDiskSize) {
     Map<String, String> configMap = Maps.newHashMap();
-    configMap.put(BOOTDISKSIZEGB.unwrap().getConfigKey(), bootDiskSize);
+    configMap.put(BOOT_DISK_SIZE_GB.unwrap().getConfigKey(), bootDiskSize);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkBootDiskSize(configuration, accumulator, localizationContext);
   }
@@ -499,8 +499,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    */
   protected void checkDataDiskCount(String dataDiskCount, String dataDiskType) {
     Map<String, String> configMap = Maps.newHashMap();
-    configMap.put(DATADISKCOUNT.unwrap().getConfigKey(), dataDiskCount);
-    configMap.put(DATADISKTYPE.unwrap().getConfigKey(), dataDiskType);
+    configMap.put(DATA_DISK_COUNT.unwrap().getConfigKey(), dataDiskCount);
+    configMap.put(DATA_DISK_TYPE.unwrap().getConfigKey(), dataDiskType);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkDataDiskCount(configuration, accumulator, localizationContext);
   }
@@ -512,7 +512,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    */
   protected void checkDataDiskType(String dataDiskType) {
     Map<String, String> configMap = Maps.newHashMap();
-    configMap.put(DATADISKTYPE.unwrap().getConfigKey(), dataDiskType);
+    configMap.put(DATA_DISK_TYPE.unwrap().getConfigKey(), dataDiskType);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkDataDiskType(configuration, accumulator, localizationContext);
   }
@@ -525,8 +525,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    */
   protected void checkDataDiskSize(String dataDiskSize, String dataDiskType) {
     Map<String, String> configMap = Maps.newHashMap();
-    configMap.put(DATADISKSIZEGB.unwrap().getConfigKey(), dataDiskSize);
-    configMap.put(DATADISKTYPE.unwrap().getConfigKey(), dataDiskType);
+    configMap.put(DATA_DISK_SIZE_GB.unwrap().getConfigKey(), dataDiskSize);
+    configMap.put(DATA_DISK_TYPE.unwrap().getConfigKey(), dataDiskType);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkDataDiskSize(configuration, accumulator, localizationContext);
   }
@@ -551,7 +551,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    */
   protected void checkNetwork(String network) {
     Map<String, String> configMap = Maps.newHashMap();
-    configMap.put(NETWORKNAME.unwrap().getConfigKey(), network);
+    configMap.put(NETWORK_NAME.unwrap().getConfigKey(), network);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkNetwork(configuration, accumulator, localizationContext);
   }

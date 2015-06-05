@@ -17,8 +17,8 @@
 package com.cloudera.director.google.compute;
 
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
@@ -149,9 +149,9 @@ public class GoogleComputeProviderFullCycleTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), "default");
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), "default");
     templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-f");
-    templateConfig.put(LOCALSSDINTERFACETYPE.unwrap().getConfigKey(), localSSDInterfaceType);
+    templateConfig.put(LOCAL_SSD_INTERFACE_TYPE.unwrap().getConfigKey(), localSSDInterfaceType);
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
     templateConfig.put(SSH_PORT.unwrap().getConfigKey(), "22");

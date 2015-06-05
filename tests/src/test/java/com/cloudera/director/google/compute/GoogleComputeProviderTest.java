@@ -16,11 +16,11 @@
 
 package com.cloudera.director.google.compute;
 
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
@@ -35,13 +35,19 @@ import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
 import com.cloudera.director.google.internal.GoogleCredentials;
+import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
+import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.Compute;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.AttachedDisk;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.AttachedDiskInitializeParams;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Disk;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Instance;
+import com.cloudera.director.google.shaded.com.google.api.services.compute.model.NetworkInterface;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Operation;
 import com.cloudera.director.spi.v1.model.Configured;
+import com.cloudera.director.spi.v1.model.InstanceState;
+import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
@@ -61,6 +67,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,7 +92,7 @@ public class GoogleComputeProviderTest {
   private static final String IMAGE_PROJECT_ID = "rhel-cloud";
   private static final String IMAGE_NAME = "rhel-6-v20150526";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
-  private static final String NETWORK_NAME = "some-network";
+  private static final String NETWORK_NAME_VALUE = "some-network";
 
   private GoogleComputeProvider computeProvider;
   private GoogleCredentials credentials;
@@ -137,7 +144,7 @@ public class GoogleComputeProviderTest {
     Compute.Instances.Insert computeInstancesInsert = mock(Compute.Instances.Insert.class);
 
     when(computeInstances.insert(
-            eq(PROJECT_ID), eq(ZONE_NAME), any(Instance.class))).thenReturn(computeInstancesInsert);
+        eq(PROJECT_ID), eq(ZONE_NAME), any(Instance.class))).thenReturn(computeInstancesInsert);
 
     return computeInstancesInsert;
   }
@@ -149,6 +156,15 @@ public class GoogleComputeProviderTest {
     when(computeInstances.delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(instanceName))).thenReturn(computeInstancesDelete);
 
     return computeInstancesDelete;
+  }
+
+  private Compute.Instances.Get mockComputeInstancesGet(
+      Compute.Instances computeInstances, String instanceName) throws IOException {
+    Compute.Instances.Get computeInstancesGet = mock(Compute.Instances.Get.class);
+
+    when(computeInstances.get(PROJECT_ID, ZONE_NAME, instanceName)).thenReturn(computeInstancesGet);
+
+    return computeInstancesGet;
   }
 
   private Compute.ZoneOperations mockComputeToZoneOperations() {
@@ -176,13 +192,33 @@ public class GoogleComputeProviderTest {
     return computeDisksInsert;
   }
 
+  private Compute.Disks.Get mockComputeDisksGet(
+      Compute.Disks computeDisks, String diskName) throws IOException {
+    Compute.Disks.Get computeDisksGet = mock(Compute.Disks.Get.class);
+
+    when(computeDisks.get(
+        eq(PROJECT_ID), eq(ZONE_NAME), eq(diskName))).thenReturn(computeDisksGet);
+
+    return computeDisksGet;
+  }
+
+  private Compute.Disks.Delete mockComputeDisksDelete(
+      Compute.Disks computeDisks, String diskName) throws IOException {
+    Compute.Disks.Delete computeDisksDelete = mock(Compute.Disks.Delete.class);
+
+    when(computeDisks.delete(
+        eq(PROJECT_ID), eq(ZONE_NAME), eq(diskName))).thenReturn(computeDisksDelete);
+
+    return computeDisksDelete;
+  }
+
   @Test
   public void testAllocate_LocalSSD() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -191,6 +227,9 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName;
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
@@ -211,9 +250,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance = argumentCaptor.getValue();
 
     // Verify instance name and metadata.
-    assertThat(insertedInstance.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName);
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
     assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
@@ -238,7 +275,7 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -247,6 +284,9 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
@@ -262,6 +302,9 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
@@ -310,9 +353,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance1 = insertedInstanceList.get(0);
 
     // Verify first instance name and metadata.
-    assertThat(insertedInstance1.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName1);
+    assertThat(insertedInstance1.getName()).isEqualTo(decoratedInstanceName1);
     assertThat(insertedInstance1.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList1 = insertedInstance1.getDisks();
@@ -334,9 +375,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance2 = insertedInstanceList.get(1);
 
     // Verify second instance name and metadata.
-    assertThat(insertedInstance2.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName2);
+    assertThat(insertedInstance2.getName()).isEqualTo(decoratedInstanceName2);
     assertThat(insertedInstance2.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList2 = insertedInstance2.getDisks();
@@ -360,18 +399,14 @@ public class GoogleComputeProviderTest {
     List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
     Instance deletedInstance1 = deletedInstanceList.get(0);
 
-    // Verify first instance deletion call instance name and metadata.
-    assertThat(deletedInstance1.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName1);
+    // Verify first instance deletion call instance name.
+    assertThat(deletedInstance1.getName()).isEqualTo(decoratedInstanceName1);
 
     // Verify second instance deletion call was made.
     Instance deletedInstance2 = deletedInstanceList.get(1);
 
-    // Verify second instance deletion call instance name and metadata.
-    assertThat(deletedInstance2.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName2);
+    // Verify second instance deletion call instance name.
+    assertThat(deletedInstance2.getName()).isEqualTo(decoratedInstanceName2);
   }
 
   @Test
@@ -380,7 +415,7 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -389,6 +424,9 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
@@ -404,6 +442,9 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
@@ -422,9 +463,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance1 = insertedInstanceList.get(0);
 
     // Verify first instance name and metadata.
-    assertThat(insertedInstance1.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName1);
+    assertThat(insertedInstance1.getName()).isEqualTo(decoratedInstanceName1);
     assertThat(insertedInstance1.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList1 = insertedInstance1.getDisks();
@@ -446,9 +485,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance2 = insertedInstanceList.get(1);
 
     // Verify second instance name and metadata.
-    assertThat(insertedInstance2.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName2);
+    assertThat(insertedInstance2.getName()).isEqualTo(decoratedInstanceName2);
     assertThat(insertedInstance2.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList2 = insertedInstance2.getDisks();
@@ -473,16 +510,19 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
-    templateConfig.put(DATADISKCOUNT.unwrap().getConfigKey(), "1");
-    templateConfig.put(DATADISKTYPE.unwrap().getConfigKey(), "Standard");
-    templateConfig.put(DATADISKSIZEGB.unwrap().getConfigKey(), "250");
+    templateConfig.put(DATA_DISK_COUNT.unwrap().getConfigKey(), "1");
+    templateConfig.put(DATA_DISK_TYPE.unwrap().getConfigKey(), "Standard");
+    templateConfig.put(DATA_DISK_SIZE_GB.unwrap().getConfigKey(), "250");
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName;
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
 
     // Configure stub for successful disk insertion operation.
@@ -514,7 +554,7 @@ public class GoogleComputeProviderTest {
 
     computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
 
-    // Verify disk insertion call was made.
+    // Verify persistent disk insertion call was made.
     ArgumentCaptor<Disk> argumentCaptor1 = ArgumentCaptor.forClass(Disk.class);
     verify(computeDisks).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor1.capture());
     Disk insertedDisk = argumentCaptor1.getValue();
@@ -522,7 +562,7 @@ public class GoogleComputeProviderTest {
     // Verify disk name, size and type.
     assertThat(insertedDisk.getName()).isEqualTo(diskName);
     assertThat(insertedDisk.getSizeGb()).isEqualTo(250);
-    assertThat(insertedDisk.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "pd-standard"));
+    assertThat(insertedDisk.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "Standard"));
 
     // Verify instance insertion call was made.
     ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
@@ -530,9 +570,7 @@ public class GoogleComputeProviderTest {
     Instance insertedInstance = argumentCaptor2.getValue();
 
     // Verify instance name and metadata.
-    assertThat(insertedInstance.getName()).isEqualTo(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
-        "-" + instanceName);
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
     assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
 
     List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
@@ -545,6 +583,577 @@ public class GoogleComputeProviderTest {
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true, null, null,
         null, null, "PERSISTENT", diskUrl);
+  }
+
+  @Test
+  public void testAllocate_SSD_CreationFails_BelowMinCount() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+    templateConfig.put(DATA_DISK_COUNT.unwrap().getConfigKey(), "1");
+    templateConfig.put(DATA_DISK_TYPE.unwrap().getConfigKey(), "SSD");
+    templateConfig.put(DATA_DISK_SIZE_GB.unwrap().getConfigKey(), "500");
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceName2 = UUID.randomUUID().toString();
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+
+    // Configure stub for first successful disk insertion operation.
+    String diskName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1 + "-pd-0";
+    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
+    Operation diskCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl1, "PENDING");
+    OngoingStubbing<Operation> ongoingDiskStub =
+        when(computeDisksInsert.execute()).thenReturn(diskCreationOperation1);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskCreationOperation1.getName())).thenReturn(computeZoneOperationsGet1);
+    when(computeZoneOperationsGet1.execute()).then(
+        new OperationAnswer(diskCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for second successful disk insertion operation.
+    String diskName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2 + "-pd-0";
+    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    Operation diskCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    ongoingDiskStub.thenReturn(diskCreationOperation2);
+    Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskCreationOperation2.getName())).thenReturn(computeZoneOperationsGet2);
+    when(computeZoneOperationsGet2.execute()).then(
+        new OperationAnswer(diskCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for successful instance insertion operation.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    OngoingStubbing<Operation> ongoingInsertionStub =
+        when(computeInstancesInsert1.execute()).thenReturn(vmCreationOperation1);
+    Compute.ZoneOperations.Get computeZoneOperationsGet3 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation1.getName())).thenReturn(computeZoneOperationsGet3);
+    when(computeZoneOperationsGet3.execute()).then(
+        new OperationAnswer(vmCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for unsuccessful instance insertion operation.
+    Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    ongoingInsertionStub.thenReturn(vmCreationOperation2);
+    Compute.ZoneOperations.Get computeZoneOperationsGet4 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation2.getName())).thenReturn(computeZoneOperationsGet4);
+    when(computeZoneOperationsGet4.execute()).then(
+        new OperationAnswer(vmCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"},
+            "SOME_ERROR_CODE", "Some error message..."));
+
+    // Now configure the expected tearDown operations.
+
+    // Configure stub for successful instance retrieval with attached persistent disk.
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, instanceName1);
+    Instance instance1 = new Instance();
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    attachedDisk1.setSource(diskUrl1);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
+    instance1.setDisks(diskList1);
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, instanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for successful instance deletion operation.
+    Compute.Instances.Delete computeInstancesDelete1 = mockComputeInstancesDelete(computeInstances, instanceName1);
+    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
+    Compute.ZoneOperations.Get computeZoneOperationsGet5 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation1.getName())).thenReturn(computeZoneOperationsGet5);
+    when(computeZoneOperationsGet5.execute()).then(
+        new OperationAnswer(vmDeletionOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for successful disk deletion operation.
+    // The first disk was attached to the first instance, so we rely on auto-delete for that one.
+    // The second disk was never attached to an instance since the instance creation failed. So it
+    // must be explicitly deleted.
+    Compute.Disks.Delete computeDisksDelete = mockComputeDisksDelete(computeDisks, diskName2);
+    Operation diskDeletionOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    when(computeDisksDelete.execute()).thenReturn(diskDeletionOperation);
+    Compute.ZoneOperations.Get computeZoneOperationsGet7 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        diskDeletionOperation.getName())).thenReturn(computeZoneOperationsGet7);
+    when(computeZoneOperationsGet7.execute()).then(
+        new OperationAnswer(diskDeletionOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    try {
+      computeProvider.allocate(template, Lists.newArrayList(instanceName1, instanceName2), 2);
+
+      fail("An exception should have been thrown when we failed to provision at least minCount instances.");
+    } catch (UnrecoverableProviderException e) {
+      LOG.info("Caught: " + e.getMessage());
+
+      assertThat(e.getMessage()).isEqualTo("Problem allocating instances.");
+      verifySingleError(e.getDetails(), "Some error message...");
+    }
+
+    // Verify persistent disk insertion call was made.
+    ArgumentCaptor<Disk> argumentCaptor1 = ArgumentCaptor.forClass(Disk.class);
+    verify(computeDisks, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor1.capture());
+    List<Disk> insertedDisks = argumentCaptor1.getAllValues();
+    Disk insertedDisk1 = insertedDisks.get(0);
+
+    // Verify first disk name, size and type.
+    assertThat(insertedDisk1.getName()).isEqualTo(diskName1);
+    assertThat(insertedDisk1.getSizeGb()).isEqualTo(500);
+    assertThat(insertedDisk1.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+
+    // Verify second persistent disk insertion call was made.
+    Disk insertedDisk2 = insertedDisks.get(1);
+
+    // Verify second disk name, size and type.
+    assertThat(insertedDisk2.getName()).isEqualTo(diskName2);
+    assertThat(insertedDisk2.getSizeGb()).isEqualTo(500);
+    assertThat(insertedDisk2.getType()).isEqualTo(Utils.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+
+    // Verify first instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor2.capture());
+    List<Instance> insertedInstanceList = argumentCaptor2.getAllValues();
+    Instance insertedInstance1 = insertedInstanceList.get(0);
+
+    // Verify first instance name and metadata.
+    assertThat(insertedInstance1.getName()).isEqualTo(decoratedInstanceName1);
+    assertThat(insertedInstance1.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList1 = insertedInstance1.getDisks();
+    assertThat(attachedDiskList1.size()).isEqualTo(2);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true, null, null,
+        null, null, "PERSISTENT", diskUrl1);
+
+    // Verify second instance insertion call was made.
+    Instance insertedInstance2 = insertedInstanceList.get(1);
+
+    // Verify second instance name and metadata.
+    assertThat(insertedInstance2.getName()).isEqualTo(decoratedInstanceName2);
+    assertThat(insertedInstance2.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList2 = insertedInstance2.getDisks();
+    assertThat(attachedDiskList2.size()).isEqualTo(2);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true, null, null,
+        null, null, "PERSISTENT", diskUrl2);
+
+    // Verify disk deletion call was made (of disk two).
+    ArgumentCaptor<String> argumentCaptor3 = ArgumentCaptor.forClass(String.class);
+    verify(computeDisks).delete(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor3.capture());
+    String deletedDiskName = argumentCaptor3.getValue();
+    assertThat(deletedDiskName).isEqualTo(diskName2);
+
+    // Verify first instance deletion call was made.
+    ArgumentCaptor<Instance> deleteArgumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), deleteArgumentCaptor.capture());
+    List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
+    Instance deletedInstance1 = deletedInstanceList.get(0);
+
+    // Verify first instance deletion call instance name.
+    assertThat(deletedInstance1.getName()).isEqualTo(decoratedInstanceName1);
+
+    // Verify second instance deletion call was made.
+    Instance deletedInstance2 = deletedInstanceList.get(1);
+
+    // Verify second instance deletion call instance name.
+    assertThat(deletedInstance2.getName()).isEqualTo(decoratedInstanceName2);
+
+  }
+
+  @Test
+  public void testFind() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    String diskName1 = UUID.randomUUID().toString();
+    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    attachedDisk1.setBoot(true);
+    attachedDisk1.setSource(diskUrl1);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
+    instance1.setDisks(diskList1);
+
+    // Configure network interface.
+    NetworkInterface networkInterface1 = new NetworkInterface();
+    networkInterface1.setNetworkIP("1.2.3.4");
+    List<NetworkInterface> networkInterfaceList1 = Lists.newArrayList(networkInterface1);
+    instance1.setNetworkInterfaces(networkInterfaceList1);
+
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for second successful instance retrieval.
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    Instance instance2 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk2 = new AttachedDisk();
+    String diskName2 = UUID.randomUUID().toString();
+    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    attachedDisk2.setBoot(true);
+    attachedDisk2.setSource(diskUrl2);
+    List<AttachedDisk> diskList2 = Lists.newArrayList(attachedDisk2);
+    instance2.setDisks(diskList2);
+
+    // Configure network interface.
+    NetworkInterface networkInterface2 = new NetworkInterface();
+    networkInterface2.setNetworkIP("5.6.7.8");
+    List<NetworkInterface> networkInterfaceList2 = Lists.newArrayList(networkInterface2);
+    instance2.setNetworkInterfaces(networkInterfaceList2);
+
+    when(computeInstancesGet2.execute()).thenReturn(instance2);
+
+    // Configure stub for first successful boot disk retrieval.
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Get computeDisksGet1 = mockComputeDisksGet(computeDisks, diskName1);
+    Disk bootDisk1 = new Disk();
+    bootDisk1.setSourceImage(diskUrl1);
+    when(computeDisksGet1.execute()).thenReturn(bootDisk1);
+
+    // Configure stub for second successful boot disk retrieval.
+    Compute.Disks.Get computeDisksGet2 = mockComputeDisksGet(computeDisks, diskName2);
+    Disk bootDisk2 = new Disk();
+    bootDisk2.setSourceImage(diskUrl2);
+    when(computeDisksGet2.execute()).thenReturn(bootDisk2);
+
+    Collection<GoogleComputeInstance> foundInstances = computeProvider.find(template, instanceIds);
+
+    // Verify that both of the two requested instances were returned.
+    assertThat(foundInstances.size()).isEqualTo(2);
+
+    // Verify the properties of the first returned instance.
+    Iterator<GoogleComputeInstance> instanceIterator = foundInstances.iterator();
+    GoogleComputeInstance foundInstance1 = instanceIterator.next();
+    assertThat(foundInstance1.getId()).isEqualTo(instanceName1);
+    assertThat(foundInstance1.getBootDisk().getSourceImage()).isEqualTo(diskUrl1);
+    assertThat(foundInstance1.getPrivateIpAddress().getHostAddress()).isEqualTo("1.2.3.4");
+
+    // Verify the properties of the second returned instance.
+    GoogleComputeInstance foundInstance2 = instanceIterator.next();
+    assertThat(foundInstance2.getId()).isEqualTo(instanceName2);
+    assertThat(foundInstance2.getBootDisk().getSourceImage()).isEqualTo(diskUrl2);
+    assertThat(foundInstance2.getPrivateIpAddress().getHostAddress()).isEqualTo("5.6.7.8");
+  }
+
+  @Test
+  public void testFind_PartialSuccess() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+
+    // Configure boot disk.
+    AttachedDisk attachedDisk1 = new AttachedDisk();
+    String diskName = UUID.randomUUID().toString();
+    String diskUrl = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    attachedDisk1.setBoot(true);
+    attachedDisk1.setSource(diskUrl);
+    List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
+    instance1.setDisks(diskList1);
+
+    // Configure network interface.
+    NetworkInterface networkInterface = new NetworkInterface();
+    networkInterface.setNetworkIP("1.2.3.4");
+    List<NetworkInterface> networkInterfaceList = Lists.newArrayList(networkInterface);
+    instance1.setNetworkInterfaces(networkInterfaceList);
+
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for successful boot disk retrieval.
+    Compute.Disks computeDisks = mockComputeToDisks();
+    Compute.Disks.Get computeDisksGet = mockComputeDisksGet(computeDisks, diskName);
+    Disk bootDisk = new Disk();
+    bootDisk.setSourceImage(diskUrl);
+    when(computeDisksGet.execute()).thenReturn(bootDisk);
+
+    Collection<GoogleComputeInstance> foundInstances = computeProvider.find(template, instanceIds);
+
+    // Verify that exactly one of the two requested instances was returned.
+    assertThat(foundInstances.size()).isEqualTo(1);
+
+    // Verify the properties of the returned instance.
+    GoogleComputeInstance foundInstance = foundInstances.iterator().next();
+    assertThat(foundInstance.getId()).isEqualTo(instanceName1);
+    assertThat(foundInstance.getBootDisk().getSourceImage()).isEqualTo(diskUrl);
+    assertThat(foundInstance.getPrivateIpAddress().getHostAddress()).isEqualTo("1.2.3.4");
+  }
+
+  @Test
+  public void testGetInstanceState() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+    instance1.setStatus("PROVISIONING");
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for second successful instance retrieval.
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    Instance instance2 = new Instance();
+    instance2.setStatus("RUNNING");
+    when(computeInstancesGet2.execute()).thenReturn(instance2);
+
+    Map<String, InstanceState> instanceStates = computeProvider.getInstanceState(template, instanceIds);
+
+    // Verify that the state of both instances was returned.
+    assertThat(instanceStates.size()).isEqualTo(2);
+
+    // Verify the state of the first instance.
+    InstanceState instanceState1 = instanceStates.get(instanceName1);
+    assertThat(instanceState1.getInstanceStatus()).isEqualTo(InstanceStatus.PENDING);
+
+    // Verify the state of the second instance.
+    InstanceState instanceState2 = instanceStates.get(instanceName2);
+    assertThat(instanceState2.getInstanceStatus()).isEqualTo(InstanceStatus.RUNNING);
+  }
+
+  @Test
+  public void testGetInstanceState_PartialSuccess() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+    instance1.setStatus("STAGING");
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    Map<String, InstanceState> instanceStates = computeProvider.getInstanceState(template, instanceIds);
+
+    // Verify that the state of both instances was returned.
+    assertThat(instanceStates.size()).isEqualTo(2);
+
+    // Verify the state of the first instance.
+    InstanceState instanceState1 = instanceStates.get(instanceName1);
+    assertThat(instanceState1.getInstanceStatus()).isEqualTo(InstanceStatus.PENDING);
+
+    // Verify the state of the second instance.
+    InstanceState instanceState2 = instanceStates.get(instanceName2);
+    assertThat(instanceState2.getInstanceStatus()).isEqualTo(InstanceStatus.UNKNOWN);
+  }
+
+  @Test
+  public void testDelete() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for successful instance deletion operation.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Delete computeInstancesDelete1 =
+            mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
+    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation1.getName())).thenReturn(computeZoneOperationsGet1);
+    when(computeZoneOperationsGet1.execute()).then(
+        new OperationAnswer(vmDeletionOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for successful instance deletion operation.
+    Compute.Instances.Delete computeInstancesDelete2 =
+            mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
+    Operation vmDeletionOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    when(computeInstancesDelete2.execute()).thenReturn(vmDeletionOperation2);
+    Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation2.getName())).thenReturn(computeZoneOperationsGet2);
+    when(computeZoneOperationsGet2.execute()).then(
+        new OperationAnswer(vmDeletionOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    computeProvider.delete(template, instanceIds);
+
+    // Verify first instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
+
+    // Verify second instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName2));
+  }
+
+  @Test
+  public void testDelete_PartialSuccess() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for successful instance deletion operation.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Delete computeInstancesDelete1 =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
+    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation1.getName())).thenReturn(computeZoneOperationsGet1);
+    when(computeZoneOperationsGet1.execute()).then(
+        new OperationAnswer(vmDeletionOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    // Configure stub for unsuccessful instance deletion operation.
+    Compute.Instances.Delete computeInstancesDelete2 =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesDelete2.execute()).thenThrow(exception);
+
+    computeProvider.delete(template, instanceIds);
+
+    // Verify first instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
+
+    // Verify second instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName2));
   }
 
   private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {

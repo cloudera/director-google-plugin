@@ -16,12 +16,12 @@
 
 package com.cloudera.director.google.compute;
 
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
@@ -246,18 +246,18 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String bootDiskSizeGBString = configuration.getConfigurationValue(BOOTDISKSIZEGB, localizationContext);
+    String bootDiskSizeGBString = configuration.getConfigurationValue(BOOT_DISK_SIZE_GB, localizationContext);
 
     if (bootDiskSizeGBString != null) {
       try {
         int bootDiskSizeGB = Integer.parseInt(bootDiskSizeGBString);
 
         if (bootDiskSizeGB < MIN_BOOT_DISK_SIZE_GB) {
-          addError(accumulator, BOOTDISKSIZEGB, localizationContext, null, INVALID_BOOT_DISK_SIZE_MSG,
+          addError(accumulator, BOOT_DISK_SIZE_GB, localizationContext, null, INVALID_BOOT_DISK_SIZE_MSG,
               MIN_BOOT_DISK_SIZE_GB, bootDiskSizeGB);
         }
       } catch (NumberFormatException e) {
-        addError(accumulator, BOOTDISKSIZEGB, localizationContext, null, INVALID_BOOT_DISK_SIZE_FORMAT_MSG,
+        addError(accumulator, BOOT_DISK_SIZE_GB, localizationContext, null, INVALID_BOOT_DISK_SIZE_FORMAT_MSG,
             bootDiskSizeGBString);
       }
     }
@@ -274,27 +274,25 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String dataDiskCountString = configuration.getConfigurationValue(DATADISKCOUNT, localizationContext);
+    String dataDiskCountString = configuration.getConfigurationValue(DATA_DISK_COUNT, localizationContext);
 
     if (dataDiskCountString != null) {
       try {
         int dataDiskCount = Integer.parseInt(dataDiskCountString);
-        String dataDiskType = configuration.getConfigurationValue(
-            GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
-            localizationContext);
+        String dataDiskType = configuration.getConfigurationValue(DATA_DISK_TYPE, localizationContext);
         boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
 
         if (dataDisksAreLocalSSD) {
           if (dataDiskCount < MIN_LOCAL_SSD_COUNT || dataDiskCount > MAX_LOCAL_SSD_COUNT) {
-            addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
+            addError(accumulator, DATA_DISK_COUNT, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG,
                 MIN_LOCAL_SSD_COUNT, MAX_LOCAL_SSD_COUNT, dataDiskCount);
           }
         } else if (dataDiskCount < 0) {
-          addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG,
+          addError(accumulator, DATA_DISK_COUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_NEGATIVE_MSG,
               dataDiskCount);
         }
       } catch (NumberFormatException e) {
-        addError(accumulator, DATADISKCOUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_FORMAT_MSG,
+        addError(accumulator, DATA_DISK_COUNT, localizationContext, null, INVALID_DATA_DISK_COUNT_FORMAT_MSG,
             dataDiskCountString);
       }
     }
@@ -311,10 +309,10 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String dataDiskType = configuration.getConfigurationValue(DATADISKTYPE, localizationContext);
+    String dataDiskType = configuration.getConfigurationValue(DATA_DISK_TYPE, localizationContext);
 
     if (dataDiskType != null && !DATA_DISK_TYPES.contains(dataDiskType)) {
-      addError(accumulator, DATADISKTYPE, localizationContext, null, INVALID_DATA_DISK_TYPE_MSG,
+      addError(accumulator, DATA_DISK_TYPE, localizationContext, null, INVALID_DATA_DISK_TYPE_MSG,
           new Object[]{dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES)});
     }
   }
@@ -330,27 +328,25 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String dataDiskSizeGBString = configuration.getConfigurationValue(DATADISKSIZEGB, localizationContext);
+    String dataDiskSizeGBString = configuration.getConfigurationValue(DATA_DISK_SIZE_GB, localizationContext);
 
     if (dataDiskSizeGBString != null) {
       try {
         int dataDiskSizeGB = Integer.parseInt(dataDiskSizeGBString);
-        String dataDiskType = configuration.getConfigurationValue(
-            GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
-            localizationContext);
+        String dataDiskType = configuration.getConfigurationValue(DATA_DISK_TYPE, localizationContext);
         boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
 
         if (dataDisksAreLocalSSD) {
           if (dataDiskSizeGB != EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB) {
-            addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG,
+            addError(accumulator, DATA_DISK_SIZE_GB, localizationContext, null, INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG,
                 EXACT_LOCAL_SSD_DATA_DISK_SIZE_GB, dataDiskSizeGB);
           }
         } else if (dataDiskSizeGB < MIN_DATA_DISK_SIZE_GB) {
-          addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_DATA_DISK_SIZE_MSG,
+          addError(accumulator, DATA_DISK_SIZE_GB, localizationContext, null, INVALID_DATA_DISK_SIZE_MSG,
               MIN_DATA_DISK_SIZE_GB, dataDiskSizeGB);
         }
       } catch (NumberFormatException e) {
-        addError(accumulator, DATADISKSIZEGB, localizationContext, null, INVALID_DATA_DISK_SIZE_FORMAT_MSG,
+        addError(accumulator, DATA_DISK_SIZE_GB, localizationContext, null, INVALID_DATA_DISK_SIZE_FORMAT_MSG,
             dataDiskSizeGBString);
       }
     }
@@ -413,7 +409,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String networkName = configuration.getConfigurationValue(NETWORKNAME, localizationContext);
+    String networkName = configuration.getConfigurationValue(NETWORK_NAME, localizationContext);
 
     if (networkName != null) {
       LOG.info(">> Querying network '{}'", networkName);

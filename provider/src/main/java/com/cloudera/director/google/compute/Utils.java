@@ -21,9 +21,11 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.Date;
 
-public class Utils {
+public final class Utils {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER_ISO8601 = ISODateTimeFormat.dateTime();
+
+  private Utils() {}
 
   static String getLocalName(String fullResourceUrl) {
     if (fullResourceUrl == null) {

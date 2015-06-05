@@ -61,8 +61,12 @@ import org.junit.runners.Parameterized;
 /**
  * Performs 'live' tests of the full cycle of {@link GoogleComputeProvider}: allocate, getInstanceState, find, delete.
  *
- * These four system properties are required: GCP_PROJECT_ID, JSON_KEY_PATH, SSH_PUBLIC_KEY_PATH, SSH_USER_NAME.
- * This system property is optional: HALT_AFTER_ALLOCATION.
+ * These three system properties are required: GCP_PROJECT_ID, SSH_PUBLIC_KEY_PATH, SSH_USER_NAME.
+ * These two system properties are optional: JSON_KEY_PATH, HALT_AFTER_ALLOCATION.
+ *
+ * If JSON_KEY_PATH is not specified, Application Default Credentials will be used.
+ *
+ * @see <a href="https://developers.google.com/identity/protocols/application-default-credentials"</a>
  */
 @RunWith(Parameterized.class)
 public class GoogleComputeProviderFullCycleTest {
@@ -83,7 +87,7 @@ public class GoogleComputeProviderFullCycleTest {
   @BeforeClass
   public static void beforeClass() throws IOException {
     PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    JSON_KEY = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
     SSH_PUBLIC_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
         Charset.defaultCharset());
     USER_NAME = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");

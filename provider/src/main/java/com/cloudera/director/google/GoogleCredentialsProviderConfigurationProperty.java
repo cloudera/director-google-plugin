@@ -38,6 +38,7 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
       .name("Client ID JSON Key")
       .defaultDescription(
           "Google Cloud service account JSON key.<br />" +
+          "Leave unset to get Google credentials from the environment.<br />" +
           "<a target='_blank' href='https://cloud.google.com/compute/docs/authentication#general'>More Information</a>")
       .widget(ConfigurationProperty.Widget.FILE)
       .sensitive(true)

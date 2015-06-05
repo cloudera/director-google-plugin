@@ -46,6 +46,8 @@ import com.cloudera.director.google.shaded.com.google.api.services.compute.model
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.NetworkInterface;
 import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Operation;
 import com.cloudera.director.spi.v1.model.Configured;
+import com.cloudera.director.spi.v1.model.InstanceState;
+import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
@@ -953,6 +955,100 @@ public class GoogleComputeProviderTest {
     assertThat(foundInstance.getId()).isEqualTo(instanceName1);
     assertThat(foundInstance.getBootDisk().getSourceImage()).isEqualTo(diskUrl);
     assertThat(foundInstance.getPrivateIpAddress().getHostAddress()).isEqualTo("1.2.3.4");
+  }
+
+  @Test
+  public void testGetInstanceState() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+    instance1.setStatus("PROVISIONING");
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for second successful instance retrieval.
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    Instance instance2 = new Instance();
+    instance2.setStatus("RUNNING");
+    when(computeInstancesGet2.execute()).thenReturn(instance2);
+
+    Map<String, InstanceState> instanceStates = computeProvider.getInstanceState(template, instanceIds);
+
+    // Verify that the state of both instances was returned.
+    assertThat(instanceStates.size()).isEqualTo(2);
+
+    // Verify the state of the first instance.
+    InstanceState instanceState1 = instanceStates.get(instanceName1);
+    assertThat(instanceState1.getInstanceStatus()).isEqualTo(InstanceStatus.PENDING);
+
+    // Verify the state of the second instance.
+    InstanceState instanceState2 = instanceStates.get(instanceName2);
+    assertThat(instanceState2.getInstanceStatus()).isEqualTo(InstanceStatus.RUNNING);
+  }
+
+  @Test
+  public void testGetInstanceState_PartialSuccess() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName1 = UUID.randomUUID().toString();
+    String decoratedInstanceName1 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName1;
+    String instanceName2 = UUID.randomUUID().toString();
+    String decoratedInstanceName2 =
+        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
+        "-" + instanceName2;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+
+    // Configure stub for first successful instance retrieval.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
+    Instance instance1 = new Instance();
+    instance1.setStatus("STAGING");
+    when(computeInstancesGet1.execute()).thenReturn(instance1);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeInstancesGet2.execute()).thenThrow(exception);
+
+    Map<String, InstanceState> instanceStates = computeProvider.getInstanceState(template, instanceIds);
+
+    // Verify that the state of both instances was returned.
+    assertThat(instanceStates.size()).isEqualTo(2);
+
+    // Verify the state of the first instance.
+    InstanceState instanceState1 = instanceStates.get(instanceName1);
+    assertThat(instanceState1.getInstanceStatus()).isEqualTo(InstanceStatus.PENDING);
+
+    // Verify the state of the second instance.
+    InstanceState instanceState2 = instanceStates.get(instanceName2);
+    assertThat(instanceState2.getInstanceStatus()).isEqualTo(InstanceStatus.UNKNOWN);
   }
 
   private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {

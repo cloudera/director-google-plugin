@@ -25,7 +25,7 @@ import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilde
  */
 public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationPropertyToken {
 
-  PROJECTID(new SimpleConfigurationPropertyBuilder()
+  PROJECT_ID(new SimpleConfigurationPropertyBuilder()
       .configKey("projectId")
       .name("Project ID")
       .defaultDescription("Google Cloud Project ID.")
@@ -33,7 +33,7 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
       .required(true)
       .build()),
 
-  JSONKEY(new SimpleConfigurationPropertyBuilder()
+  JSON_KEY(new SimpleConfigurationPropertyBuilder()
       .configKey("jsonKey")
       .name("Client ID JSON Key")
       .defaultDescription(

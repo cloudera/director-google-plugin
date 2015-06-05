@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google;
 
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSON_KEY;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECT_ID;
 import static com.cloudera.director.google.GoogleLauncher.DEFAULT_PLUGIN_LOCALIZATION_CONTEXT;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,13 +54,14 @@ import java.util.Map;
  */
 public class GoogleCloudProviderTest {
 
-  private static String PROJECT_ID;
-  private static String JSON_KEY;
+  private static String PROJECT_ID_VALUE;
+  private static String JSON_KEY_VALUE;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    PROJECT_ID_VALUE = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY_VALUE = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"),
+        Charset.defaultCharset());
   }
 
   @Rule
@@ -76,8 +77,8 @@ public class GoogleCloudProviderTest {
     List<ConfigurationProperty> credentialsConfigurationProperties =
         credentialsProviderMetadata.getCredentialsConfigurationProperties();
     assertEquals(2, credentialsConfigurationProperties.size());
-    assertTrue(credentialsConfigurationProperties.contains(PROJECTID.unwrap()));
-    assertTrue(credentialsConfigurationProperties.contains(JSONKEY.unwrap()));
+    assertTrue(credentialsConfigurationProperties.contains(PROJECT_ID.unwrap()));
+    assertTrue(credentialsConfigurationProperties.contains(JSON_KEY.unwrap()));
 
     Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
     GoogleCredentialsProvider googleCredentialsProvider = new GoogleCredentialsProvider(applicationPropertiesConfig);
@@ -86,8 +87,8 @@ public class GoogleCloudProviderTest {
     // In order to create a cloud provider we need to configure credentials
     // (we expect them to be eagerly validated on cloud provider creation).
     Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECTID.unwrap().getConfigKey(), PROJECT_ID);
-    environmentConfig.put(JSONKEY.unwrap().getConfigKey(), JSON_KEY);
+    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), PROJECT_ID_VALUE);
+    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), JSON_KEY_VALUE);
 
     LocalizationContext cloudLocalizationContext =
             GoogleCloudProvider.METADATA.getLocalizationContext(DEFAULT_PLUGIN_LOCALIZATION_CONTEXT);

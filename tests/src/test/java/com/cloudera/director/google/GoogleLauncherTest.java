@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google;
 
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSONKEY;
-import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECTID;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.JSON_KEY;
+import static com.cloudera.director.google.GoogleCredentialsProviderConfigurationProperty.PROJECT_ID;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -51,13 +51,14 @@ import java.util.Map;
  */
 public class GoogleLauncherTest {
 
-  private static String PROJECT_ID;
-  private static String JSON_KEY;
+  private static String PROJECT_ID_VALUE;
+  private static String JSON_KEY_VALUE;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"), Charset.defaultCharset());
+    PROJECT_ID_VALUE = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    JSON_KEY_VALUE = TestUtils.readFile(TestUtils.readRequiredSystemProperty("JSON_KEY_PATH"),
+        Charset.defaultCharset());
   }
 
   @Rule
@@ -80,14 +81,14 @@ public class GoogleLauncherTest {
     List<ConfigurationProperty> credentialsConfigurationProperties =
         metadata.getCredentialsProviderMetadata().getCredentialsConfigurationProperties();
     assertEquals(2, credentialsConfigurationProperties.size());
-    assertTrue(credentialsConfigurationProperties.contains(PROJECTID.unwrap()));
-    assertTrue(credentialsConfigurationProperties.contains(JSONKEY.unwrap()));
+    assertTrue(credentialsConfigurationProperties.contains(PROJECT_ID.unwrap()));
+    assertTrue(credentialsConfigurationProperties.contains(JSON_KEY.unwrap()));
 
     // In order to create a cloud provider we need to configure credentials
     // (we expect them to be eagerly validated on cloud provider creation).
     Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECTID.unwrap().getConfigKey(), PROJECT_ID);
-    environmentConfig.put(JSONKEY.unwrap().getConfigKey(), JSON_KEY);
+    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), PROJECT_ID_VALUE);
+    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), JSON_KEY_VALUE);
 
     CloudProvider cloudProvider = launcher.createCloudProvider(
         GoogleCloudProvider.ID,

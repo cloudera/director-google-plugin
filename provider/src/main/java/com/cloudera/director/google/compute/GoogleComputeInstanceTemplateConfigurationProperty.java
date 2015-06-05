@@ -53,7 +53,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(true)
       .build()),
 
-  NETWORKNAME(new SimpleConfigurationPropertyBuilder()
+  NETWORK_NAME(new SimpleConfigurationPropertyBuilder()
       .configKey("networkName")
       .name("Network Name")
       .defaultDescription(
@@ -75,7 +75,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(true)
       .build()),
 
-  BOOTDISKSIZEGB(new SimpleConfigurationPropertyBuilder()
+  BOOT_DISK_SIZE_GB(new SimpleConfigurationPropertyBuilder()
       .configKey("bootDiskSizeGb")
       .name("Boot Disk Size (GB)")
       .defaultDescription("The size of the boot disk in GB.")
@@ -85,7 +85,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(false)
       .build()),
 
-  DATADISKCOUNT(new SimpleConfigurationPropertyBuilder()
+  DATA_DISK_COUNT(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskCount")
       .name("Data Disk Count")
       .defaultDescription("The number of data disks to create.")
@@ -95,7 +95,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(false)
       .build()),
 
-  DATADISKTYPE(new SimpleConfigurationPropertyBuilder()
+  DATA_DISK_TYPE(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskType")
       .name("Data Disk Type")
       .addValidValues("LocalSSD", "SSD", "Standard")
@@ -108,7 +108,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .build()),
 
   // This property is ignored when dataDiskType == 'LocalSSD'.
-  DATADISKSIZEGB(new SimpleConfigurationPropertyBuilder()
+  DATA_DISK_SIZE_GB(new SimpleConfigurationPropertyBuilder()
       .configKey("dataDiskSizeGb")
       .name("Data Disk Size")
       .defaultDescription(
@@ -121,7 +121,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .build()),
 
   // This property is ignored when dataDiskType != 'LocalSSD'.
-  LOCALSSDINTERFACETYPE(new SimpleConfigurationPropertyBuilder()
+  LOCAL_SSD_INTERFACE_TYPE(new SimpleConfigurationPropertyBuilder()
       .configKey("localSSDInterfaceType")
       .name("Local SSD Interface Type")
       .addValidValues("SCSI", "NVME")

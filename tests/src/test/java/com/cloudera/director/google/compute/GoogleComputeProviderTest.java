@@ -16,11 +16,11 @@
 
 package com.cloudera.director.google.compute;
 
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
@@ -92,7 +92,7 @@ public class GoogleComputeProviderTest {
   private static final String IMAGE_PROJECT_ID = "rhel-cloud";
   private static final String IMAGE_NAME = "rhel-6-v20150526";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
-  private static final String NETWORK_NAME = "some-network";
+  private static final String NETWORK_NAME_VALUE = "some-network";
 
   private GoogleComputeProvider computeProvider;
   private GoogleCredentials credentials;
@@ -218,7 +218,7 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -275,7 +275,7 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -415,7 +415,7 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
 
     // Create the resource template.
@@ -510,11 +510,11 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
-    templateConfig.put(DATADISKCOUNT.unwrap().getConfigKey(), "1");
-    templateConfig.put(DATADISKTYPE.unwrap().getConfigKey(), "Standard");
-    templateConfig.put(DATADISKSIZEGB.unwrap().getConfigKey(), "250");
+    templateConfig.put(DATA_DISK_COUNT.unwrap().getConfigKey(), "1");
+    templateConfig.put(DATA_DISK_TYPE.unwrap().getConfigKey(), "Standard");
+    templateConfig.put(DATA_DISK_SIZE_GB.unwrap().getConfigKey(), "250");
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
@@ -591,11 +591,11 @@ public class GoogleComputeProviderTest {
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
-    templateConfig.put(NETWORKNAME.unwrap().getConfigKey(), NETWORK_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
-    templateConfig.put(DATADISKCOUNT.unwrap().getConfigKey(), "1");
-    templateConfig.put(DATADISKTYPE.unwrap().getConfigKey(), "SSD");
-    templateConfig.put(DATADISKSIZEGB.unwrap().getConfigKey(), "500");
+    templateConfig.put(DATA_DISK_COUNT.unwrap().getConfigKey(), "1");
+    templateConfig.put(DATA_DISK_TYPE.unwrap().getConfigKey(), "SSD");
+    templateConfig.put(DATA_DISK_SIZE_GB.unwrap().getConfigKey(), "500");
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",

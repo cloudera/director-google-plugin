@@ -16,6 +16,15 @@
 
 package com.cloudera.director.google.compute;
 
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 
@@ -169,14 +178,11 @@ public class GoogleComputeProvider
     List<Operation> vmCreationOperations = new ArrayList<Operation>();
 
     for (String instanceId : instanceIds) {
-      String zone = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
+      String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
 
       // Resolve the source image.
-      String imageAlias = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.IMAGE,
-          templateLocalizationContext);
+      String imageAlias = template.getConfigurationValue(IMAGE, templateLocalizationContext);
       String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
 
       // Compose attached disks.
@@ -184,7 +190,7 @@ public class GoogleComputeProvider
 
       // Compose the boot disk.
       long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.BOOTDISKSIZEGB,
+          BOOT_DISK_SIZE_GB,
           templateLocalizationContext));
       AttachedDiskInitializeParams bootDiskInitializeParams = new AttachedDiskInitializeParams();
       bootDiskInitializeParams.setSourceImage(sourceImageUrl);
@@ -197,18 +203,18 @@ public class GoogleComputeProvider
 
       // Attach data disks.
       int dataDiskCount = Integer.parseInt(template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKCOUNT,
+          DATA_DISK_COUNT,
           templateLocalizationContext));
       String dataDiskType = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKTYPE,
+          DATA_DISK_TYPE,
           templateLocalizationContext);
       String dataDiskTypeUrl = Utils.buildDiskTypeUrl(projectId, zone, dataDiskType);
       boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
       long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.DATADISKSIZEGB,
+          DATA_DISK_SIZE_GB,
           templateLocalizationContext));
       String localSSDInterfaceType = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.LOCALSSDINTERFACETYPE,
+          LOCAL_SSD_INTERFACE_TYPE,
           templateLocalizationContext);
 
       // Use this list to collect the operations that must reach a DONE state prior to provisioning the instance.
@@ -261,9 +267,7 @@ public class GoogleComputeProvider
       }
 
       // Compose the network url.
-      String networkName = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.NETWORKNAME,
-          templateLocalizationContext);
+      String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
       String networkUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
           "/global/networks/" + networkName;
 
@@ -278,9 +282,7 @@ public class GoogleComputeProvider
       networkInterface.setAccessConfigs(Arrays.asList(new AccessConfig[]{accessConfig}));
 
       // Compose the machine type url.
-      String machineTypeName = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.TYPE,
-          templateLocalizationContext);
+      String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
       String machineTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
           "/zones/" + zone +
           "/machineTypes/" + machineTypeName;
@@ -288,10 +290,8 @@ public class GoogleComputeProvider
       // Compose the instance metadata containing the SSH public key, user name and tags.
       List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
 
-      String sshUserName = template.getConfigurationValue(SSH_USERNAME,
-          templateLocalizationContext);
-      String sshPublicKey = template.getConfigurationValue(SSH_OPENSSH_PUBLIC_KEY,
-          templateLocalizationContext);
+      String sshUserName = template.getConfigurationValue(SSH_USERNAME, templateLocalizationContext);
+      String sshPublicKey = template.getConfigurationValue(SSH_OPENSSH_PUBLIC_KEY, templateLocalizationContext);
 
       if (sshUserName != null && !sshUserName.isEmpty() && sshPublicKey != null && !sshPublicKey.isEmpty()) {
         String sshKeysValue = sshUserName + ":" + sshPublicKey;
@@ -471,8 +471,7 @@ public class GoogleComputeProvider
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
-      String zone = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
+      String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
@@ -541,8 +540,7 @@ public class GoogleComputeProvider
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
 
-      String zone = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
+      String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
@@ -583,8 +581,7 @@ public class GoogleComputeProvider
     List<Operation> vmDeletionOperations = new ArrayList<Operation>();
 
     for (String currentId : instanceIds) {
-      String zone = template.getConfigurationValue(
-          GoogleComputeInstanceTemplateConfigurationProperty.ZONE, templateLocalizationContext);
+      String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {

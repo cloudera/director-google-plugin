@@ -16,42 +16,25 @@
 
 package com.cloudera.director.google.compute;
 
+import com.google.api.client.http.GenericUrl;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.Date;
+import java.util.List;
 
 public final class Utils {
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER_ISO8601 = ISODateTimeFormat.dateTime();
 
+  @VisibleForTesting
+  static final String MALFORMED_RESOURCE_URL_MSG = "Malformed resource url '%s'.";
+
   private Utils() {}
-
-  static String getLocalName(String fullResourceUrl) {
-    if (fullResourceUrl == null) {
-      return null;
-    }
-
-    String[] urlParts = fullResourceUrl.split("/");
-
-    return urlParts[urlParts.length - 1];
-  }
-
-  static String getProject(String fullResourceUrl) {
-    if (fullResourceUrl == null) {
-      return null;
-    }
-
-    String[] urlParts = fullResourceUrl.split("/");
-
-    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526
-    if (urlParts.length < 10) {
-      throw new IllegalArgumentException("Malformed resource url '" + fullResourceUrl + "'.");
-    } else {
-      return urlParts[urlParts.length - 4];
-    }
-  }
 
   static Date getDateFromTimestamp(String timestamp) {
     if (timestamp != null && !timestamp.isEmpty()) {
@@ -61,21 +44,107 @@ public final class Utils {
     return null;
   }
 
+  static String getLocalName(String fullResourceUrl) {
+    if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
+      return null;
+    }
+
+    GenericUrl url = new GenericUrl(fullResourceUrl);
+
+    return Iterables.getLast(url.getPathParts());
+  }
+
+  static String getProject(String fullResourceUrl) {
+    if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
+      return null;
+    }
+
+    GenericUrl url = new GenericUrl(fullResourceUrl);
+    String[] urlParts = Iterables.toArray(url.getPathParts(), String.class);
+
+    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526
+    // The path parts begin after the host and include a leading "" path part to force the leading slash.
+    if (urlParts.length < 8) {
+      throw new IllegalArgumentException(String.format(MALFORMED_RESOURCE_URL_MSG, fullResourceUrl));
+    } else {
+      return urlParts[urlParts.length - 4];
+    }
+  }
+
   static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
-    String diskTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/diskTypes/";
+    String diskTypePath;
 
     if (dataDiskType.equals("LocalSSD")) {
-      diskTypeUrl += "local-ssd";
+      diskTypePath = "local-ssd";
     } else if (dataDiskType.equals("SSD")) {
-      diskTypeUrl += "pd-ssd";
+      diskTypePath = "pd-ssd";
     } else {
       // The value will already have been checked by the validator.
       // Assume 'Standard'.
-      diskTypeUrl += "pd-standard";
+      diskTypePath = "pd-standard";
     }
 
-    return diskTypeUrl;
+    return buildZonalUrl(projectId, zone, "diskTypes", diskTypePath);
+  }
+
+  static String buildDiskUrl(String projectId, String zone, String diskName) {
+    return buildZonalUrl(projectId, zone, "disks", diskName);
+  }
+
+  static String buildMachineTypeUrl(String projectId, String zone, String machineType) {
+    return buildZonalUrl(projectId, zone, "machineTypes", machineType);
+  }
+
+  static String buildNetworkUrl(String projectId, String networkName) {
+    return buildGlobalUrl(projectId, "networks", networkName);
+  }
+
+  public static String buildZonalUrl(String projectId, String zone, String... resourcePathParts) {
+    List<String> pathParts = Lists.newArrayList("zones", zone);
+
+    if (resourcePathParts != null) {
+      pathParts.addAll(Lists.newArrayList(resourcePathParts));
+    }
+
+    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+  }
+
+  public static String buildRegionalUrl(String projectId, String region, String... resourcePathParts) {
+    List<String> pathParts = Lists.newArrayList("regions", region);
+
+    if (resourcePathParts != null) {
+      pathParts.addAll(Lists.newArrayList(resourcePathParts));
+    }
+
+    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+  }
+
+  public static String buildGlobalUrl(String projectId, String... resourcePathParts) {
+    List<String> pathParts = Lists.newArrayList("global");
+
+    if (resourcePathParts != null) {
+      pathParts.addAll(Lists.newArrayList(resourcePathParts));
+    }
+
+    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+  }
+
+  static String buildGoogleApisUrl(String projectId, String... resourcePathParts) {
+    GenericUrl genericUrl = new GenericUrl();
+    genericUrl.setScheme("https");
+    genericUrl.setHost("www.googleapis.com");
+
+    List<String> pathParts = Lists.newArrayList("", "compute", "v1");
+    pathParts.add("projects");
+    pathParts.add(projectId);
+
+    if (resourcePathParts != null) {
+      pathParts.addAll(Lists.newArrayList(resourcePathParts));
+    }
+
+    genericUrl.setPathParts(pathParts);
+
+    return genericUrl.build();
   }
 
   public static String buildApplicationNameVersionTag(Config applicationProperties) {

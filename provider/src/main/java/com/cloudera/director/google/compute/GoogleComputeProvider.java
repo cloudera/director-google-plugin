@@ -260,8 +260,7 @@ public class GoogleComputeProvider
             accumulator.addError(null, e.getMessage());
           }
 
-          String persistentDiskUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-              "/zones/" + zone + "/disks/" + persistentDisk.getName();
+          String persistentDiskUrl = Utils.buildDiskUrl(projectId, zone, persistentDisk.getName());
           attachedDisk.setType("PERSISTENT");
           attachedDisk.setSource(persistentDiskUrl);
         }
@@ -272,8 +271,7 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
-      String networkUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-          "/global/networks/" + networkName;
+      String networkUrl = Utils.buildNetworkUrl(projectId, networkName);
 
       // Compose the network interface.
       String accessConfigName = "External NAT";
@@ -287,9 +285,7 @@ public class GoogleComputeProvider
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
-      String machineTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-          "/zones/" + zone +
-          "/machineTypes/" + machineTypeName;
+      String machineTypeUrl = Utils.buildMachineTypeUrl(projectId, zone, machineTypeName);
 
       // Compose the instance metadata containing the SSH public key, user name and tags.
       List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();

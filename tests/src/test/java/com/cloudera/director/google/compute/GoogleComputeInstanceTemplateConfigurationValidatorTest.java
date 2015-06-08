@@ -86,9 +86,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String PROJECT_ID = "some-project";
   private static final String REGION_NAME_1 = "us-central1";
   private static final String REGION_NAME_2 = "europe-west1";
-  private static final String BASE_URL = "https://www.googleapis.com/compute/v1/projects/";
-  private static final String REGION_URL_1 = BASE_URL + PROJECT_ID + "/regions/" + REGION_NAME_1;
-  private static final String REGION_URL_2 = BASE_URL + PROJECT_ID + "/regions/" + REGION_NAME_2;
+  private static final String REGION_URL_1 = Utils.buildRegionalUrl(PROJECT_ID, REGION_NAME_1);
+  private static final String REGION_URL_2 = Utils.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
   private static final String ZONE_NAME = "us-central1-a";
   private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";

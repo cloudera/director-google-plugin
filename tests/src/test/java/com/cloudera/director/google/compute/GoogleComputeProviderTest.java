@@ -529,7 +529,7 @@ public class GoogleComputeProviderTest {
     String diskName =
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName + "-pd-0";
-    String diskUrl = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    String diskUrl = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
     Operation diskCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl, "PENDING");
@@ -615,7 +615,7 @@ public class GoogleComputeProviderTest {
     String diskName1 =
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName1 + "-pd-0";
-    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    String diskUrl1 = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
     Operation diskCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl1, "PENDING");
@@ -632,7 +632,7 @@ public class GoogleComputeProviderTest {
     String diskName2 =
         InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() +
         "-" + instanceName2 + "-pd-0";
-    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    String diskUrl2 = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
     Operation diskCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
     ongoingDiskStub.thenReturn(diskCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -823,7 +823,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk1 = new AttachedDisk();
     String diskName1 = UUID.randomUUID().toString();
-    String diskUrl1 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    String diskUrl1 = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     attachedDisk1.setBoot(true);
     attachedDisk1.setSource(diskUrl1);
     List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
@@ -844,7 +844,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk2 = new AttachedDisk();
     String diskName2 = UUID.randomUUID().toString();
-    String diskUrl2 = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    String diskUrl2 = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
     attachedDisk2.setBoot(true);
     attachedDisk2.setSource(diskUrl2);
     List<AttachedDisk> diskList2 = Lists.newArrayList(attachedDisk2);
@@ -918,7 +918,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk1 = new AttachedDisk();
     String diskName = UUID.randomUUID().toString();
-    String diskUrl = TestUtils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    String diskUrl = Utils.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     attachedDisk1.setBoot(true);
     attachedDisk1.setSource(diskUrl);
     List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
@@ -1159,7 +1159,7 @@ public class GoogleComputeProviderTest {
   private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {
     Operation operation = new Operation();
 
-    operation.setZone(zone);
+    operation.setZone(Utils.buildZonalUrl(PROJECT_ID, zone));
     operation.setName(operationName);
     operation.setTargetLink(targetLinkUrl);
     operation.setStatus(status);

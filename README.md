@@ -8,7 +8,7 @@ Prior to using this plugin, you will need to have a Google Cloud Platform projec
 ## Configure your Google Cloud Platform project
 Note: These instructions assume you have a Google Cloud Platform project with billing enabled.
 
-If you are running Cloudera Director on a Google Compute Engine VM instance within the Google Cloud Platform project that will contain your Cloudera clusters, you can have the plugin automatically retrieve credentials from the environment. You simply need to ensure that the instance was created with the [Compute RW scope](https://cloud.google.com/compute/docs/authentication?hl=en_US) enabled.
+If you are running Cloudera Director on a Google Compute Engine VM instance within the Google Cloud Platform project that will contain your Cloudera clusters, you can have the plugin automatically retrieve credentials from the environment. You simply need to ensure that the instance was created with [Read-write access to Compute Engine methods](https://cloud.google.com/compute/docs/authentication) enabled.
 
 If you are running Cloudera Directory outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
 * Point your browser at your [Google Developers Console](https://console.developers.google.com/).

@@ -10,7 +10,7 @@ Note: These instructions assume you have a Google Cloud Platform project with bi
 
 If you are running Cloudera Director on a Google Compute Engine VM instance within the Google Cloud Platform project that will contain your Cloudera clusters, you can have the plugin automatically retrieve credentials from the environment. You simply need to ensure that the instance was created with [Read-write access to Compute Engine methods](https://cloud.google.com/compute/docs/authentication) enabled.
 
-If you are running Cloudera Directory outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
+If you are running Cloudera Director outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
 * Point your browser at your [Google Developers Console](https://console.developers.google.com/).
 * Navigate to: Projects->{your-project-name}->APIs & auth->APIs
 * Enable the Google Compute Engine API.

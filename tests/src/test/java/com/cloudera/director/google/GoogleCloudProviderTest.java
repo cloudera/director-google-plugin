@@ -25,6 +25,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
+import com.cloudera.director.google.compute.Utils;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
@@ -102,14 +103,13 @@ public class GoogleCloudProviderTest {
 
     // Verify the user agent header string.
     assertEquals(
-        applicationPropertiesConfig.getString("application.name") + "/" +
-        applicationPropertiesConfig.getString("application.version"),
+        Utils.buildApplicationNameVersionTag(applicationPropertiesConfig),
         googleCredentials.getCompute().getApplicationName());
 
     Config googleConfig = TestUtils.buildGoogleConfig();
 
-    GoogleCloudProvider googleProvider = new GoogleCloudProvider(googleCredentials, googleConfig,
-        cloudLocalizationContext);
+    GoogleCloudProvider googleProvider = new GoogleCloudProvider(googleCredentials, applicationPropertiesConfig,
+        googleConfig, cloudLocalizationContext);
     assertNotNull(googleProvider);
     assertSame(googleProviderMetadata, googleProvider.getProviderMetadata());
 

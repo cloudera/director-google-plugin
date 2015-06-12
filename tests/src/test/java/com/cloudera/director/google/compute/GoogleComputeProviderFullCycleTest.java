@@ -39,6 +39,8 @@ import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
+import com.cloudera.director.spi.v1.model.exception.UnrecoverableProviderException;
 import com.cloudera.director.spi.v1.model.util.DefaultLocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
@@ -184,7 +186,18 @@ public class GoogleComputeProviderFullCycleTest {
     // Use the template to provision one resource.
     LOG.info("About to provision an instance...");
     List<String> instanceIds = Arrays.asList(UUID.randomUUID().toString());
-    compute.allocate(template, instanceIds, 1);
+
+    try {
+      compute.allocate(template, instanceIds, 1);
+    } catch (UnrecoverableProviderException e) {
+      PluginExceptionDetails details = e.getDetails();
+
+      if (details != null) {
+        LOG.info("Caught on allocate(): " + details.getConditionsByKey());
+      }
+
+      throw e;
+    }
 
     // Run a find by ID.
     LOG.info("About to lookup an instance...");

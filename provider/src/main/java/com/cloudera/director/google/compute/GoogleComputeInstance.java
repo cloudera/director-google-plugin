@@ -16,6 +16,8 @@
 
 package com.cloudera.director.google.compute;
 
+import com.cloudera.director.google.compute.util.Dates;
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.model.DisplayProperty;
 import com.cloudera.director.spi.v1.model.DisplayPropertyToken;
@@ -68,7 +70,7 @@ public class GoogleComputeInstance
         .build()) {
       @Override
       protected String getPropertyValue(Instance instance, Disk bootDisk) {
-        return Utils.getLocalName(bootDisk.getSourceImage());
+        return Urls.getLocalName(bootDisk.getSourceImage());
       }
     },
 
@@ -96,7 +98,7 @@ public class GoogleComputeInstance
         .build()) {
       @Override
       protected String getPropertyValue(Instance instance, Disk bootDisk) {
-        return Utils.getLocalName(instance.getMachineType());
+        return Urls.getLocalName(instance.getMachineType());
       }
     },
 
@@ -118,7 +120,7 @@ public class GoogleComputeInstance
           Date creationTimestamp = null;
 
           if (creationTimestampStr != null) {
-            creationTimestamp = Utils.getDateFromTimestamp(creationTimestampStr);
+            creationTimestamp = Dates.getDateFromTimestamp(creationTimestampStr);
           }
 
           if (creationTimestamp != null) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute;
+package com.cloudera.director.google.compute.util;
 
 import static junit.framework.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,21 +24,21 @@ import org.junit.Test;
 import java.net.MalformedURLException;
 
 /**
- * Tests {@link Utils}.
+ * Tests {@link Urls}.
  */
-public class UtilsTest {
+public class UrlsTest {
 
   @Test
   public void testGetLocalName() {
     String someUrl = "https://www.googleapis.com/compute/v1/projects/some-project/zones/us-central1-a/disks/director-b54b77f3-913b-4052-8cc3-5fbc19928c9f";
 
-    assertThat(Utils.getLocalName(someUrl)).isEqualTo("director-b54b77f3-913b-4052-8cc3-5fbc19928c9f");
+    assertThat(Urls.getLocalName(someUrl)).isEqualTo("director-b54b77f3-913b-4052-8cc3-5fbc19928c9f");
   }
 
   @Test
   public void testGetLocalName_AlreadyLocal() {
     try {
-      Utils.getLocalName("director-b54b77f3-913b-4052-8cc3-5fbc19928c9f");
+      Urls.getLocalName("director-b54b77f3-913b-4052-8cc3-5fbc19928c9f");
 
       fail("An exception should have been thrown when we attempted to parse a malformed url.");
     } catch (IllegalArgumentException e) {
@@ -48,25 +48,25 @@ public class UtilsTest {
 
   @Test
   public void testGetLocalName_Null() {
-    assertThat(Utils.getLocalName(null)).isEqualTo(null);
+    assertThat(Urls.getLocalName(null)).isEqualTo(null);
   }
 
   @Test
   public void testGetLocalName_EmptyString() {
-    assertThat(Utils.getLocalName("")).isEqualTo(null);
+    assertThat(Urls.getLocalName("")).isEqualTo(null);
   }
 
   @Test
   public void testGetProject() {
     String someUrl = "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526";
 
-    assertThat(Utils.getProject(someUrl)).isEqualTo("rhel-cloud");
+    assertThat(Urls.getProject(someUrl)).isEqualTo("rhel-cloud");
   }
 
   @Test
   public void testGetProject_AlreadyLocal() {
     try {
-      Utils.getProject("rhel-cloud");
+      Urls.getProject("rhel-cloud");
 
       fail("An exception should have been thrown when we attempted to parse a malformed url.");
     } catch (IllegalArgumentException e) {
@@ -79,55 +79,55 @@ public class UtilsTest {
     String someUrl = "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images";
 
     try {
-      Utils.getProject(someUrl);
+      Urls.getProject(someUrl);
 
       fail("An exception should have been thrown when we attempted to parse a malformed url.");
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).isEqualTo(String.format(Utils.MALFORMED_RESOURCE_URL_MSG, someUrl));
+      assertThat(e.getMessage()).isEqualTo(String.format(Urls.MALFORMED_RESOURCE_URL_MSG, someUrl));
     }
 
     someUrl = "https://www.googleapis.com/compute/v1/projects/rhel-cloud/images/rhel-6-v20150526";
 
     try {
-      Utils.getProject(someUrl);
+      Urls.getProject(someUrl);
 
       fail("An exception should have been thrown when we attempted to parse a malformed url.");
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).isEqualTo(String.format(Utils.MALFORMED_RESOURCE_URL_MSG, someUrl));
+      assertThat(e.getMessage()).isEqualTo(String.format(Urls.MALFORMED_RESOURCE_URL_MSG, someUrl));
     }
   }
 
   @Test
   public void testGetProject_Null() {
-    assertThat(Utils.getProject(null)).isEqualTo(null);
+    assertThat(Urls.getProject(null)).isEqualTo(null);
   }
 
   @Test
   public void testGetProject_EmptyString() {
-    assertThat(Utils.getProject("")).isEqualTo(null);
+    assertThat(Urls.getProject("")).isEqualTo(null);
   }
 
   @Test
   public void testBuildZonalUrl() {
-    assertThat(Utils.buildZonalUrl("some-project", "us-central1-f")).endsWith("/some-project/zones/us-central1-f");
+    assertThat(Urls.buildZonalUrl("some-project", "us-central1-f")).endsWith("/some-project/zones/us-central1-f");
 
-    assertThat(Utils.buildZonalUrl("some-project", "us-central1-f", "some", "resource"))
+    assertThat(Urls.buildZonalUrl("some-project", "us-central1-f", "some", "resource"))
         .endsWith("/some-project/zones/us-central1-f/some/resource");
   }
 
   @Test
   public void testBuildRegionalUrl() {
-    assertThat(Utils.buildRegionalUrl("some-project", "us-central1")).endsWith("/some-project/regions/us-central1");
+    assertThat(Urls.buildRegionalUrl("some-project", "us-central1")).endsWith("/some-project/regions/us-central1");
 
-    assertThat(Utils.buildRegionalUrl("some-project", "us-central1", "some", "resource"))
+    assertThat(Urls.buildRegionalUrl("some-project", "us-central1", "some", "resource"))
         .endsWith("/some-project/regions/us-central1/some/resource");
   }
 
   @Test
   public void testBuildGlobalUrl() {
-    assertThat(Utils.buildGlobalUrl("some-project")).endsWith("/some-project/global");
+    assertThat(Urls.buildGlobalUrl("some-project")).endsWith("/some-project/global");
 
-    assertThat(Utils.buildGlobalUrl("some-project", "some", "resource"))
+    assertThat(Urls.buildGlobalUrl("some-project", "some", "resource"))
         .endsWith("/some-project/global/some/resource");
   }
 }

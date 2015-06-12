@@ -28,6 +28,7 @@ import static com.cloudera.director.google.compute.GoogleComputeProviderConfigur
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
 import com.cloudera.director.google.Configurations;
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
@@ -169,7 +170,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       try {
         Zone zone = compute.zones().get(projectId, zoneName).execute();
 
-        if (!Utils.getLocalName(zone.getRegion()).equals(regionName)) {
+        if (!Urls.getLocalName(zone.getRegion()).equals(regionName)) {
           addError(accumulator, ZONE, localizationContext, null, ZONE_NOT_FOUND_IN_REGION_MSG,
               zoneName, regionName, projectId);
         }
@@ -215,8 +216,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
         GoogleCredentials credentials = provider.getCredentials();
         Compute compute = credentials.getCompute();
-        String projectId = Utils.getProject(sourceImageUrl);
-        String imageLocalName = Utils.getLocalName(sourceImageUrl);
+        String projectId = Urls.getProject(sourceImageUrl);
+        String imageLocalName = Urls.getLocalName(sourceImageUrl);
 
         try {
           compute.images().get(projectId, imageLocalName).execute();

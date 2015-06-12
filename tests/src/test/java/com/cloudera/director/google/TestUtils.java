@@ -18,7 +18,7 @@ package com.cloudera.director.google;
 
 import static org.junit.Assert.fail;
 
-import com.cloudera.director.google.compute.Utils;
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
 import com.google.common.io.Files;
@@ -74,10 +74,10 @@ public class TestUtils {
   }
 
   public static String buildImageUrl(String projectId, String image) {
-    return Utils.buildGlobalUrl(projectId, "images", image);
+    return Urls.buildGlobalUrl(projectId, "images", image);
   }
 
   public static String buildInstanceUrl(String projectId, String zone, String instanceName) {
-    return Utils.buildZonalUrl(projectId, zone, "instances", instanceName);
+    return Urls.buildZonalUrl(projectId, zone, "instances", instanceName);
   }
 }

@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute;
+package com.cloudera.director.google.compute.util;
 
 import com.google.api.client.http.GenericUrl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.typesafe.config.Config;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
-import java.util.Date;
 import java.util.List;
 
-public final class Utils {
-
-  private static final DateTimeFormatter DATE_TIME_FORMATTER_ISO8601 = ISODateTimeFormat.dateTime();
+public final class Urls {
 
   @VisibleForTesting
   static final String MALFORMED_RESOURCE_URL_MSG = "Malformed resource url '%s'.";
 
-  private Utils() {}
+  private Urls() {}
 
-  static Date getDateFromTimestamp(String timestamp) {
-    if (timestamp != null && !timestamp.isEmpty()) {
-      return DATE_TIME_FORMATTER_ISO8601.parseDateTime(timestamp).toDate();
-    }
-
-    return null;
-  }
-
-  static String getLocalName(String fullResourceUrl) {
+  public static String getLocalName(String fullResourceUrl) {
     if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
       return null;
     }
@@ -54,7 +40,7 @@ public final class Utils {
     return Iterables.getLast(url.getPathParts());
   }
 
-  static String getProject(String fullResourceUrl) {
+  public static String getProject(String fullResourceUrl) {
     if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
       return null;
     }
@@ -71,7 +57,7 @@ public final class Utils {
     }
   }
 
-  static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
+  public static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
     String diskTypePath;
 
     if (dataDiskType.equals("LocalSSD")) {
@@ -87,15 +73,15 @@ public final class Utils {
     return buildZonalUrl(projectId, zone, "diskTypes", diskTypePath);
   }
 
-  static String buildDiskUrl(String projectId, String zone, String diskName) {
+  public static String buildDiskUrl(String projectId, String zone, String diskName) {
     return buildZonalUrl(projectId, zone, "disks", diskName);
   }
 
-  static String buildMachineTypeUrl(String projectId, String zone, String machineType) {
+  public static String buildMachineTypeUrl(String projectId, String zone, String machineType) {
     return buildZonalUrl(projectId, zone, "machineTypes", machineType);
   }
 
-  static String buildNetworkUrl(String projectId, String networkName) {
+  public static String buildNetworkUrl(String projectId, String networkName) {
     return buildGlobalUrl(projectId, "networks", networkName);
   }
 
@@ -145,10 +131,5 @@ public final class Utils {
     genericUrl.setPathParts(pathParts);
 
     return genericUrl.build();
-  }
-
-  public static String buildApplicationNameVersionTag(Config applicationProperties) {
-    return applicationProperties.getString("application.name") + "/" +
-        applicationProperties.getString("application.version");
   }
 }

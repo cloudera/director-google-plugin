@@ -54,6 +54,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
@@ -86,8 +87,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String PROJECT_ID = "some-project";
   private static final String REGION_NAME_1 = "us-central1";
   private static final String REGION_NAME_2 = "europe-west1";
-  private static final String REGION_URL_1 = Utils.buildRegionalUrl(PROJECT_ID, REGION_NAME_1);
-  private static final String REGION_URL_2 = Utils.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
+  private static final String REGION_URL_1 = Urls.buildRegionalUrl(PROJECT_ID, REGION_NAME_1);
+  private static final String REGION_URL_2 = Urls.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
   private static final String ZONE_NAME = "us-central1-a";
   private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";

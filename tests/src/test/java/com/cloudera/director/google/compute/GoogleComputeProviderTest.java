@@ -119,7 +119,7 @@ public class GoogleComputeProviderTest {
 
     // Create the Google compute provider.
     computeProvider = new GoogleComputeProvider(resourceProviderConfiguration, credentials,
-        TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
+        TestUtils.buildApplicationPropertiesConfig(), TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
   }
 
   private Compute.Zones.List mockComputeToZonesList() throws IOException {

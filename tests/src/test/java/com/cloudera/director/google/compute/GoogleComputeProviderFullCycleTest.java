@@ -31,6 +31,7 @@ import static junit.framework.Assert.assertNotNull;
 
 import com.cloudera.director.google.TestUtils;
 import com.cloudera.director.google.internal.GoogleCredentials;
+import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.spi.v1.compute.ComputeInstance;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
@@ -127,8 +128,8 @@ public class GoogleComputeProviderFullCycleTest {
     Configured resourceProviderConfiguration = new SimpleConfiguration(computeConfig);
 
     // Create Google credentials for use by both the validator and the provider.
-    GoogleCredentials credentials = new GoogleCredentials(TestUtils.buildApplicationPropertiesConfig(),
-        PROJECT_ID, JSON_KEY);
+    Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
+    GoogleCredentials credentials = new GoogleCredentials(applicationPropertiesConfig, PROJECT_ID, JSON_KEY);
 
     // Validate the Google compute provider configuration.
     LOG.info("About to validate the resource provider configuration...");
@@ -140,7 +141,7 @@ public class GoogleComputeProviderFullCycleTest {
 
     // Create the Google compute provider.
     GoogleComputeProvider compute = new GoogleComputeProvider(resourceProviderConfiguration, credentials,
-        TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
+        applicationPropertiesConfig, TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
 
     // Retrieve and list out the resource template configuration properties for Google compute provider.
     LOG.info("Configurations required for template:");

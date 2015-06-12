@@ -62,6 +62,8 @@ import com.google.api.services.compute.model.Instance;
 import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
+import com.google.api.services.compute.model.Tags;
+import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,15 +104,17 @@ public class GoogleComputeProvider
       .build();
 
   private GoogleCredentials credentials;
+  private Config applicationProperties;
   private Config googleConfig;
 
   private final ConfigurationValidator resourceTemplateConfigurationValidator;
 
   public GoogleComputeProvider(Configured configuration, GoogleCredentials credentials,
-      Config googleConfig, LocalizationContext cloudLocalizationContext) {
+      Config applicationProperties, Config googleConfig, LocalizationContext cloudLocalizationContext) {
     super(configuration, METADATA, cloudLocalizationContext);
 
     this.credentials = credentials;
+    this.applicationProperties = applicationProperties;
     this.googleConfig = googleConfig;
 
     Compute compute = credentials.getCompute();
@@ -318,6 +322,15 @@ public class GoogleComputeProvider
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);
       instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
+
+      // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
+      // This is not the same as the template 'tags' which are propagated as instance metadata.
+      Tags tags = new Tags();
+      String applicationNameVersionTag = Utils.buildApplicationNameVersionTag(applicationProperties);
+      // Massage it into a form acceptable for use as a tag (only allows lowercase letters, numbers and hyphens).
+      applicationNameVersionTag = applicationNameVersionTag.toLowerCase().replaceAll("\\.|/", "-");
+      tags.setItems(Lists.newArrayList(applicationNameVersionTag));
+      instance.setTags(tags);
 
       // Wait for operations to reach DONE state before provisioning the instance.
       List<Operation> successfulOperations = pollPendingOperations(projectId, diskCreationOperations, DONE_STATE, compute, accumulator);

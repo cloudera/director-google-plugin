@@ -43,6 +43,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
       Collections.singletonList(GoogleComputeProvider.METADATA);
 
   private GoogleCredentials credentials;
+  private Config applicationProperties;
   private Config googleConfig;
 
   protected static final CloudProviderMetadata METADATA = new SimpleCloudProviderMetadataBuilder()
@@ -54,10 +55,12 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
       .resourceProviderMetadata(RESOURCE_PROVIDER_METADATA)
       .build();
 
-  public GoogleCloudProvider(GoogleCredentials credentials, Config googleConfig,
+  public GoogleCloudProvider(GoogleCredentials credentials, Config applicationProperties, Config googleConfig,
       LocalizationContext rootLocalizationContext) {
     super(METADATA, rootLocalizationContext);
+
     this.credentials = credentials;
+    this.applicationProperties = applicationProperties;
     this.googleConfig = googleConfig;
   }
 
@@ -78,7 +81,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
   public ResourceProvider createResourceProvider(String resourceProviderId, Configured configuration) {
 
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
-      return new GoogleComputeProvider(configuration, credentials, googleConfig,
+      return new GoogleComputeProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
     }
 

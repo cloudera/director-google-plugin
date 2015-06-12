@@ -16,6 +16,7 @@
 
 package com.cloudera.director.google.compute;
 
+import com.typesafe.config.Config;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -75,5 +76,10 @@ public final class Utils {
     }
 
     return diskTypeUrl;
+  }
+
+  public static String buildApplicationNameVersionTag(Config applicationProperties) {
+    return applicationProperties.getString("application.name") + "/" +
+        applicationProperties.getString("application.version");
   }
 }

@@ -136,6 +136,6 @@ public class GoogleLauncher extends AbstractLauncher {
       }
     }
 
-    return new GoogleCloudProvider(credentials, googleConfig, localizationContext);
+    return new GoogleCloudProvider(credentials, applicationProperties, googleConfig, localizationContext);
   }
 }

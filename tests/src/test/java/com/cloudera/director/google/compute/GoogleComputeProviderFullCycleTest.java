@@ -84,7 +84,7 @@ public class GoogleComputeProviderFullCycleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    testFixture = TestFixture.newTestFixture(true, true);
+    testFixture = TestFixture.newTestFixture(true);
   }
 
   private String localSSDInterfaceType;
@@ -122,7 +122,7 @@ public class GoogleComputeProviderFullCycleTest {
     // Create Google credentials for use by both the validator and the provider.
     Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
     GoogleCredentials credentials = new GoogleCredentials(TestUtils.buildApplicationPropertiesConfig(),
-        testFixture.projectId, testFixture.jsonKey);
+        testFixture.getProjectId(), testFixture.getJsonKey());
 
     // Validate the Google compute provider configuration.
     LOG.info("About to validate the resource provider configuration...");
@@ -150,8 +150,8 @@ public class GoogleComputeProviderFullCycleTest {
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), "default");
     templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-f");
     templateConfig.put(LOCAL_SSD_INTERFACE_TYPE.unwrap().getConfigKey(), localSSDInterfaceType);
-    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), testFixture.sshPublicKey);
-    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), testFixture.userName);
+    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), testFixture.getSshPublicKey());
+    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), testFixture.getUserName());
     templateConfig.put(SSH_PORT.unwrap().getConfigKey(), "22");
 
     Map<String, String> tags = new HashMap<String, String>();
@@ -215,7 +215,7 @@ public class GoogleComputeProviderFullCycleTest {
       LOG.info("  " + keyValuePair.getKey() + " -> " + keyValuePair.getValue());
     }
 
-    if (testFixture.haltAfterAllocation) {
+    if (testFixture.getHaltAfterAllocation()) {
       LOG.info("HALT_AFTER_ALLOCATION flag is set.");
 
       return;

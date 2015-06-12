@@ -59,7 +59,7 @@ public class GoogleLauncherTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    testFixture = TestFixture.newTestFixture(false, false);
+    testFixture = TestFixture.newTestFixture(false);
   }
 
   @Rule
@@ -88,8 +88,8 @@ public class GoogleLauncherTest {
     // In order to create a cloud provider we need to configure credentials
     // (we expect them to be eagerly validated on cloud provider creation).
     Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), testFixture.projectId);
-    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), testFixture.jsonKey);
+    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), testFixture.getProjectId());
+    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), testFixture.getJsonKey());
 
     CloudProvider cloudProvider = launcher.createCloudProvider(
         GoogleCloudProvider.ID,

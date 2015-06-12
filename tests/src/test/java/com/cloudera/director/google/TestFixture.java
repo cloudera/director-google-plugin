@@ -21,17 +21,11 @@ import java.nio.charset.Charset;
 
 public final class TestFixture {
 
-  private static String PROJECT_ID;
-  private static String JSON_KEY;
-  private static String SSH_PUBLIC_KEY;
-  private static String USER_NAME;
-  private static boolean HALT_AFTER_ALLOCATION;
-
-  public String projectId;
-  public String jsonKey;
-  public String sshPublicKey;
-  public String userName;
-  public boolean haltAfterAllocation;
+  private String projectId;
+  private String jsonKey;
+  private String sshPublicKey;
+  private String userName;
+  private boolean haltAfterAllocation;
 
   private TestFixture(
       String projectId, String jsonKey, String sshPublicKey, String userName, boolean haltAfterAllocation) {
@@ -42,27 +36,40 @@ public final class TestFixture {
     this.haltAfterAllocation = haltAfterAllocation;
   }
 
-  private static void initializeIfNecessary(boolean sshPublicKeyIsRequired, boolean userNameIsRequired) throws IOException {
-    if (PROJECT_ID == null) {
-      PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-      JSON_KEY = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
+  public static TestFixture newTestFixture(boolean sshPublicKeyAndUserNameAreRequired) throws IOException {
+    String projectId = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
+    String jsonKey = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
+    String sshPublicKey = null;
+    String userName = null;
 
-      if (sshPublicKeyIsRequired) {
-        SSH_PUBLIC_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
-            Charset.defaultCharset());
-      }
-
-      if (userNameIsRequired) {
-        USER_NAME = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");
-      }
-
-      HALT_AFTER_ALLOCATION = Boolean.parseBoolean(System.getProperty("HALT_AFTER_ALLOCATION", "false"));
+    if (sshPublicKeyAndUserNameAreRequired) {
+      sshPublicKey = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
+          Charset.defaultCharset());
+      userName = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");
     }
+
+    boolean haltAfterAllocation = Boolean.parseBoolean(System.getProperty("HALT_AFTER_ALLOCATION", "false"));
+
+    return new TestFixture(projectId, jsonKey, sshPublicKey, userName, haltAfterAllocation);
   }
 
-  public static TestFixture newTestFixture(boolean sshPublicKeyIsRequired, boolean userNameIsRequired) throws IOException {
-    initializeIfNecessary(sshPublicKeyIsRequired, userNameIsRequired);
+  public String getProjectId() {
+    return projectId;
+  }
 
-    return new TestFixture(PROJECT_ID, JSON_KEY, SSH_PUBLIC_KEY, USER_NAME, HALT_AFTER_ALLOCATION);
+  public String getJsonKey() {
+    return jsonKey;
+  }
+
+  public String getSshPublicKey() {
+    return sshPublicKey;
+  }
+
+  public String getUserName() {
+    return userName;
+  }
+
+  public boolean getHaltAfterAllocation() {
+    return haltAfterAllocation;
   }
 }

@@ -18,6 +18,7 @@ package com.cloudera.director.google;
 
 import static org.junit.Assert.fail;
 
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
 import com.google.common.io.Files;
@@ -62,26 +63,21 @@ public class TestUtils {
 
   public static Config buildGoogleConfig() throws IOException {
     Map<String, String> googleConfig = new HashMap<String, String>();
-    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "centos6",
-        "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150526");
-    googleConfig.put(Configurations.IMAGE_ALIASES_SECTION + "rhel6",
-        "https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526");
+    googleConfig.put(
+        Configurations.IMAGE_ALIASES_SECTION + "centos6",
+        buildImageUrl("centos-cloud", "centos-6-v20150526"));
+    googleConfig.put(
+        Configurations.IMAGE_ALIASES_SECTION + "rhel6",
+        buildImageUrl("rhel-cloud", "rhel-6-v20150526"));
 
     return ConfigFactory.parseMap(googleConfig);
   }
 
   public static String buildImageUrl(String projectId, String image) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/global/images/" + image;
+    return Urls.buildGlobalUrl(projectId, "images", image);
   }
 
   public static String buildInstanceUrl(String projectId, String zone, String instanceName) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/instances/" + instanceName;
-  }
-
-  public static String buildDiskUrl(String projectId, String zone, String diskName) {
-    return "https://www.googleapis.com/compute/v1/projects/" + projectId +
-        "/zones/" + zone + "/disks/" + diskName;
+    return Urls.buildZonalUrl(projectId, zone, "instances", instanceName);
   }
 }

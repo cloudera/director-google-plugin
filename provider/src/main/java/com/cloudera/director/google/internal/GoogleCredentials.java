@@ -16,7 +16,7 @@
 
 package com.cloudera.director.google.internal;
 
-import com.cloudera.director.google.compute.Utils;
+import com.cloudera.director.google.compute.util.Names;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
@@ -64,7 +64,7 @@ public class GoogleCredentials {
       return new Compute.Builder(httpTransport,
           JSON_FACTORY,
           null)
-          .setApplicationName(Utils.buildApplicationNameVersionTag(applicationProperties))
+          .setApplicationName(Names.buildApplicationNameVersionTag(applicationProperties))
           .setHttpRequestInitializer(credential)
           .build();
 

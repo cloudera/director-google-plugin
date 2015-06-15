@@ -29,6 +29,8 @@ import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.Compu
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
 
 import com.cloudera.director.google.Configurations;
+import com.cloudera.director.google.compute.util.Names;
+import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
@@ -212,7 +214,7 @@ public class GoogleComputeProvider
       String dataDiskType = template.getConfigurationValue(
           DATA_DISK_TYPE,
           templateLocalizationContext);
-      String dataDiskTypeUrl = Utils.buildDiskTypeUrl(projectId, zone, dataDiskType);
+      String dataDiskTypeUrl = Urls.buildDiskTypeUrl(projectId, zone, dataDiskType);
       boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
       long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           DATA_DISK_SIZE_GB,
@@ -260,8 +262,7 @@ public class GoogleComputeProvider
             accumulator.addError(null, e.getMessage());
           }
 
-          String persistentDiskUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-              "/zones/" + zone + "/disks/" + persistentDisk.getName();
+          String persistentDiskUrl = Urls.buildDiskUrl(projectId, zone, persistentDisk.getName());
           attachedDisk.setType("PERSISTENT");
           attachedDisk.setSource(persistentDiskUrl);
         }
@@ -272,8 +273,7 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
-      String networkUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-          "/global/networks/" + networkName;
+      String networkUrl = Urls.buildNetworkUrl(projectId, networkName);
 
       // Compose the network interface.
       String accessConfigName = "External NAT";
@@ -287,9 +287,7 @@ public class GoogleComputeProvider
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
-      String machineTypeUrl = "https://www.googleapis.com/compute/v1/projects/" + projectId +
-          "/zones/" + zone +
-          "/machineTypes/" + machineTypeName;
+      String machineTypeUrl = Urls.buildMachineTypeUrl(projectId, zone, machineTypeName);
 
       // Compose the instance metadata containing the SSH public key, user name and tags.
       List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
@@ -326,7 +324,7 @@ public class GoogleComputeProvider
       // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
       // This is not the same as the template 'tags' which are propagated as instance metadata.
       Tags tags = new Tags();
-      String applicationNameVersionTag = Utils.buildApplicationNameVersionTag(applicationProperties);
+      String applicationNameVersionTag = Names.buildApplicationNameVersionTag(applicationProperties);
       // Massage it into a form acceptable for use as a tag (only allows lowercase letters, numbers and hyphens).
       applicationNameVersionTag = applicationNameVersionTag.toLowerCase().replaceAll("\\.|/", "-");
       tags.setItems(Lists.newArrayList(applicationNameVersionTag));
@@ -413,8 +411,8 @@ public class GoogleComputeProvider
 
     // Iterate over each instance creation operation.
     for (Operation vmCreationOperation : vmCreationOperations) {
-      String zone = Utils.getLocalName(vmCreationOperation.getZone());
-      String instanceName = Utils.getLocalName(vmCreationOperation.getTargetLink());
+      String zone = Urls.getLocalName(vmCreationOperation.getZone());
+      String instanceName = Urls.getLocalName(vmCreationOperation.getTargetLink());
 
       try {
         // If any persistent disks were created, retrieve each instance representation and remove its attached disks
@@ -444,8 +442,8 @@ public class GoogleComputeProvider
 
     // Delete each persistent disk that is not attached to an instance.
     for (Operation diskCreationOperation : diskNameToCreationOperationMap.values()) {
-      String zone = Utils.getLocalName(diskCreationOperation.getZone());
-      String diskName = Utils.getLocalName(diskCreationOperation.getTargetLink());
+      String zone = Urls.getLocalName(diskCreationOperation.getZone());
+      String diskName = Urls.getLocalName(diskCreationOperation.getTargetLink());
 
       try {
         Operation tearDownOperation = compute.disks().delete(projectId, zone, diskName).execute();
@@ -523,7 +521,7 @@ public class GoogleComputeProvider
     Disk bootDisk = null;
 
     if (attachedBootDisk != null) {
-      String bootDiskName = Utils.getLocalName(attachedBootDisk.getSource());
+      String bootDiskName = Urls.getLocalName(attachedBootDisk.getSource());
 
       try {
         bootDisk = compute.disks().get(projectId, zone, bootDiskName).execute();
@@ -684,7 +682,7 @@ public class GoogleComputeProvider
 
       for (Operation pendingOperation : pendingOperations) {
         try {
-          String zone = Utils.getLocalName(pendingOperation.getZone());
+          String zone = Urls.getLocalName(pendingOperation.getZone());
           String pendingOperationName = pendingOperation.getName();
           Operation subjectOperation = compute.zoneOperations().get(projectId, zone, pendingOperationName).execute();
           Operation.Error error = subjectOperation.getError();
@@ -697,7 +695,7 @@ public class GoogleComputeProvider
               for (Operation.Error.Errors errors : errorsList) {
                 // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
                 if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Resource '{}' already exists.", Utils.getLocalName(subjectOperation.getTargetLink()));
+                  LOG.info("Resource '{}' already exists.", Urls.getLocalName(subjectOperation.getTargetLink()));
                 } else {
                   accumulator.addError(null, errors.getMessage());
                   isActualError = true;

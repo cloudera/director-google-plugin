@@ -29,6 +29,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 
+import com.cloudera.director.google.TestFixture;
 import com.cloudera.director.google.TestUtils;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
@@ -81,20 +82,11 @@ public class GoogleComputeProviderFullCycleTest {
 
   private static final int POLLING_INTERVAL_SECONDS = 5;
 
-  private static String PROJECT_ID;
-  private static String JSON_KEY;
-  private static String SSH_PUBLIC_KEY;
-  private static String USER_NAME;
-  private static boolean HALT_AFTER_ALLOCATION;
+  private static TestFixture testFixture;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
-    SSH_PUBLIC_KEY = TestUtils.readFile(TestUtils.readRequiredSystemProperty("SSH_PUBLIC_KEY_PATH"),
-        Charset.defaultCharset());
-    USER_NAME = TestUtils.readRequiredSystemProperty("SSH_USER_NAME");
-    HALT_AFTER_ALLOCATION = Boolean.parseBoolean(System.getProperty("HALT_AFTER_ALLOCATION", "false"));
+    testFixture = TestFixture.newTestFixture(true);
   }
 
   private String localSSDInterfaceType;
@@ -131,7 +123,8 @@ public class GoogleComputeProviderFullCycleTest {
 
     // Create Google credentials for use by both the validator and the provider.
     Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
-    GoogleCredentials credentials = new GoogleCredentials(applicationPropertiesConfig, PROJECT_ID, JSON_KEY);
+    GoogleCredentials credentials = new GoogleCredentials(TestUtils.buildApplicationPropertiesConfig(),
+        testFixture.getProjectId(), testFixture.getJsonKey());
 
     // Validate the Google compute provider configuration.
     LOG.info("About to validate the resource provider configuration...");
@@ -159,8 +152,8 @@ public class GoogleComputeProviderFullCycleTest {
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), "default");
     templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-f");
     templateConfig.put(LOCAL_SSD_INTERFACE_TYPE.unwrap().getConfigKey(), localSSDInterfaceType);
-    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), SSH_PUBLIC_KEY);
-    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), USER_NAME);
+    templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), testFixture.getSshPublicKey());
+    templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), testFixture.getUserName());
     templateConfig.put(SSH_PORT.unwrap().getConfigKey(), "22");
 
     Map<String, String> tags = new HashMap<String, String>();
@@ -235,7 +228,7 @@ public class GoogleComputeProviderFullCycleTest {
       LOG.info("  " + keyValuePair.getKey() + " -> " + keyValuePair.getValue());
     }
 
-    if (HALT_AFTER_ALLOCATION) {
+    if (testFixture.getHaltAfterAllocation()) {
       LOG.info("HALT_AFTER_ALLOCATION flag is set.");
 
       return;

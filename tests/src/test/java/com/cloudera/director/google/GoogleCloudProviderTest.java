@@ -59,13 +59,11 @@ import java.util.Map;
  */
 public class GoogleCloudProviderTest {
 
-  private static String PROJECT_ID_VALUE;
-  private static String JSON_KEY_VALUE;
+  private static TestFixture testFixture;
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    PROJECT_ID_VALUE = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
-    JSON_KEY_VALUE = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
+    testFixture = TestFixture.newTestFixture(false);
   }
 
   @Rule
@@ -91,8 +89,8 @@ public class GoogleCloudProviderTest {
     // In order to create a cloud provider we need to configure credentials
     // (we expect them to be eagerly validated on cloud provider creation).
     Map<String, String> environmentConfig = new HashMap<String, String>();
-    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), PROJECT_ID_VALUE);
-    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), JSON_KEY_VALUE);
+    environmentConfig.put(PROJECT_ID.unwrap().getConfigKey(), testFixture.getProjectId());
+    environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), testFixture.getJsonKey());
 
     LocalizationContext cloudLocalizationContext =
             GoogleCloudProvider.METADATA.getLocalizationContext(DEFAULT_PLUGIN_LOCALIZATION_CONTEXT);

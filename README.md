@@ -64,6 +64,9 @@ To verify that your ssh key was properly set, you can retrieve the External IP o
 $ ssh $SSH_USER_NAME@$EXTERNAL_IP
 ```
 
+## Install the Plugin in Cloudera Director
+There are instructions on plugin installation in the Cloudera Director Service Provider Interface [documentation](https://github.com/cloudera/director-spi#installing-the-plugin).
+
 ## Copyright and License
 Copyright © 2015 Google. Licensed under the Apache License.
 

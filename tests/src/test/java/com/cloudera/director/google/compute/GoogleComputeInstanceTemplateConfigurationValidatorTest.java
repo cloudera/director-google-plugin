@@ -452,7 +452,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
 
     checkNetwork(NETWORK_NAME_VALUE);
     verify(computeNetworksGet).execute();
-    verifySingleError(TYPE, NETWORK_NOT_FOUND_MSG, NETWORK_NAME_VALUE, PROJECT_ID);
+    verifySingleError(NETWORK_NAME, NETWORK_NOT_FOUND_MSG, NETWORK_NAME_VALUE, PROJECT_ID);
   }
 
   /**

@@ -423,7 +423,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
         compute.networks().get(projectId, networkName).execute();
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          addError(accumulator, TYPE, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, projectId);
+          addError(accumulator, NETWORK_NAME, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, projectId);
         } else {
           throw new TransientProviderException(e);
         }

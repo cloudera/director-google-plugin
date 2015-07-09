@@ -27,6 +27,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
+import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 
 import com.cloudera.director.google.Configurations;
 import com.cloudera.director.google.compute.util.Names;
@@ -39,7 +40,6 @@ import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
-import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.exception.InvalidCredentialsException;
@@ -430,8 +430,8 @@ public class GoogleComputeProvider
         tearDownOperations.add(tearDownOperation);
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          // Since we try to tear down all instances, and some may not have been successfully provisioned in the first,
-          // we don't need to propagate this.
+          // Since we try to tear down all instances, and some may not have been successfully provisioned in the first
+          // place, we don't need to propagate this.
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -479,6 +479,12 @@ public class GoogleComputeProvider
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
     List<GoogleComputeInstance> result = new ArrayList<GoogleComputeInstance>();
+
+    // If the prefix is not valid, there is no way the instances could have been created in the first place.
+    if (!prefixIsValid(template, templateLocalizationContext)) {
+      return result;
+    }
+
     for (String currentId : instanceIds) {
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
@@ -547,29 +553,37 @@ public class GoogleComputeProvider
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
-    for (String currentId : instanceIds) {
-      Compute compute = credentials.getCompute();
-      String projectId = credentials.getProjectId();
 
-      String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
-      String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
+    // If the prefix is not valid, there is no way the instances could have been created in the first place.
+    if (!prefixIsValid(template, templateLocalizationContext)) {
+      for (String currentId : instanceIds) {
+        result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
+      }
+    } else {
+      for (String currentId : instanceIds) {
+        Compute compute = credentials.getCompute();
+        String projectId = credentials.getProjectId();
 
-      try {
-        // TODO(duftler): Might want to store the entire instance representation in the InstanceState object.
-        Instance instance = compute.instances().get(projectId, zone, decoratedInstanceName).execute();
-        InstanceStatus instanceStatus = convertGCEInstanceStatusToDirectorInstanceStatus(instance.getStatus());
+        String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
+        String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
-        result.put(currentId, new SimpleInstanceState(instanceStatus));
-      } catch (GoogleJsonResponseException e) {
-        if (e.getStatusCode() == 404) {
-          LOG.info("Instance '{}' not found.", decoratedInstanceName);
+        try {
+          // TODO(duftler): Might want to store the entire instance representation in the InstanceState object.
+          Instance instance = compute.instances().get(projectId, zone, decoratedInstanceName).execute();
+          InstanceStatus instanceStatus = convertGCEInstanceStatusToDirectorInstanceStatus(instance.getStatus());
 
-          result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
-        } else {
+          result.put(currentId, new SimpleInstanceState(instanceStatus));
+        } catch (GoogleJsonResponseException e) {
+          if (e.getStatusCode() == 404) {
+            LOG.info("Instance '{}' not found.", decoratedInstanceName);
+
+            result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
+          } else {
+            throw new RuntimeException(e);
+          }
+        } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
       }
     }
     return result;
@@ -584,6 +598,12 @@ public class GoogleComputeProvider
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
+
+    // If the prefix is not valid, there is no way the instances could have been created in the first place.
+    // So we shouldn't attempt to delete them, but we also shouldn't report an error.
+    if (!prefixIsValid(template, templateLocalizationContext)) {
+      return;
+    }
 
     Compute compute = credentials.getCompute();
     String projectId = credentials.getProjectId();
@@ -631,9 +651,7 @@ public class GoogleComputeProvider
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
       LocalizationContext templateLocalizationContext) {
-    return template.getConfigurationValue(
-        InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX,
-        templateLocalizationContext) + "-" + currentId;
+    return template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext) + "-" + currentId;
   }
 
   private static InstanceStatus convertGCEInstanceStatusToDirectorInstanceStatus(String gceInstanceStatus) {
@@ -740,6 +758,22 @@ public class GoogleComputeProvider
     }
 
     return successfulOperations;
+  }
+
+  private boolean prefixIsValid(GoogleComputeInstanceTemplate template,
+      LocalizationContext templateLocalizationContext) {
+    PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
+
+    GoogleComputeInstanceTemplateConfigurationValidator.checkPrefix(template, accumulator, templateLocalizationContext);
+
+    boolean isValid = accumulator.getConditionsByKey().isEmpty();
+
+    if (!isValid) {
+      LOG.info("Instance name prefix '{}' is invalid.",
+          template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext));
+    }
+
+    return isValid;
   }
 
 }

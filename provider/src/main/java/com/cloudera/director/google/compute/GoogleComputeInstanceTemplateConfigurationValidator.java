@@ -25,6 +25,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
+import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
 import com.cloudera.director.google.Configurations;
@@ -51,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Validates Google compute instance template configuration.
@@ -117,10 +119,28 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   @VisibleForTesting
   static final String NETWORK_NOT_FOUND_MSG = "Network '%s' not found for project '%s'.";
 
+  @VisibleForTesting
+  static final String PREFIX_MISSING_MSG = "Instance name prefix must be provided.";
+  @VisibleForTesting
+  static final String INVALID_PREFIX_LENGTH_MSG = "Instance name prefix must be between 1 and 26 characters.";
+  @VisibleForTesting
+  static final String INVALID_PREFIX_MSG = "Instance name prefix must follow this pattern: " +
+      "The first character must be a lowercase letter, and all following characters must be a dash, lowercase " +
+      "letter, or digit.";
+
   /**
    * The Google compute provider.
    */
   private final GoogleComputeProvider provider;
+
+  /**
+   * The pattern to which instance name prefixes must conform. The pattern is the same as that for instance names in
+   * general, except that we allow a trailing dash to be used. This is allowed since we always append a dash and the
+   * specified instance id to the prefix.
+   *
+   *  @see <a href="https://developers.google.com/resources/api-libraries/documentation/compute/v1/java/latest/com/google/api/services/compute/model/Instance.html#setName(java.lang.String)" />
+   */
+  private final static Pattern instanceNamePrefixPattern = Pattern.compile("[a-z][-a-z0-9]*");
 
   /**
    * Creates a Google compute instance template configuration validator with the specified
@@ -144,6 +164,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
     checkDataDiskSize(configuration, accumulator, localizationContext);
     checkMachineType(configuration, accumulator, localizationContext);
     checkNetwork(configuration, accumulator, localizationContext);
+    checkPrefix(configuration, accumulator, localizationContext);
   }
 
   /**
@@ -429,6 +450,34 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
         }
       } catch (IOException e) {
         throw new TransientProviderException(e);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured prefix.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  static void checkPrefix(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String instanceNamePrefix = configuration.getConfigurationValue(INSTANCE_NAME_PREFIX, localizationContext);
+
+    LOG.info(">> Validating prefix '{}'", instanceNamePrefix);
+
+    if (instanceNamePrefix == null) {
+      addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, PREFIX_MISSING_MSG);
+    } else {
+      int length = instanceNamePrefix.length();
+
+      if (length < 1 || length > 26) {
+        addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, INVALID_PREFIX_LENGTH_MSG);
+      } else if (!instanceNamePrefixPattern.matcher(instanceNamePrefix).matches()) {
+        addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, INVALID_PREFIX_MSG);
       }
     }
   }

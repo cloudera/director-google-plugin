@@ -36,6 +36,8 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_DATA_DISK_TYPE_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_LOCAL_SSD_DATA_DISK_SIZE_MSG;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_PREFIX_LENGTH_MSG;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_PREFIX_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MAX_LOCAL_SSD_COUNT;
@@ -43,9 +45,11 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MIN_DATA_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MIN_LOCAL_SSD_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.NETWORK_NOT_FOUND_MSG;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.PREFIX_MISSING_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.ZONE_NOT_FOUND_IN_REGION_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.ZONE_NOT_FOUND_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
+import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -455,6 +459,65 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
     verifySingleError(TYPE, NETWORK_NOT_FOUND_MSG, NETWORK_NAME_VALUE, PROJECT_ID);
   }
 
+  @Test
+  public void testCheckPrefix() throws IOException {
+    checkPrefix("director");
+    checkPrefix("some-other-prefix");
+    checkPrefix("length-is-eq-26-characters");
+    checkPrefix("c");
+    checkPrefix("c-d");
+    checkPrefix("ends-with-digit-1");
+    verifyClean();
+  }
+
+  @Test
+  public void testCheckPrefix_Missing() throws IOException {
+    checkPrefix(null);
+    verifySingleError(INSTANCE_NAME_PREFIX, PREFIX_MISSING_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_TooShort() throws IOException {
+    checkPrefix("");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_LENGTH_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_TooLong() throws IOException {
+    checkPrefix("the-length-eqs-twenty-seven");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_LENGTH_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_StartsWithUppercaseLetter() throws IOException {
+    checkPrefix("Bad-prefix");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_StartsWithDash() throws IOException {
+    checkPrefix("-bad-prefix");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_StartsWithDigit() throws IOException {
+    checkPrefix("1-bad-prefix");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_ContainsUppercaseLetter() throws IOException {
+    checkPrefix("badPrefix");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_MSG);
+  }
+
+  @Test
+  public void testCheckPrefix_ContainsUnderscore() throws IOException {
+    checkPrefix("bad_prefix");
+    verifySingleError(INSTANCE_NAME_PREFIX, INVALID_PREFIX_MSG);
+  }
+
   /**
    * Invokes checkZone with the specified configuration.
    *
@@ -554,6 +617,18 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
     configMap.put(NETWORK_NAME.unwrap().getConfigKey(), network);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkNetwork(configuration, accumulator, localizationContext);
+  }
+
+  /**
+   * Invokes checkPrefix with the specified configuration.
+   *
+   * @param prefix the instance name prefix
+   */
+  protected void checkPrefix(String prefix) {
+    Map<String, String> configMap = Maps.newHashMap();
+    configMap.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), prefix);
+    Configured configuration = new SimpleConfiguration(configMap);
+    validator.checkPrefix(configuration, accumulator, localizationContext);
   }
 
   /**

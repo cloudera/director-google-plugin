@@ -1,4 +1,4 @@
-# Cloudera Director Google Plugin
+# Google Cloud Platform plugin for Cloudera Director
 The Cloudera Director Google Plugin is an implementation of the [Cloudera Director Service Provider Interface](https://github.com/cloudera/director-spi) for the [Google Cloud Platform](https://cloud.google.com). It presently supports provisioning Google Compute Engine resources and will soon expand to include support for provisioning Google Cloud SQL resources.
 
 These instructions describe how to configure and exercise the Cloudera Director Google Plugin.

@@ -15,10 +15,10 @@ If you are running Cloudera Director outside of Google Compute Engine, or in a d
 * Navigate to: Projects->{your-project-name}->APIs & auth->APIs
 * Enable the Google Compute Engine API.
 * Navigate to: Projects->{your-project-name}->APIs & auth->Credentials.
-* Under OAuth, click on "Create new Client ID".
-* Select "Service account".
-* Click "Create Client ID" button.
-* Dismiss "New Public/Private key pair generated" popup with "Okay, got it" button.
+* Select "Add credentials->Service account".
+* Ensure "JSON" option is enabled.
+* Click "Create" button.
+* Dismiss "New public/private key pair" popup with "OK" button.
 * Note the location of your newly-downloaded .json file.
 
 ## Prerequisites

@@ -230,7 +230,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
@@ -285,7 +285,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
@@ -301,7 +301,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -312,7 +312,8 @@ public class GoogleComputeProviderTest {
             "SOME_ERROR_CODE", "Some error message..."));
 
     // Configure stub for successful instance deletion operation.
-    Compute.Instances.Delete computeInstancesDelete1 = mockComputeInstancesDelete(computeInstances, instanceName1);
+    Compute.Instances.Delete computeInstancesDelete1 =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
     Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations.Get computeZoneOperationsGet3 = mock(Compute.ZoneOperations.Get.class);
@@ -322,7 +323,8 @@ public class GoogleComputeProviderTest {
         new OperationAnswer(vmDeletionOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for successful instance deletion operation.
-    Compute.Instances.Delete computeInstancesDelete2 = mockComputeInstancesDelete(computeInstances, instanceName2);
+    Compute.Instances.Delete computeInstancesDelete2 =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
     Operation vmDeletionOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     when(computeInstancesDelete2.execute()).thenReturn(vmDeletionOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet4 = mock(Compute.ZoneOperations.Get.class);
@@ -390,19 +392,10 @@ public class GoogleComputeProviderTest {
         Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify first instance deletion call was made.
-    ArgumentCaptor<Instance> deleteArgumentCaptor = ArgumentCaptor.forClass(Instance.class);
-    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), deleteArgumentCaptor.capture());
-    List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
-    Instance deletedInstance1 = deletedInstanceList.get(0);
-
-    // Verify first instance deletion call instance name.
-    assertThat(deletedInstance1.getName()).isEqualTo(decoratedInstanceName1);
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
 
     // Verify second instance deletion call was made.
-    Instance deletedInstance2 = deletedInstanceList.get(1);
-
-    // Verify second instance deletion call instance name.
-    assertThat(deletedInstance2.getName()).isEqualTo(decoratedInstanceName2);
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName2));
   }
 
   @Test
@@ -421,7 +414,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
@@ -437,7 +430,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -513,7 +506,7 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName);
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
 
     // Configure stub for successful disk insertion operation.
     String diskName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName + "-pd-0";
@@ -590,10 +583,10 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
 
     // Configure stub for first successful disk insertion operation.
     String diskName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1 + "-pd-0";
@@ -646,7 +639,7 @@ public class GoogleComputeProviderTest {
     // Now configure the expected tearDown operations.
 
     // Configure stub for successful instance retrieval with attached persistent disk.
-    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, instanceName1);
+    Compute.Instances.Get computeInstancesGet1 = mockComputeInstancesGet(computeInstances, decoratedInstanceName1);
     Instance instance1 = new Instance();
     AttachedDisk attachedDisk1 = new AttachedDisk();
     attachedDisk1.setSource(diskUrl1);
@@ -655,13 +648,14 @@ public class GoogleComputeProviderTest {
     when(computeInstancesGet1.execute()).thenReturn(instance1);
 
     // Configure stub for unsuccessful instance retrieval (throws 404).
-    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, instanceName2);
+    Compute.Instances.Get computeInstancesGet2 = mockComputeInstancesGet(computeInstances, decoratedInstanceName2);
     GoogleJsonResponseException exception =
         GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
     when(computeInstancesGet2.execute()).thenThrow(exception);
 
     // Configure stub for successful instance deletion operation.
-    Compute.Instances.Delete computeInstancesDelete1 = mockComputeInstancesDelete(computeInstances, instanceName1);
+    Compute.Instances.Delete computeInstancesDelete1 =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
     Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations.Get computeZoneOperationsGet5 = mock(Compute.ZoneOperations.Get.class);
@@ -758,21 +752,8 @@ public class GoogleComputeProviderTest {
     String deletedDiskName = argumentCaptor3.getValue();
     assertThat(deletedDiskName).isEqualTo(diskName2);
 
-    // Verify first instance deletion call was made.
-    ArgumentCaptor<Instance> deleteArgumentCaptor = ArgumentCaptor.forClass(Instance.class);
-    verify(computeInstances, times(2)).insert(eq(PROJECT_ID), eq(ZONE_NAME), deleteArgumentCaptor.capture());
-    List<Instance> deletedInstanceList = deleteArgumentCaptor.getAllValues();
-    Instance deletedInstance1 = deletedInstanceList.get(0);
-
-    // Verify first instance deletion call instance name.
-    assertThat(deletedInstance1.getName()).isEqualTo(decoratedInstanceName1);
-
-    // Verify second instance deletion call was made.
-    Instance deletedInstance2 = deletedInstanceList.get(1);
-
-    // Verify second instance deletion call instance name.
-    assertThat(deletedInstance2.getName()).isEqualTo(decoratedInstanceName2);
-
+    // Verify instance deletion call was made (of instance one).
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
   }
 
   @Test
@@ -1080,17 +1061,17 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName2);
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance deletion operation.
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Delete computeInstancesDelete1 =
-            mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
     Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
@@ -1102,7 +1083,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance deletion operation.
     Compute.Instances.Delete computeInstancesDelete2 =
-            mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
     Operation vmDeletionOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
     when(computeInstancesDelete2.execute()).thenReturn(vmDeletionOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -1131,8 +1112,8 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, instanceName1);
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);

@@ -99,10 +99,11 @@ public class GoogleComputeProvider
       .id(ID)
       .name("Google Compute Engine")
       .description("Google Compute Engine provider")
+      .providerClass(GoogleComputeProvider.class)
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
       .resourceTemplateConfigurationProperties(
           GoogleComputeInstanceTemplate.getConfigurationProperties())
-      .providerClass(GoogleComputeProvider.class)
+      .resourceDisplayProperties(GoogleComputeInstance.getDisplayProperties())
       .build();
 
   private GoogleCredentials credentials;

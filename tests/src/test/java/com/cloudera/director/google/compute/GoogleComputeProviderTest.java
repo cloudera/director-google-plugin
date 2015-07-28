@@ -437,9 +437,10 @@ public class GoogleComputeProviderTest {
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
         vmCreationOperation2.getName())).thenReturn(computeZoneOperationsGet2);
     when(computeZoneOperationsGet2.execute()).then(
-        new OperationAnswer(vmCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(vmCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"},
+            "SOME_ERROR_CODE", "Some error message..."));
 
-    computeProvider.allocate(template, Lists.newArrayList(instanceName1, instanceName2), 2);
+    computeProvider.allocate(template, Lists.newArrayList(instanceName1, instanceName2), 1);
 
     // Verify first instance insertion call was made.
     ArgumentCaptor<Instance> insertArgumentCaptor = ArgumentCaptor.forClass(Instance.class);
@@ -487,6 +488,9 @@ public class GoogleComputeProviderTest {
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(2), null, true,
         Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+
+    // NPE would be thrown (due to lack of mocks) if the compute provider attempted actual deletion calls against GCE.
+    // If no NPE's are thrown, the test is a success.
   }
 
   @Test

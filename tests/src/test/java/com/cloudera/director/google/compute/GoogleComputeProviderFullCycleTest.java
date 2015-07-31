@@ -243,6 +243,9 @@ public class GoogleComputeProviderFullCycleTest {
     // Verify that the instance has been deleted.
     instances = compute.find(template, instanceIds);
     assertEquals(0, instances.size());
+
+    LOG.info("About to delete the same instance again...");
+    compute.delete(template, instanceIds);
   }
 
   private static void pollInstanceState(

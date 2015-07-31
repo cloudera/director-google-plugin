@@ -789,6 +789,9 @@ public class GoogleComputeProviderTest {
         new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
             "RESOURCE_ALREADY_EXISTS", "Some error message..."));
 
+    // An UnrecoverableProviderException would be thrown if the compute provider did not treat an error code of
+    // RESOURCE_ALREADY_EXISTS on insertion as acceptable.
+    // If no UnrecoverableProviderException is thrown, the test is a success.
     computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
 
     // Verify instance insertion call was made.
@@ -1257,6 +1260,9 @@ public class GoogleComputeProviderTest {
         new OperationAnswer(vmDeletionOperation, new String[]{"PENDING", "DONE"},
             "RESOURCE_NOT_FOUND", "Some error message..."));
 
+    // An UnrecoverableProviderException would be thrown if the compute provider did not treat an error code of
+    // RESOURCE_NOT_FOUND on deletion as acceptable.
+    // If no UnrecoverableProviderException is thrown, the test is a success.
     computeProvider.delete(template, instanceIds);
 
     // Verify instance deletion call was made.

@@ -233,7 +233,7 @@ public class GoogleComputeProviderTest {
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
-    Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
+    Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
     when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
     Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
@@ -288,7 +288,7 @@ public class GoogleComputeProviderTest {
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
-    Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl1);
     OngoingStubbing<Operation> ongoingInsertionStub =
         when(computeInstancesInsert1.execute()).thenReturn(vmCreationOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
@@ -302,7 +302,7 @@ public class GoogleComputeProviderTest {
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
-    Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -314,7 +314,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance deletion operation.
     Compute.Instances.Delete computeInstancesDelete1 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
-    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmDeletionOperation1 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl1);
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations.Get computeZoneOperationsGet3 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -325,7 +325,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance deletion operation.
     Compute.Instances.Delete computeInstancesDelete2 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
-    Operation vmDeletionOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    Operation vmDeletionOperation2 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl2);
     when(computeInstancesDelete2.execute()).thenReturn(vmDeletionOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet4 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -417,7 +417,7 @@ public class GoogleComputeProviderTest {
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
-    Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl1);
     OngoingStubbing<Operation> ongoingInsertionStub =
         when(computeInstancesInsert1.execute()).thenReturn(vmCreationOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
@@ -431,7 +431,7 @@ public class GoogleComputeProviderTest {
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
-    Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -517,7 +517,7 @@ public class GoogleComputeProviderTest {
     String diskUrl = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
-    Operation diskCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl, "PENDING");
+    Operation diskCreationOperation = buildInitialOperation(ZONE_NAME, "insert", diskUrl);
     when(computeDisksInsert.execute()).thenReturn(diskCreationOperation);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
     Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
@@ -529,7 +529,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
-    Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
+    Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
     when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -597,7 +597,7 @@ public class GoogleComputeProviderTest {
     String diskUrl1 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
-    Operation diskCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl1, "PENDING");
+    Operation diskCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", diskUrl1);
     OngoingStubbing<Operation> ongoingDiskStub =
         when(computeDisksInsert.execute()).thenReturn(diskCreationOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
@@ -610,7 +610,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for second successful disk insertion operation.
     String diskName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2 + "-pd-0";
     String diskUrl2 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
-    Operation diskCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    Operation diskCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", diskUrl2);
     ongoingDiskStub.thenReturn(diskCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -621,7 +621,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
-    Operation vmCreationOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl1);
     OngoingStubbing<Operation> ongoingInsertionStub =
         when(computeInstancesInsert1.execute()).thenReturn(vmCreationOperation1);
     Compute.ZoneOperations.Get computeZoneOperationsGet3 = mock(Compute.ZoneOperations.Get.class);
@@ -631,7 +631,7 @@ public class GoogleComputeProviderTest {
         new OperationAnswer(vmCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for unsuccessful instance insertion operation.
-    Operation vmCreationOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet4 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -660,7 +660,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance deletion operation.
     Compute.Instances.Delete computeInstancesDelete1 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
-    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmDeletionOperation1 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl1);
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations.Get computeZoneOperationsGet5 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -673,7 +673,7 @@ public class GoogleComputeProviderTest {
     // The second disk was never attached to an instance since the instance creation failed. So it
     // must be explicitly deleted.
     Compute.Disks.Delete computeDisksDelete = mockComputeDisksDelete(computeDisks, diskName2);
-    Operation diskDeletionOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), diskUrl2, "PENDING");
+    Operation diskDeletionOperation = buildInitialOperation(ZONE_NAME, "delete", diskUrl2);
     when(computeDisksDelete.execute()).thenReturn(diskDeletionOperation);
     Compute.ZoneOperations.Get computeZoneOperationsGet7 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -758,6 +758,62 @@ public class GoogleComputeProviderTest {
 
     // Verify instance deletion call was made (of instance one).
     verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
+  }
+
+  @Test
+  public void testAllocate_RESOURCE_ALREADY_EXISTS() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    // Configure stub for unsuccessful instance insertion operation of instance that already exists.
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
+    when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
+            "RESOURCE_ALREADY_EXISTS", "Some error message..."));
+
+    computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
+
+    // Verify instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor.capture());
+    Instance insertedInstance = argumentCaptor.getValue();
+
+    // Verify instance name and metadata.
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
+    assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
+    assertThat(attachedDiskList.size()).isEqualTo(3);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true, null, 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
   }
 
   @Test
@@ -1076,7 +1132,7 @@ public class GoogleComputeProviderTest {
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Delete computeInstancesDelete1 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
-    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmDeletionOperation1 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl1);
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
     Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
@@ -1088,7 +1144,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance deletion operation.
     Compute.Instances.Delete computeInstancesDelete2 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName2);
-    Operation vmDeletionOperation2 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl2, "PENDING");
+    Operation vmDeletionOperation2 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl2);
     when(computeInstancesDelete2.execute()).thenReturn(vmDeletionOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
     when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
@@ -1126,7 +1182,7 @@ public class GoogleComputeProviderTest {
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Delete computeInstancesDelete1 =
         mockComputeInstancesDelete(computeInstances, decoratedInstanceName1);
-    Operation vmDeletionOperation1 = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl1, "PENDING");
+    Operation vmDeletionOperation1 = buildInitialOperation(ZONE_NAME, "delete", instanceUrl1);
     when(computeInstancesDelete1.execute()).thenReturn(vmDeletionOperation1);
     Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
     Compute.ZoneOperations.Get computeZoneOperationsGet1 = mock(Compute.ZoneOperations.Get.class);
@@ -1172,11 +1228,52 @@ public class GoogleComputeProviderTest {
     computeProvider.delete(template, instanceIds);
   }
 
-  private static Operation buildOperation(String zone, String operationName, String targetLinkUrl, String status) {
+  @Test
+  public void testDelete_RESOURCE_NOT_FOUND() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    List<String> instanceIds = Lists.newArrayList(instanceName);
+
+    // Configure stub for unsuccessful instance deletion operation of instance that does not exist.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Delete computeInstancesDelete =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName);
+    Operation vmDeletionOperation = buildInitialOperation(ZONE_NAME, "delete", instanceUrl);
+    when(computeInstancesDelete.execute()).thenReturn(vmDeletionOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmDeletionOperation, new String[]{"PENDING", "DONE"},
+            "RESOURCE_NOT_FOUND", "Some error message..."));
+
+    computeProvider.delete(template, instanceIds);
+
+    // Verify instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName));
+  }
+
+  private static Operation buildInitialOperation(String zone, String operationType, String targetLinkUrl) {
+    return buildOperation(zone, UUID.randomUUID().toString(), operationType, targetLinkUrl, "PENDING");
+  }
+
+  private static Operation buildOperation(String zone, String operationName, String operationType, String targetLinkUrl,
+      String status) {
     Operation operation = new Operation();
 
     operation.setZone(Urls.buildZonalUrl(PROJECT_ID, zone));
     operation.setName(operationName);
+    operation.setOperationType(operationType);
     operation.setTargetLink(targetLinkUrl);
     operation.setStatus(status);
 
@@ -1213,7 +1310,7 @@ public class GoogleComputeProviderTest {
     @Override
     public Operation answer(InvocationOnMock invocationOnMock) throws Throwable {
       Operation polledOperation = buildOperation(ZONE_NAME, subjectOperation.getName(),
-          subjectOperation.getTargetLink(), statusQueue.remove());
+          subjectOperation.getOperationType(), subjectOperation.getTargetLink(), statusQueue.remove());
 
       if (polledOperation.getStatus().equals("DONE") && errorCode != null) {
         Operation.Error.Errors errors = new Operation.Error.Errors();

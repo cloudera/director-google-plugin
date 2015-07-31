@@ -622,7 +622,7 @@ public class GoogleComputeProvider
         vmDeletionOperations.add(vmDeletionOperation);
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          LOG.info("Instance '{}' not found.", decoratedInstanceName);
+          LOG.info("Attempted to delete instance '{}', but it does not exist.", decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -712,9 +712,16 @@ public class GoogleComputeProvider
 
             if (errorsList != null) {
               for (Operation.Error.Errors errors : errorsList) {
-                // As we want insertion operations to be idempotent, we don't propagate RESOURCE_ALREADY_EXISTS errors.
-                if (errors.getCode().equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Resource '{}' already exists.", Urls.getLocalName(subjectOperation.getTargetLink()));
+                String operationType = subjectOperation.getOperationType();
+                String errorCode = errors.getCode();
+
+                // We want insertion and deletion operations to be idempotent.
+                if (operationType.equals("insert") && errorCode.equals("RESOURCE_ALREADY_EXISTS")) {
+                  LOG.info("Attempted to create resource '{}', but it already exists.",
+                      Urls.getLocalName(subjectOperation.getTargetLink()));
+                } else if (operationType.equals("delete") && errorCode.equals("RESOURCE_NOT_FOUND")) {
+                  LOG.info("Attempted to delete resource '{}', but it does not exist.",
+                      Urls.getLocalName(subjectOperation.getTargetLink()));
                 } else {
                   accumulator.addError(null, errors.getMessage());
                   isActualError = true;

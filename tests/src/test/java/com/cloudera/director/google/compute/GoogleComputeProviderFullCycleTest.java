@@ -122,8 +122,8 @@ public class GoogleComputeProviderFullCycleTest {
 
     // Create Google credentials for use by both the validator and the provider.
     Config applicationPropertiesConfig = TestUtils.buildApplicationPropertiesConfig();
-    GoogleCredentials credentials = new GoogleCredentials(TestUtils.buildApplicationPropertiesConfig(),
-        testFixture.getProjectId(), testFixture.getJsonKey());
+    GoogleCredentials credentials = new GoogleCredentials(applicationPropertiesConfig, testFixture.getProjectId(),
+        testFixture.getJsonKey());
 
     // Validate the Google compute provider configuration.
     LOG.info("About to validate the resource provider configuration...");

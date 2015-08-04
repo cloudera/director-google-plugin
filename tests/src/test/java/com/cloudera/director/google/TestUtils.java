@@ -80,4 +80,9 @@ public class TestUtils {
   public static String buildInstanceUrl(String projectId, String zone, String instanceName) {
     return Urls.buildZonalUrl(projectId, zone, "instances", instanceName);
   }
+
+  // SQL URL Builder.
+  public static String buildInstanceUrl(String projectId, String instanceName) {
+    return Urls.buildSQLUrl(projectId, "instances", instanceName);
+  }
 }

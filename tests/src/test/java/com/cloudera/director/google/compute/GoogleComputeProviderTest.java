@@ -982,7 +982,7 @@ public class GoogleComputeProviderTest {
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
-            new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
     String instanceName2 = UUID.randomUUID().toString();
@@ -1091,7 +1091,7 @@ public class GoogleComputeProviderTest {
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
-            new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
     String instanceName2 = UUID.randomUUID().toString();
@@ -1219,7 +1219,7 @@ public class GoogleComputeProviderTest {
 
     // Create the resource template.
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
-            new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
     String instanceName2 = UUID.randomUUID().toString();
@@ -1349,7 +1349,7 @@ public class GoogleComputeProviderTest {
    */
   private static void verifyAttachedDiskAttributes(AttachedDisk attachedDisk, Boolean boot, Boolean autoDelete,
       String diskType, Long diskSizeGb, String sourceImage, String localSSDInterfaceType,
-      String scratchOrPersistent, String source) {
+         String scratchOrPersistent, String source) {
     assertThat(attachedDisk.getBoot()).isEqualTo(boot);
     assertThat(attachedDisk.getAutoDelete()).isEqualTo(autoDelete);
 

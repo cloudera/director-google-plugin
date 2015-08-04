@@ -115,12 +115,34 @@ public final class Urls {
     return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
   }
 
+  public static String buildSQLUrl(String projectId, String... resoucePathParts) {
+    return buildSQLGoogleApisUrl(projectId, resoucePathParts);
+  }
+
   static String buildGoogleApisUrl(String projectId, String... resourcePathParts) {
     GenericUrl genericUrl = new GenericUrl();
     genericUrl.setScheme("https");
     genericUrl.setHost("www.googleapis.com");
 
     List<String> pathParts = Lists.newArrayList("", "compute", "v1");
+    pathParts.add("projects");
+    pathParts.add(projectId);
+
+    if (resourcePathParts != null) {
+      pathParts.addAll(Lists.newArrayList(resourcePathParts));
+    }
+
+    genericUrl.setPathParts(pathParts);
+
+    return genericUrl.build();
+  }
+
+  static String buildSQLGoogleApisUrl(String projectId, String... resourcePathParts) {
+    GenericUrl genericUrl = new GenericUrl();
+    genericUrl.setScheme("https");
+    genericUrl.setHost("www.googleapis.com");
+
+    List<String> pathParts = Lists.newArrayList("", "sql", "v1beta");
     pathParts.add("projects");
     pathParts.add(projectId);
 

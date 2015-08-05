@@ -111,7 +111,7 @@ public class GoogleComputeProviderTest {
 
     Compute.Zones.List computeZonesList = mockComputeToZonesList();
 
-    // We don't need to actually return an image, we just need to not throw a 404.
+    // We don't need to actually return a list of zones, we just need to not throw a 404.
     when(computeZonesList.execute()).thenReturn(null);
 
     // Prepare configuration for Google compute provider.

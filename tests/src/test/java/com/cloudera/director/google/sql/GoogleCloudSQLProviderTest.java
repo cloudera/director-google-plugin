@@ -16,11 +16,11 @@
 
 package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.sql.GoogleSQLProviderConfigurationProperty.REGION_SQL;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.TIER;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.ENGINE;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.ENGINE;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
@@ -45,7 +45,6 @@ import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.mode
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
-import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.UnrecoverableProviderException;
@@ -73,11 +72,11 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * Tests {@link GoogleSQLProvider}.
+ * Tests {@link GoogleCloudSQLProvider}.
  */
-public class GoogleSQLProviderTest {
+public class GoogleCloudSQLProviderTest {
 
-  private static final Logger LOG = Logger.getLogger(GoogleSQLProviderTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(GoogleCloudSQLProviderTest.class.getName());
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -91,10 +90,10 @@ public class GoogleSQLProviderTest {
   private static final String DATABASE_TYPE = "MYSQL";
   private static final String INVALID_INSTANCE_NAME_PREFIX = "-starts-with-dash";
 
-  private GoogleSQLProvider sqlProvider;
+  private GoogleCloudSQLProvider sqlProvider;
   private GoogleCredentials credentials;
   private SQLAdmin sqlAdmin;
-  private GoogleSQLInstanceTemplateConfigurationValidator validator;
+  private GoogleCloudSQLInstanceTemplateConfigurationValidator validator;
 
   @Before
   public void setUp() throws IOException {
@@ -109,13 +108,13 @@ public class GoogleSQLProviderTest {
     // We don't need to actually return an image, we just need to not throw a 404.
     when(sqlTierList.execute()).thenReturn(null);
 
-    // Prepare configuration for Google sql provider.
+    // Prepare configuration for Google Cloud SQL provider.
     Map<String, String> sqlAdminConfig = new HashMap<String, String>();
     sqlAdminConfig.put(REGION_SQL.unwrap().getConfigKey(), REGION_NAME_1);
     Configured resourceProviderConfiguration = new SimpleConfiguration(sqlAdminConfig);
 
-    // Create the Google sql provider.
-    sqlProvider = new GoogleSQLProvider(resourceProviderConfiguration, credentials,
+    // Create the Google Cloud SQL provider.
+    sqlProvider = new GoogleCloudSQLProvider(resourceProviderConfiguration, credentials,
         TestUtils.buildApplicationPropertiesConfig(), TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
   }
 
@@ -181,13 +180,13 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation dbCreationOperation = buildInitialOperation("insert", instanceUrl);
@@ -221,13 +220,13 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation vmCreationOperation1 = buildInitialOperation("insert", instanceUrl1);
@@ -242,7 +241,7 @@ public class GoogleSQLProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation("insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
@@ -312,13 +311,13 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation vmCreationOperation1 = buildInitialOperation("insert", instanceUrl1);
@@ -333,7 +332,7 @@ public class GoogleSQLProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation("insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
@@ -373,13 +372,13 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
     new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     // Configure stub for unsuccessful instance insertion operation of instance that already exists.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation vmCreationOperation = buildInitialOperation("insert", instanceUrl);
@@ -389,7 +388,7 @@ public class GoogleSQLProviderTest {
     when(sqlAdminOperations.get(PROJECT_ID, vmCreationOperation.getName())).thenReturn(sqlAdminOperationsGet);
     when(sqlAdminOperationsGet.execute()).then(
     new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
-        "RESOURCE_ALREADY_EXISTS", "Some error message..."));
+    "RESOURCE_ALREADY_EXISTS", "Some error message..."));
 
     // An UnrecoverableProviderException would be thrown if the compute provider did not treat an error code of
     // RESOURCE_ALREADY_EXISTS on insertion as acceptable.
@@ -415,7 +414,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -437,18 +436,18 @@ public class GoogleSQLProviderTest {
 
     when(sqlAdminInstancesGet2.execute()).thenReturn(instance2);
 
-    Collection<GoogleSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
+    Collection<GoogleCloudSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
 
     // Verify that both of the two requested instances were returned.
     assertThat(foundInstances.size()).isEqualTo(2);
 
     // Verify the properties of the first returned instance.
-    Iterator<GoogleSQLInstance> instanceIterator = foundInstances.iterator();
-    GoogleSQLInstance foundInstance1 = instanceIterator.next();
+    Iterator<GoogleCloudSQLInstance> instanceIterator = foundInstances.iterator();
+    GoogleCloudSQLInstance foundInstance1 = instanceIterator.next();
     assertThat(foundInstance1.getId()).isEqualTo(instanceName1);
 
     // Verify the properties of the second returned instance.
-    GoogleSQLInstance foundInstance2 = instanceIterator.next();
+    GoogleCloudSQLInstance foundInstance2 = instanceIterator.next();
     assertThat(foundInstance2.getId()).isEqualTo(instanceName2);
   }
 
@@ -461,7 +460,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
     new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -483,13 +482,13 @@ public class GoogleSQLProviderTest {
         GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
     when(sqlAdminInstancesGet2.execute()).thenThrow(exception);
 
-    Collection<GoogleSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
+    Collection<GoogleCloudSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
 
     // Verify that exactly one of the two requested instances was returned.
     assertThat(foundInstances.size()).isEqualTo(1);
 
     // Verify the properties of the returned instance.
-    GoogleSQLInstance foundInstance = foundInstances.iterator().next();
+    GoogleCloudSQLInstance foundInstance = foundInstances.iterator().next();
     assertThat(foundInstance.getId()).isEqualTo(instanceName1);
   }
 
@@ -503,7 +502,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), INVALID_INSTANCE_NAME_PREFIX);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -512,7 +511,7 @@ public class GoogleSQLProviderTest {
 
     // NPE would be thrown (due to lack of mocks) if the sql provider attempted actual calls against GCE.
     // When the instance name prefix is deemed invalid, no calls are attempted against GCE.
-    Collection<GoogleSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
+    Collection<GoogleCloudSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
 
     // Verify that no instances were returned.
     assertThat(foundInstances.size()).isEqualTo(0);
@@ -527,7 +526,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -572,7 +571,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -618,7 +617,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), INVALID_INSTANCE_NAME_PREFIX);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -650,15 +649,15 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance deletion operation.
@@ -681,7 +680,7 @@ public class GoogleSQLProviderTest {
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
     when(sqlAdminOperations.get(PROJECT_ID, vmDeletionOperation2.getName())).thenReturn(sqlAdminOperationsGet2);
     when(sqlAdminOperationsGet2.execute()).then(
-        new OperationAnswer(vmDeletionOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+    new OperationAnswer(vmDeletionOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     sqlProvider.delete(template, instanceIds);
 
@@ -701,12 +700,12 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
     new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
@@ -749,7 +748,7 @@ public class GoogleSQLProviderTest {
     templateConfig.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), INVALID_INSTANCE_NAME_PREFIX);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
@@ -771,12 +770,12 @@ public class GoogleSQLProviderTest {
     templateConfig.put(ENGINE.unwrap().getConfigKey(), DATABASE_TYPE);
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
+    GoogleCloudSQLInstanceTemplate template = sqlProvider.createResourceTemplate("template-1",
     new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     List<String> instanceIds = Lists.newArrayList(instanceName);
 
     // Configure stub for unsuccessful instance deletion operation of instance that does not exist.

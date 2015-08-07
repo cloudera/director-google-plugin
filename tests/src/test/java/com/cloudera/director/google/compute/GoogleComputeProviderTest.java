@@ -35,7 +35,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
-import com.cloudera.director.google.compute.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
@@ -262,11 +261,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
   }
 
   @Test
@@ -363,11 +362,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify second instance insertion call was made.
     Instance insertedInstance2 = insertedInstanceList.get(1);
@@ -385,11 +384,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify first instance deletion call was made.
     verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
@@ -461,11 +460,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList1.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify second instance insertion call was made.
     Instance insertedInstance2 = insertedInstanceList.get(1);
@@ -483,11 +482,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList2.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // NPE would be thrown (due to lack of mocks) if the compute provider attempted actual deletion calls against GCE.
     // If no NPE's are thrown, the test is a success.
@@ -514,7 +513,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful disk insertion operation.
     String diskName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName + "-pd-0";
-    String diskUrl = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    String diskUrl = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
     Operation diskCreationOperation = buildInitialOperation(ZONE_NAME, "insert", diskUrl);
@@ -547,7 +546,7 @@ public class GoogleComputeProviderTest {
     // Verify disk name, size and type.
     assertThat(insertedDisk.getName()).isEqualTo(diskName);
     assertThat(insertedDisk.getSizeGb()).isEqualTo(250);
-    assertThat(insertedDisk.getType()).isEqualTo(Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "Standard"));
+    assertThat(insertedDisk.getType()).isEqualTo(com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "Standard"));
 
     // Verify instance insertion call was made.
     ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
@@ -594,7 +593,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for first successful disk insertion operation.
     String diskName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1 + "-pd-0";
-    String diskUrl1 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    String diskUrl1 = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
     Operation diskCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", diskUrl1);
@@ -609,7 +608,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for second successful disk insertion operation.
     String diskName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2 + "-pd-0";
-    String diskUrl2 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    String diskUrl2 = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
     Operation diskCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", diskUrl2);
     ongoingDiskStub.thenReturn(diskCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -701,7 +700,7 @@ public class GoogleComputeProviderTest {
     // Verify first disk name, size and type.
     assertThat(insertedDisk1.getName()).isEqualTo(diskName1);
     assertThat(insertedDisk1.getSizeGb()).isEqualTo(500);
-    assertThat(insertedDisk1.getType()).isEqualTo(Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+    assertThat(insertedDisk1.getType()).isEqualTo(com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
 
     // Verify second persistent disk insertion call was made.
     Disk insertedDisk2 = insertedDisks.get(1);
@@ -709,7 +708,7 @@ public class GoogleComputeProviderTest {
     // Verify second disk name, size and type.
     assertThat(insertedDisk2.getName()).isEqualTo(diskName2);
     assertThat(insertedDisk2.getSizeGb()).isEqualTo(500);
-    assertThat(insertedDisk2.getType()).isEqualTo(Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
+    assertThat(insertedDisk2.getType()).isEqualTo(com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"));
 
     // Verify first instance insertion call was made.
     ArgumentCaptor<Instance> argumentCaptor2 = ArgumentCaptor.forClass(Instance.class);
@@ -812,11 +811,11 @@ public class GoogleComputeProviderTest {
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
 
     // Verify data disk.
     verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
-        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+        com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
   }
 
   @Test
@@ -843,7 +842,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk1 = new AttachedDisk();
     String diskName1 = UUID.randomUUID().toString();
-    String diskUrl1 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
+    String diskUrl1 = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     attachedDisk1.setBoot(true);
     attachedDisk1.setSource(diskUrl1);
     List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
@@ -864,7 +863,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk2 = new AttachedDisk();
     String diskName2 = UUID.randomUUID().toString();
-    String diskUrl2 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
+    String diskUrl2 = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
     attachedDisk2.setBoot(true);
     attachedDisk2.setSource(diskUrl2);
     List<AttachedDisk> diskList2 = Lists.newArrayList(attachedDisk2);
@@ -934,7 +933,7 @@ public class GoogleComputeProviderTest {
     // Configure boot disk.
     AttachedDisk attachedDisk1 = new AttachedDisk();
     String diskName = UUID.randomUUID().toString();
-    String diskUrl = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
+    String diskUrl = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     attachedDisk1.setBoot(true);
     attachedDisk1.setSource(diskUrl);
     List<AttachedDisk> diskList1 = Lists.newArrayList(attachedDisk1);
@@ -1277,7 +1276,7 @@ public class GoogleComputeProviderTest {
       String status) {
     Operation operation = new Operation();
 
-    operation.setZone(Urls.buildZonalUrl(PROJECT_ID, zone));
+    operation.setZone(com.cloudera.director.google.compute.util.Urls.buildZonalUrl(PROJECT_ID, zone));
     operation.setName(operationName);
     operation.setOperationType(operationType);
     operation.setTargetLink(targetLinkUrl);
@@ -1349,7 +1348,7 @@ public class GoogleComputeProviderTest {
    */
   private static void verifyAttachedDiskAttributes(AttachedDisk attachedDisk, Boolean boot, Boolean autoDelete,
       String diskType, Long diskSizeGb, String sourceImage, String localSSDInterfaceType,
-         String scratchOrPersistent, String source) {
+      String scratchOrPersistent, String source) {
     assertThat(attachedDisk.getBoot()).isEqualTo(boot);
     assertThat(attachedDisk.getAutoDelete()).isEqualTo(autoDelete);
 

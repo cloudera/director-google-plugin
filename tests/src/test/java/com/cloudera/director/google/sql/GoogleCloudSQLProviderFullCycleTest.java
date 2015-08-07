@@ -16,12 +16,11 @@
 
 package com.cloudera.director.google.sql;
 
-
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.TIER;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.ENGINE;
-import static com.cloudera.director.google.sql.GoogleSQLProviderConfigurationProperty.REGION_SQL;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.ENGINE;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
@@ -57,23 +56,25 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Performs 'live' tests of the full cycle of {@link GoogleSQLProvider}: allocate, getInstanceState, find, delete.
+ * Performs 'live' tests of the full cycle of {@link GoogleCloudSQLProvider}: allocate, getInstanceState, find, delete.
+ *
+ * This property is required: GCP_PROJECT_ID.
+ * These two system properties are optional: JSON_KEY_PATH, HALT_AFTER_ALLOCATION.
  *
  * If JSON_KEY_PATH is not specified, Application Default Credentials will be used.
  *
  * @see <a href="https://developers.google.com/identity/protocols/application-default-credentials"</a>
  */
 
-public class GoogleSQLProviderFullCycleTest {
+public class GoogleCloudSQLProviderFullCycleTest {
 
-  private static final Logger LOG = Logger.getLogger(GoogleSQLProviderFullCycleTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(GoogleCloudSQLProviderFullCycleTest.class.getName());
 
   private static final DefaultLocalizationContext DEFAULT_LOCALIZATION_CONTEXT =
       new DefaultLocalizationContext(Locale.getDefault(), "");
 
   private static final int POLLING_INTERVAL_SECONDS = 5;
 
-  //private static final String MY_REGION_NAME = "asia-east1";
   private static final String MY_REGION_NAME = "us-central";
   private static final String MY_TIER = "D4";
   private static final String MY_USER_PASSWORD = "admin";
@@ -84,23 +85,23 @@ public class GoogleSQLProviderFullCycleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-      testFixture = TestFixture.newTestFixture(true);
+      testFixture = TestFixture.newTestFixture(false);
   }
 
-  public GoogleSQLProviderFullCycleTest() {}
+  public GoogleCloudSQLProviderFullCycleTest() {}
 
   @Test
   public void testFullCycle() throws InterruptedException, IOException {
 
-    // Retrieve and list out the provider configuration properties for Google sql provider.
-    ResourceProviderMetadata sqlMetadata = GoogleSQLProvider.METADATA;
+    // Retrieve and list out the provider configuration properties for Google Cloud SQL provider.
+    ResourceProviderMetadata sqlMetadata = GoogleCloudSQLProvider.METADATA;
     LOG.info("Configurations required for 'sql' resource provider:");
     for (ConfigurationProperty property :
         sqlMetadata.getProviderConfigurationProperties()) {
       LOG.info(property.getName(DEFAULT_LOCALIZATION_CONTEXT));
     }
 
-    // Prepare configuration for Google sql provider.
+    // Prepare configuration for Google Cloud SQL provider.
     Map<String, String> sqlAdminConfig = new HashMap<String, String>();
     sqlAdminConfig.put(REGION_SQL.unwrap().getConfigKey(), MY_REGION_NAME);
     Configured resourceProviderConfiguration = new SimpleConfiguration(sqlAdminConfig);
@@ -110,19 +111,19 @@ public class GoogleSQLProviderFullCycleTest {
     GoogleCredentials credentials = new GoogleCredentials(applicationPropertiesConfig, testFixture.getProjectId(),
         testFixture.getJsonKey());
 
-    // Validate the Google sql provider configuration.
+    // Validate the Google Cloud SQL provider configuration.
     LOG.info("About to validate the resource provider configuration...");
-    ConfigurationValidator resourceProviderValidator = new GoogleSQLProviderConfigurationValidator(credentials);
+    ConfigurationValidator resourceProviderValidator = new GoogleCloudSQLProviderConfigurationValidator(credentials);
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
     resourceProviderValidator.validate("resource provider configuration", resourceProviderConfiguration, accumulator,
         DEFAULT_LOCALIZATION_CONTEXT);
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
-    // Create the Google sql provider.
-    GoogleSQLProvider sqlAdmin = new GoogleSQLProvider(resourceProviderConfiguration, credentials,
+    // Create the Google Cloud SQL provider.
+    GoogleCloudSQLProvider sqlAdmin = new GoogleCloudSQLProvider(resourceProviderConfiguration, credentials,
         applicationPropertiesConfig, TestUtils.buildGoogleConfig(), DEFAULT_LOCALIZATION_CONTEXT);
 
-    // Retrieve and list out the resource template configuration properties for Google compute provider.
+    // Retrieve and list out the resource template configuration properties for Google Cloud SQL provider.
     LOG.info("Configurations required for template:");
     for (ConfigurationProperty property :
         sqlMetadata.getResourceTemplateConfigurationProperties()) {
@@ -152,9 +153,9 @@ public class GoogleSQLProviderFullCycleTest {
     assertFalse(accumulator.getConditionsByKey().toString(), accumulator.hasError());
 
     // Create the resource template.
-    GoogleSQLInstanceTemplate template =
+    GoogleCloudSQLInstanceTemplate template =
         sqlAdmin.createResourceTemplate("template-1", templateConfiguration, tags);
-      assertNotNull(template);
+    assertNotNull(template);
 
     // Use the template to provision one resource.
     LOG.info("About to provision an instance...");
@@ -174,7 +175,7 @@ public class GoogleSQLProviderFullCycleTest {
 
     // Run a find by ID.
     LOG.info("About to lookup an instance...");
-    Collection<GoogleSQLInstance> instances = sqlAdmin.find(template, instanceIds);
+    Collection<GoogleCloudSQLInstance> instances = sqlAdmin.find(template, instanceIds);
     assertEquals(1, instances.size());
 
     for (DatabaseServerInstance foundInstance : instances) {
@@ -240,8 +241,8 @@ public class GoogleSQLProviderFullCycleTest {
   }
 
   private static void pollInstanceState(
-      GoogleSQLProvider sqlAdmin,
-      GoogleSQLInstanceTemplate template,
+      GoogleCloudSQLProvider sqlAdmin,
+      GoogleCloudSQLInstanceTemplate template,
       List<String> instanceIds,
       InstanceStatus desiredStatus) throws InterruptedException {
 

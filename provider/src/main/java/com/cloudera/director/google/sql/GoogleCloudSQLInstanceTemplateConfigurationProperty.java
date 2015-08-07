@@ -16,19 +16,19 @@
 
 package com.cloudera.director.google.sql;
 
-import com.cloudera.director.spi.v1.model.ConfigurationProperty;
-import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
-import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
-
 import static com.cloudera.director.spi.v1.database.DatabaseServerInstanceTemplate.DatabaseServerInstanceTemplateConfigurationPropertyToken.ADMIN_PASSWORD;
 import static com.cloudera.director.spi.v1.database.DatabaseServerInstanceTemplate.DatabaseServerInstanceTemplateConfigurationPropertyToken.ADMIN_USERNAME;
 import static com.cloudera.director.spi.v1.database.DatabaseServerInstanceTemplate.DatabaseServerInstanceTemplateConfigurationPropertyToken.TYPE;
 
+import com.cloudera.director.spi.v1.model.ConfigurationProperty;
+import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
+import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
+
 
 /**
- * Google SQL instance template configuration properties.
+ * Google Cloud SQL instance template configuration properties.
  */
-public enum GoogleSQLInstanceTemplateConfigurationProperty implements ConfigurationPropertyToken {
+public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements ConfigurationPropertyToken {
 
   TIER(new SimpleConfigurationPropertyBuilder()
       .configKey("tier")
@@ -49,12 +49,12 @@ public enum GoogleSQLInstanceTemplateConfigurationProperty implements Configurat
   ),
 
   /**
-   * The name of master user for the client DB instance.
+   * The name of the master user for the client DB instance.
    */
   MASTER_USERNAME(new SimpleConfigurationPropertyBuilder()
       .configKey(ADMIN_USERNAME.unwrap().getConfigKey())
       .name("Master username")
-      .defaultDescription("The name of master user for the client DB instance.")
+      .defaultDescription("The name of the master user for the client DB instance.")
       .build()),
 
   /**
@@ -92,12 +92,12 @@ public enum GoogleSQLInstanceTemplateConfigurationProperty implements Configurat
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleSQLInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
+  private GoogleCloudSQLInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
       this.configurationProperty = configurationProperty;
   }
 
   @Override
   public ConfigurationProperty unwrap() {
-                                        return configurationProperty;
-    }
+    return configurationProperty;
+  }
 }

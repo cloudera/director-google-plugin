@@ -30,8 +30,8 @@ import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.Compu
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 
 import com.cloudera.director.google.Configurations;
-import com.cloudera.director.google.compute.util.Names;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Names;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
@@ -215,7 +215,7 @@ public class GoogleComputeProvider
       String dataDiskType = template.getConfigurationValue(
           DATA_DISK_TYPE,
           templateLocalizationContext);
-      String dataDiskTypeUrl = Urls.buildDiskTypeUrl(projectId, zone, dataDiskType);
+      String dataDiskTypeUrl = com.cloudera.director.google.compute.util.Urls.buildDiskTypeUrl(projectId, zone, dataDiskType);
       boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
       long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           DATA_DISK_SIZE_GB,
@@ -263,7 +263,7 @@ public class GoogleComputeProvider
             accumulator.addError(null, e.getMessage());
           }
 
-          String persistentDiskUrl = Urls.buildDiskUrl(projectId, zone, persistentDisk.getName());
+          String persistentDiskUrl = com.cloudera.director.google.compute.util.Urls.buildDiskUrl(projectId, zone, persistentDisk.getName());
           attachedDisk.setType("PERSISTENT");
           attachedDisk.setSource(persistentDiskUrl);
         }
@@ -274,7 +274,7 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
-      String networkUrl = Urls.buildNetworkUrl(projectId, networkName);
+      String networkUrl = com.cloudera.director.google.compute.util.Urls.buildNetworkUrl(projectId, networkName);
 
       // Compose the network interface.
       String accessConfigName = "External NAT";
@@ -288,7 +288,7 @@ public class GoogleComputeProvider
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
-      String machineTypeUrl = Urls.buildMachineTypeUrl(projectId, zone, machineTypeName);
+      String machineTypeUrl = com.cloudera.director.google.compute.util.Urls.buildMachineTypeUrl(projectId, zone, machineTypeName);
 
       // Compose the instance metadata containing the SSH public key, user name and tags.
       List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();

@@ -25,24 +25,24 @@ import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import java.util.List;
 import java.util.Map;
 
-public class GoogleSQLInstanceTemplate extends DatabaseServerInstanceTemplate {
+public class GoogleCloudSQLInstanceTemplate extends DatabaseServerInstanceTemplate {
 
   /**
    * The list of configuration properties (including inherited properties).
    */
   private static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
   ConfigurationPropertiesUtil.merge(
-  DatabaseServerInstanceTemplate.getConfigurationProperties(),
-  ConfigurationPropertiesUtil.asConfigurationPropertyList(
-  GoogleSQLInstanceTemplateConfigurationProperty.values())
+      DatabaseServerInstanceTemplate.getConfigurationProperties(),
+      ConfigurationPropertiesUtil.asConfigurationPropertyList(
+          GoogleCloudSQLInstanceTemplateConfigurationProperty.values())
   );
 
   public static List<ConfigurationProperty> getConfigurationProperties() {
     return CONFIGURATION_PROPERTIES;
   }
 
-  public GoogleSQLInstanceTemplate(String name, Configured configuration,
-      Map<String, String> tags, LocalizationContext providerLocalizationContext) {
+  public GoogleCloudSQLInstanceTemplate(String name, Configured configuration, Map<String, String> tags,
+      LocalizationContext providerLocalizationContext) {
     super(name, configuration, tags, providerLocalizationContext);
   }
 }

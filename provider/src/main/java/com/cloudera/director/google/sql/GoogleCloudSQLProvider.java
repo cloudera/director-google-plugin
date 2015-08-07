@@ -16,11 +16,11 @@
 
 package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
-import static com.cloudera.director.google.sql.GoogleSQLProviderConfigurationProperty.REGION_SQL;
 
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.database.DatabaseType;
 import com.cloudera.director.spi.v1.database.util.AbstractDatabaseServerInstance;
@@ -31,7 +31,6 @@ import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.InstanceState;
 import com.cloudera.director.spi.v1.model.InstanceStatus;
-import com.cloudera.director.spi.v1.model.InstanceTemplate;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.Resource;
 import com.cloudera.director.spi.v1.model.util.CompositeConfigurationValidator;
@@ -65,34 +64,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 
-public class GoogleSQLProvider
-        extends AbstractDatabaseServerProvider<GoogleSQLInstance, GoogleSQLInstanceTemplate> {
+public class GoogleCloudSQLProvider
+    extends AbstractDatabaseServerProvider<GoogleCloudSQLInstance, GoogleCloudSQLInstanceTemplate> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(GoogleSQLProvider.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudSQLProvider.class);
 
   private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
   private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
-          GoogleSQLProviderConfigurationProperty.values());
+          GoogleCloudSQLProviderConfigurationProperty.values());
 
   /**
    * The resource provider ID.
    */
-  public static final String ID = GoogleSQLProvider.class.getCanonicalName();
+  public static final String ID = GoogleCloudSQLProvider.class.getCanonicalName();
 
   public static final ResourceProviderMetadata METADATA = SimpleDatabaseServerProviderMetadata
       .databaseServerProviderMetadataBuilder()
       .id(ID)
       .name("GoogleCloudSQL")
       .description("Google Cloud SQL provider")
-      .providerClass(GoogleSQLProvider.class)
+      .providerClass(GoogleCloudSQLProvider.class)
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
       .resourceTemplateConfigurationProperties(
-          GoogleSQLInstanceTemplate.getConfigurationProperties())
+          GoogleCloudSQLInstanceTemplate.getConfigurationProperties())
       .supportedDatabaseTypes(new HashSet<DatabaseType>(Arrays.asList(DatabaseType.MYSQL)))
-      .resourceDisplayProperties(GoogleSQLInstance.getDisplayProperties())
+      .resourceDisplayProperties(GoogleCloudSQLInstance.getDisplayProperties())
       .build();
 
   private GoogleCredentials credentials;
@@ -101,8 +100,8 @@ public class GoogleSQLProvider
 
   private final ConfigurationValidator resourceTemplateConfigurationValidator;
 
-  public GoogleSQLProvider(Configured configuration, GoogleCredentials credentials,
-      Config applicationProperties, Config googleConfig, LocalizationContext cloudLocalizationContext) {
+  public GoogleCloudSQLProvider(Configured configuration, GoogleCredentials credentials,
+                                Config applicationProperties, Config googleConfig, LocalizationContext cloudLocalizationContext) {
     super(configuration, METADATA, cloudLocalizationContext);
 
     this.credentials = credentials;
@@ -116,7 +115,6 @@ public class GoogleSQLProvider
 
     try {
       sqlAdmin.tiers().list(projectId).execute();
-
     } catch (GoogleJsonResponseException e) {
       if (e.getStatusCode() == 404) {
           throw new InvalidCredentialsException("Unable to list tiers in project: " + projectId, e);
@@ -129,7 +127,7 @@ public class GoogleSQLProvider
 
     this.resourceTemplateConfigurationValidator =
         new CompositeConfigurationValidator(METADATA.getResourceTemplateConfigurationValidator(),
-            new GoogleSQLInstanceTemplateConfigurationValidator(this));
+            new GoogleCloudSQLInstanceTemplateConfigurationValidator(this));
   }
 
   @Override
@@ -148,14 +146,14 @@ public class GoogleSQLProvider
   }
 
   @Override
-  public GoogleSQLInstanceTemplate createResourceTemplate(
+  public GoogleCloudSQLInstanceTemplate createResourceTemplate(
       String name, Configured configuration, Map<String, String> tags) {
-    return new GoogleSQLInstanceTemplate(name, configuration, tags, getLocalizationContext());
+    return new GoogleCloudSQLInstanceTemplate(name, configuration, tags, getLocalizationContext());
   }
 
   @Override
-  public void allocate(GoogleSQLInstanceTemplate template,
-  Collection<String> instanceIds, int minCount) throws InterruptedException {
+  public void allocate(GoogleCloudSQLInstanceTemplate template,
+      Collection<String> instanceIds, int minCount) throws InterruptedException {
 
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
@@ -164,7 +162,7 @@ public class GoogleSQLProvider
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
 
-    SQLAdmin sqladmin = credentials.getSQLAdmin();
+    SQLAdmin sqlAdmin = credentials.getSQLAdmin();
     String projectId = credentials.getProjectId();
 
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
@@ -181,7 +179,6 @@ public class GoogleSQLProvider
       String tierName = template.getConfigurationValue(TIER, templateLocalizationContext);
       settings.setTier(tierName);
 
-
       // Compose the instance.
       DatabaseInstance instance = new DatabaseInstance();
       String regionName = template.getConfigurationValue(REGION_SQL, templateLocalizationContext);
@@ -192,7 +189,7 @@ public class GoogleSQLProvider
 
       try {
         // This is an async operation. We must poll until it completes to confirm the disk exists.
-        Operation dbCreationOperation = sqladmin.instances().insert(projectId, instance).execute();
+        Operation dbCreationOperation = sqlAdmin.instances().insert(projectId, instance).execute();
 
         dbCreationOperations.add(dbCreationOperation);
       } catch (GoogleJsonResponseException e) {
@@ -211,14 +208,14 @@ public class GoogleSQLProvider
     // Wait for operations to reach DONE state before returning.
     // This is the status of the Operations we're referring to, not of the Instances.
     List<Operation> successfulOperations = pollPendingOperations(projectId, dbCreationOperations, DONE_STATE,
-    sqladmin, accumulator);
+        sqlAdmin, accumulator);
     int successfulOperationCount = successfulOperations.size() + preExistingDatabaseInstanceCount;
 
     if (successfulOperationCount < minCount) {
       LOG.info("Provisioned {} instances out of {}. minCount is {}. Tearing down provisioned instances.",
       successfulOperationCount, instanceIds.size(), minCount);
 
-      tearDownResources(projectId, dbCreationOperations, sqladmin, accumulator);
+      tearDownResources(projectId, dbCreationOperations, sqlAdmin, accumulator);
 
       PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
       throw new UnrecoverableProviderException("Problem allocating instances.", pluginExceptionDetails);
@@ -251,7 +248,7 @@ public class GoogleSQLProvider
   private void tearDownResources(String projectId, List<Operation> dbCreationOperations,
       SQLAdmin sqladmin, PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
 
-    // Use this list to keep track of all disk and instance deletion operations.
+    // Use this list to keep track of database instance deletion operations.
     List<Operation> tearDownOperations = new ArrayList<Operation>();
 
     // Iterate over each instance creation operation.
@@ -274,24 +271,24 @@ public class GoogleSQLProvider
     }
 
     List<Operation> successfulTearDownOperations = pollPendingOperations(projectId, tearDownOperations, DONE_STATE,
-            sqladmin, accumulator);
+        sqladmin, accumulator);
     int tearDownOperationCount = tearDownOperations.size();
     int successfulTearDownOperationCount = successfulTearDownOperations.size();
 
     if (successfulTearDownOperationCount < tearDownOperationCount) {
         accumulator.addError(null, successfulTearDownOperationCount + " of the " + tearDownOperationCount +
-                " tear down operations completed successfully.");
+            " tear down operations completed successfully.");
     }
   }
 
   @Override
-  public Collection<GoogleSQLInstance> find(GoogleSQLInstanceTemplate template, Collection<String> instanceIds)
+  public Collection<GoogleCloudSQLInstance> find(GoogleCloudSQLInstanceTemplate template, Collection<String> instanceIds)
       throws InterruptedException {
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
-    List<GoogleSQLInstance> result = new ArrayList<GoogleSQLInstance>();
+    List<GoogleCloudSQLInstance> result = new ArrayList<GoogleCloudSQLInstance>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
     if (!prefixIsValid(template, templateLocalizationContext)) {
@@ -305,7 +302,7 @@ public class GoogleSQLProvider
 
       try {
         DatabaseInstance instance = sqlAdmin.instances().get(projectId, decoratedInstanceName).execute();
-        result.add(new GoogleSQLInstance(template, currentId, instance));
+        result.add(new GoogleCloudSQLInstance(template, currentId, instance));
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           LOG.info("Instance '{}' not found.", decoratedInstanceName);
@@ -320,7 +317,7 @@ public class GoogleSQLProvider
   }
 
   @Override
-  public Map<String, InstanceState> getInstanceState(GoogleSQLInstanceTemplate template,
+  public Map<String, InstanceState> getInstanceState(GoogleCloudSQLInstanceTemplate template,
       Collection<String> instanceIds) {
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
@@ -363,7 +360,7 @@ public class GoogleSQLProvider
   }
 
   @Override
-  public void delete(GoogleSQLInstanceTemplate template,
+  public void delete(GoogleCloudSQLInstanceTemplate template,
       Collection<String> instanceIds) throws InterruptedException {
 
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
@@ -396,7 +393,7 @@ public class GoogleSQLProvider
           LOG.info("Attempted to delete instance '{}', but it does not exist.", decoratedInstanceName);
         } else if (e.getStatusCode() == 409) {
           // TODO Might want to handle this error another way.
-          LOG.info("Attempted to delete instance '{}', but it's still deleting.", decoratedInstanceName);
+          LOG.info("Attempted to delete instance '{}', but it's already in the process of being deleted.", decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -424,7 +421,7 @@ public class GoogleSQLProvider
     return googleConfig;
   }
 
-  private static String decorateInstanceName(GoogleSQLInstanceTemplate template, String currentId,
+  private static String decorateInstanceName(GoogleCloudSQLInstanceTemplate template, String currentId,
       LocalizationContext templateLocalizationContext) {
     return template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext) + "-" + currentId;
   }
@@ -541,11 +538,11 @@ public class GoogleSQLProvider
     return successfulOperations;
   }
 
-  private boolean prefixIsValid(GoogleSQLInstanceTemplate template,
-                                LocalizationContext templateLocalizationContext) {
+  private boolean prefixIsValid(GoogleCloudSQLInstanceTemplate template,
+      LocalizationContext templateLocalizationContext) {
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
-    GoogleSQLInstanceTemplateConfigurationValidator.checkPrefix(template, accumulator, templateLocalizationContext);
+    GoogleCloudSQLInstanceTemplateConfigurationValidator.checkPrefix(template, accumulator, templateLocalizationContext);
 
     boolean isValid = accumulator.getConditionsByKey().isEmpty();
 

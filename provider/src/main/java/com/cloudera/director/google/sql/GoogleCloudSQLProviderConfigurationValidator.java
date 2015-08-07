@@ -16,7 +16,7 @@
 
 package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.sql.GoogleSQLProviderConfigurationProperty.REGION_SQL;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
 import com.cloudera.director.google.internal.GoogleCredentials;
@@ -35,21 +35,22 @@ import java.io.IOException;
 /**
  * Validates Google Cloud SQL provider configuration.
  */
-public class GoogleSQLProviderConfigurationValidator implements ConfigurationValidator {
+public class GoogleCloudSQLProviderConfigurationValidator implements ConfigurationValidator {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(GoogleSQLProviderConfigurationValidator.class);
+      LoggerFactory.getLogger(GoogleCloudSQLProviderConfigurationValidator.class);
 
   private static final String REGION_NOT_FOUND_MSG = "Region '%s' not found for project '%s'.";
+  private static final String REGION_SUGGESTION = "You should probably use '%s' instead.";
 
   private GoogleCredentials credentials;
 
   /**
    * Creates a Google Cloud SQL provider configuration validator with the specified parameters.
    */
-  public GoogleSQLProviderConfigurationValidator(GoogleCredentials credentials) {
-        this.credentials = credentials;
-    }
+  public GoogleCloudSQLProviderConfigurationValidator(GoogleCredentials credentials) {
+    this.credentials = credentials;
+  }
 
   @Override
   public void validate(String name, Configured configuration,
@@ -80,7 +81,8 @@ public class GoogleSQLProviderConfigurationValidator implements ConfigurationVal
 
     if (regionName.equals("us-central1")) {
       // We must manually handle this case.
-      regionName = "";
+      addError(accumulator, REGION_SQL, localizationContext, null, REGION_NOT_FOUND_MSG + " " + REGION_SUGGESTION,
+          regionName, projectId, "us-central");
     } else if (regionName.equals("us-central")) {
       regionName = "us-central1";
     }
@@ -89,8 +91,7 @@ public class GoogleSQLProviderConfigurationValidator implements ConfigurationVal
       compute.regions().get(projectId, regionName).execute();
     } catch (GoogleJsonResponseException e) {
       if (e.getStatusCode() == 404) {
-        addError(accumulator, REGION_SQL,
-            localizationContext, null, REGION_NOT_FOUND_MSG, regionName, projectId);
+        addError(accumulator, REGION_SQL, localizationContext, null, REGION_NOT_FOUND_MSG, regionName, projectId);
       } else {
         throw new TransientProviderException(e);
       }

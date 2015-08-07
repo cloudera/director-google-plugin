@@ -16,7 +16,7 @@
 
 package com.cloudera.director.google.internal;
 
-import com.cloudera.director.google.compute.util.Names;
+import com.cloudera.director.google.util.Names;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
@@ -38,14 +38,14 @@ public class GoogleCredentials {
   private final String projectId;
   private final String jsonKey;
   private final Compute compute;
-  private final SQLAdmin sqladmin;
+  private final SQLAdmin sqlAdmin;
 
   public GoogleCredentials(Config applicationProperties, String projectId, String jsonKey) {
     this.applicationProperties = applicationProperties;
     this.projectId = projectId;
     this.jsonKey = jsonKey;
     this.compute = buildCompute();
-    this.sqladmin = buildSQLAdmin();
+    this.sqlAdmin = buildSQLAdmin();
   }
 
   private Compute buildCompute() {
@@ -119,7 +119,7 @@ public class GoogleCredentials {
   }
 
   public SQLAdmin getSQLAdmin() {
-    return sqladmin;
+    return sqlAdmin;
   }
 
   public boolean match(String projectId, String jsonKey) {

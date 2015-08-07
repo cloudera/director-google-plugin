@@ -17,8 +17,8 @@
 package com.cloudera.director.google;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
-import com.cloudera.director.google.sql.GoogleSQLProvider;
-import com.cloudera.director.google.sql.GoogleSQLProviderConfigurationValidator;
+import com.cloudera.director.google.sql.GoogleCloudSQLProvider;
+import com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationValidator;
 import com.cloudera.director.google.compute.GoogleComputeProviderConfigurationValidator;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
@@ -43,7 +43,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
   public static final String ID = "google";
 
   private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA =
-      Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleSQLProvider.METADATA));
+      Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleCloudSQLProvider.METADATA));
 
   private GoogleCredentials credentials;
   private Config applicationProperties;
@@ -73,8 +73,8 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     ConfigurationValidator providerSpecificValidator;
     if (resourceProviderMetadata.getId().equals(GoogleComputeProvider.METADATA.getId())) {
       providerSpecificValidator = new GoogleComputeProviderConfigurationValidator(credentials);
-    } else if (resourceProviderMetadata.getId().equals(GoogleSQLProvider.METADATA.getId())) {
-      providerSpecificValidator = new GoogleSQLProviderConfigurationValidator(credentials);
+    } else if (resourceProviderMetadata.getId().equals(GoogleCloudSQLProvider.METADATA.getId())) {
+      providerSpecificValidator = new GoogleCloudSQLProviderConfigurationValidator(credentials);
     } else {
       throw new NoSuchElementException("Invalid provider id: " + resourceProviderMetadata.getId());
     }
@@ -88,8 +88,8 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
       return new GoogleComputeProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
-    } else if (GoogleSQLProvider.METADATA.getId().equals(resourceProviderId)) {
-      return new GoogleSQLProvider(configuration, credentials, applicationProperties, googleConfig,
+    } else if (GoogleCloudSQLProvider.METADATA.getId().equals(resourceProviderId)) {
+      return new GoogleCloudSQLProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
     }
 

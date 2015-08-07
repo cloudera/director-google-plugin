@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.sun.org.apache.xalan.internal.xsltc.runtime.InternalRuntimeError;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -118,7 +117,7 @@ public class GoogleComputeProviderFullCycleTest {
 
     // Prepare configuration for Google compute provider.
     Map<String, String> computeConfig = new HashMap<String, String>();
-    computeConfig.put(REGION.unwrap().getConfigKey(), "europe-west1");
+    computeConfig.put(REGION.unwrap().getConfigKey(), "us-central1");
     Configured resourceProviderConfiguration = new SimpleConfiguration(computeConfig);
 
     // Create Google credentials for use by both the validator and the provider.
@@ -150,7 +149,7 @@ public class GoogleComputeProviderFullCycleTest {
     templateConfig.put(IMAGE.unwrap().getConfigKey(), image);
     templateConfig.put(TYPE.unwrap().getConfigKey(), "n1-standard-1");
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), "default");
-    templateConfig.put(ZONE.unwrap().getConfigKey(), "europe-west1-d");
+    templateConfig.put(ZONE.unwrap().getConfigKey(), "us-central1-f");
     templateConfig.put(LOCAL_SSD_INTERFACE_TYPE.unwrap().getConfigKey(), localSSDInterfaceType);
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), testFixture.getSshPublicKey());
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), testFixture.getUserName());

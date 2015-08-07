@@ -16,38 +16,26 @@
 
 package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.sql.GoogleSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
-
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
-import com.cloudera.director.google.Configurations;
-import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
-import com.cloudera.director.spi.v1.model.exception.PluginExceptionCondition;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
-import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.services.sqladmin.SQLAdmin;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class GoogleSQLInstanceTemplateConfigurationValidator implements ConfigurationValidator  {
+public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements ConfigurationValidator  {
   private static final Logger LOG =
-      LoggerFactory.getLogger(GoogleSQLInstanceTemplateConfigurationValidator.class);
+      LoggerFactory.getLogger(GoogleCloudSQLInstanceTemplateConfigurationValidator.class);
 
   @VisibleForTesting
   static final String INVALID_TIER_MSG = "Tier '%s' not found.";
@@ -63,27 +51,26 @@ public class GoogleSQLInstanceTemplateConfigurationValidator implements Configur
       "letter, or digit.";
 
   /**
-   * The Google SQL provider.
+   * The Google Cloud SQL provider.
    */
-  private final GoogleSQLProvider provider;
+  private final GoogleCloudSQLProvider provider;
 
   /**
    * The pattern to which instance name prefixes must conform. The pattern is the same as that for instance names in
    * general, except that we allow a trailing dash to be used. This is allowed since we always append a dash and the
    * specified instance id to the prefix.
    *
-   *  @see <a href="https://developers.google.com/resources/api-libraries/documentation/compute/v1/java/latest/com/google/api/services/compute/model/Instance.html#setName(java.lang.String)" />
-   *  TODO fix link
+   *  @see <a href="https://developers.google.com/resources/api-libraries/documentation/sqladmin/v1beta4/java/latest/com/google/api/services/sqladmin/model/DatabaseInstance.html#setName(java.lang.String)" />
    */
   private final static Pattern instanceNamePrefixPattern = Pattern.compile("[a-z][-a-z0-9]*");
 
   /**
-   * Creates a Google SQL instance template configuration validator with the specified
+   * Creates a Google Cloud SQL instance template configuration validator with the specified
    * parameters.
    *
-   * @param provider the Google SQL provider
+   * @param provider the Google Cloud SQL provider
    */
-  public GoogleSQLInstanceTemplateConfigurationValidator(GoogleSQLProvider provider) {
+  public GoogleCloudSQLInstanceTemplateConfigurationValidator(GoogleCloudSQLProvider provider) {
     this.provider = Preconditions.checkNotNull(provider, "provider");
   }
 
@@ -108,7 +95,7 @@ public class GoogleSQLInstanceTemplateConfigurationValidator implements Configur
 
     String tier = configuration.getConfigurationValue(TIER, localizationContext);
 
-    // TODO Might want to make an API call instead.
+    // TODO(kl3n1nz) Might want to make an API call instead.
     // SQL API currently is supporting only list() method.
     if (tier != null && !TIERS.contains(tier)) {
       addError(accumulator, TIER, localizationContext, null, INVALID_TIER_MSG, tier);

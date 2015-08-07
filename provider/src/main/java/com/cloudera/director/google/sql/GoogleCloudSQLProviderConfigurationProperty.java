@@ -23,7 +23,7 @@ import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilde
 /**
  * Google Cloud SQL configuration properties.
  */
-public enum GoogleSQLProviderConfigurationProperty implements ConfigurationPropertyToken {
+public enum GoogleCloudSQLProviderConfigurationProperty implements ConfigurationPropertyToken {
 
   REGION_SQL(new SimpleConfigurationPropertyBuilder()
       .configKey("region_sql")
@@ -49,13 +49,13 @@ public enum GoogleSQLProviderConfigurationProperty implements ConfigurationPrope
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleSQLProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
+  private GoogleCloudSQLProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }
 
   @Override
   public ConfigurationProperty unwrap() {
-                                        return configurationProperty;
-    }
+      return configurationProperty;
+  }
 }
 

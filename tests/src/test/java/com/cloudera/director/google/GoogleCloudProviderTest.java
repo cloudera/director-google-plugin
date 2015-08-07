@@ -24,12 +24,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.cloudera.director.google.util.Names;
 import com.cloudera.director.google.compute.GoogleComputeProvider;
-import com.cloudera.director.google.sql.GoogleSQLProvider;
-import com.cloudera.director.google.compute.util.Names;
+import com.cloudera.director.google.sql.GoogleCloudSQLProvider;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
-import com.cloudera.director.google.sql.GoogleSQLProvider;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
@@ -122,7 +121,7 @@ public class GoogleCloudProviderTest {
 
       if (GoogleComputeProvider.ID.equals(resourceProviderId)) {
         computeResourceProviderMetadata = resourceProviderMetadata;
-      } else if (GoogleSQLProvider.ID.equals(resourceProviderId)) {
+      } else if (GoogleCloudSQLProvider.ID.equals(resourceProviderId)) {
         sqlResourceProviderMetadata = resourceProviderMetadata;
       } else {
         throw new IllegalArgumentException("Unexpected resource provider: " + resourceProviderId);
@@ -136,10 +135,9 @@ public class GoogleCloudProviderTest {
             new SimpleConfiguration(Collections.<String, String>emptyMap()));
     Assert.assertEquals(GoogleComputeProvider.class, computeResourceProvider.getClass());
 
-
     ResourceProvider<?, ?> sqlResourceProvider =
-        googleProvider.createResourceProvider(GoogleSQLProvider.ID,
+        googleProvider.createResourceProvider(GoogleCloudSQLProvider.ID,
             new SimpleConfiguration(Collections.<String, String>emptyMap()));
-    Assert.assertEquals(GoogleSQLProvider.class, sqlResourceProvider.getClass());
+    Assert.assertEquals(GoogleCloudSQLProvider.class, sqlResourceProvider.getClass());
   }
 }

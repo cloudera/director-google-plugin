@@ -29,7 +29,7 @@ import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTempla
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
 import com.cloudera.director.google.Configurations;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;

@@ -22,22 +22,20 @@ import com.cloudera.director.spi.v1.model.DisplayPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleDisplayPropertyBuilder;
 import com.cloudera.director.spi.v1.util.DisplayPropertiesUtil;
 import com.google.api.services.sqladmin.model.DatabaseInstance;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-public class GoogleSQLInstance
-    extends AbstractDatabaseServerInstance<GoogleSQLInstanceTemplate, DatabaseInstance> {
+public class GoogleCloudSQLInstance
+    extends AbstractDatabaseServerInstance<GoogleCloudSQLInstanceTemplate, DatabaseInstance> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(GoogleSQLInstance.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudSQLInstance.class);
 
   /**
    * The list of display properties (including inherited properties).
@@ -46,9 +44,9 @@ public class GoogleSQLInstance
       DisplayPropertiesUtil.asDisplayPropertyList(GoogleSQLInstanceDisplayPropertyToken.values());
 
   /**
-   * Returns the list of display properties for a Google instance, including inherited properties.
+   * Returns the list of display properties for a Google Cloud SQL instance, including inherited properties.
    *
-   * @return the list of display properties for a Google instance, including inherited properties
+   * @return the list of display properties for a Google Cloud SQL instance, including inherited properties
    */
   public static List<DisplayProperty> getDisplayProperties() {
     return DISPLAY_PROPERTIES;
@@ -59,7 +57,7 @@ public class GoogleSQLInstance
    */
   public static enum GoogleSQLInstanceDisplayPropertyToken implements DisplayPropertyToken {
 
-    //TODO Add other display properties.
+    //TODO(kl3n1nz) Add other display properties.
     /**
      * The display property.
      */
@@ -99,7 +97,7 @@ public class GoogleSQLInstance
     }
   }
 
-  public static final Type TYPE = new ResourceType("GoogleSQLInstance");
+  public static final Type TYPE = new ResourceType("GoogleCloudSQLInstance");
 
   /**
    * Creates a Google Cloud SQL instance with the specified parameters.
@@ -109,8 +107,8 @@ public class GoogleSQLInstance
    * @param instanceDetails the provider-specific instance details
    * @throws IllegalArgumentException if the instance does not have a valid private IP address
    */
-  protected GoogleSQLInstance(GoogleSQLInstanceTemplate template,
-                                  String instanceId, DatabaseInstance instanceDetails) {
+  protected GoogleCloudSQLInstance(GoogleCloudSQLInstanceTemplate template, String instanceId,
+      DatabaseInstance instanceDetails) {
     super(template, instanceId, getPrivateIpAddress(instanceDetails), null, instanceDetails);
   }
 

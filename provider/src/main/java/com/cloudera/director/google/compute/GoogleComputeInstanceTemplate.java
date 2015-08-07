@@ -41,8 +41,8 @@ public class GoogleComputeInstanceTemplate extends ComputeInstanceTemplate {
     return CONFIGURATION_PROPERTIES;
   }
 
-  public GoogleComputeInstanceTemplate(String name, Configured configuration,
-      Map<String, String> tags, LocalizationContext providerLocalizationContext) {
+  public GoogleComputeInstanceTemplate(String name, Configured configuration, Map<String, String> tags,
+      LocalizationContext providerLocalizationContext) {
     super(name, configuration, tags, providerLocalizationContext);
   }
 }

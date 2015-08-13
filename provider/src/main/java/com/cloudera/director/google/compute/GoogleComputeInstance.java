@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google.compute;
 
-import com.cloudera.director.google.compute.util.Dates;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Dates;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.model.DisplayProperty;
 import com.cloudera.director.spi.v1.model.DisplayPropertyToken;

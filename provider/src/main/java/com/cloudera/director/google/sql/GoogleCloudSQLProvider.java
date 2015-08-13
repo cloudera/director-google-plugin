@@ -205,10 +205,6 @@ public class GoogleCloudSQLProvider
       }
     }
 
-    // Create the user.
-
-
-
     // Wait for operations to reach DONE state before returning.
     // This is the status of the Operations we're referring to, not of the Instances.
     List<Operation> successfulOperations = pollPendingOperations(projectId, dbCreationOperations, DONE_STATE,
@@ -396,7 +392,6 @@ public class GoogleCloudSQLProvider
         if (e.getStatusCode() == 404) {
           LOG.info("Attempted to delete instance '{}', but it does not exist.", decoratedInstanceName);
         } else if (e.getStatusCode() == 409) {
-          // TODO Might want to handle this error another way.
           LOG.info("Attempted to delete instance '{}', but it's already in the process of being deleted.", decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());

@@ -80,10 +80,12 @@ public class GoogleCloudSQLProviderConfigurationValidator implements Configurati
 
     try {
       List<Tier> tierList = sqlAdmin.tiers().list(projectId).execute().getItems();
-      boolean isRegionValid = false;
-      for (Tier tier : tierList) {
-        if (tier.getRegion().contains(regionName)) {
-          return;
+
+      if (tierList != null) {
+        for (Tier tier : tierList) {
+          if (tier.getRegion().contains(regionName)) {
+            return;
+          }
         }
       }
       addError(accumulator, REGION_SQL, localizationContext, null, REGION_NOT_FOUND_MSG, regionName, projectId);

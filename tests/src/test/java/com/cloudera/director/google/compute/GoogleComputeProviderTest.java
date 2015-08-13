@@ -233,7 +233,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
@@ -401,7 +401,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl1);
@@ -417,7 +417,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -532,7 +532,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation1 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl1);
@@ -548,7 +548,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
     Compute.ZoneOperations.Get computeZoneOperationsGet2 = mock(Compute.ZoneOperations.Get.class);
@@ -630,7 +630,7 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
 
     // Configure stub for successful disk insertion operation.
     String diskName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName + "-pd-0";
@@ -708,10 +708,10 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
 
     // Configure stub for first successful disk insertion operation.
     String diskName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1 + "-pd-0";
@@ -899,7 +899,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for unsuccessful instance insertion operation of instance that already exists.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
@@ -1249,10 +1249,10 @@ public class GoogleComputeProviderTest {
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
+    String instanceUrl2 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance deletion operation.
@@ -1300,7 +1300,7 @@ public class GoogleComputeProviderTest {
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
+    String instanceUrl1 = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
@@ -1367,7 +1367,7 @@ public class GoogleComputeProviderTest {
 
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     List<String> instanceIds = Lists.newArrayList(instanceName);
 
     // Configure stub for unsuccessful instance deletion operation of instance that does not exist.

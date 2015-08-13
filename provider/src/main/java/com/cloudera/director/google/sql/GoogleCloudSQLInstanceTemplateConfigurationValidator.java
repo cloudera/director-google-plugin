@@ -20,16 +20,21 @@ import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateCon
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
+import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
+import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
+import com.google.api.services.sqladmin.model.Tier;
+import com.google.api.services.sqladmin.SQLAdmin;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -39,8 +44,6 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
 
   @VisibleForTesting
   static final String INVALID_TIER_MSG = "Tier '%s' not found.";
-  @VisibleForTesting
-  static final List<String> TIERS = ImmutableList.of("D0", "D1", "D2", "D4", "D8", "D16", "D32");
   @VisibleForTesting
   static final String PREFIX_MISSING_MSG = "Instance name prefix must be provided.";
   @VisibleForTesting
@@ -89,15 +92,26 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
    * @param localizationContext the localization context
    */
   void checkTier(Configured configuration,
-      PluginExceptionConditionAccumulator accumulator,
-      LocalizationContext localizationContext) {
+      PluginExceptionConditionAccumulator accumulator, LocalizationContext localizationContext) {
 
-    String tier = configuration.getConfigurationValue(TIER, localizationContext);
+    GoogleCredentials credentials = provider.getCredentials();
+    SQLAdmin sqlAdmin = credentials.getSQLAdmin();
+    String projectId = credentials.getProjectId();
+    String tierName = configuration.getConfigurationValue(TIER, localizationContext);
 
-    // TODO(kl3n1nz) Might want to make an API call instead.
-    // SQL API currently is supporting only list() method.
-    if (tier != null && !TIERS.contains(tier)) {
-      addError(accumulator, TIER, localizationContext, null, INVALID_TIER_MSG, tier);
+    try {
+      List<Tier> tierList = sqlAdmin.tiers().list(projectId).execute().getItems();
+
+      if (tierList != null) {
+        for (Tier tier : tierList) {
+          if (tier.getTier().equals(tierName)) {
+            return;
+          }
+        }
+      }
+      addError(accumulator, TIER, localizationContext, null, INVALID_TIER_MSG, tierName);
+    } catch (IOException e) {
+      throw new TransientProviderException(e);
     }
   }
 

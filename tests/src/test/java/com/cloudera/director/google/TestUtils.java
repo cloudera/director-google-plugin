@@ -78,7 +78,7 @@ public class TestUtils {
     return ComputeUrls.buildGlobalUrl(projectId, "images", image);
   }
 
-  public static String buildInstanceUrl(String projectId, String zone, String instanceName) {
+  public static String buildComputeInstanceUrl(String projectId, String zone, String instanceName) {
     return ComputeUrls.buildZonalUrl(projectId, zone, "instances", instanceName);
   }
 

@@ -27,6 +27,7 @@ import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccu
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,8 @@ public class GoogleComputeProviderConfigurationValidator implements Configuratio
   private static final Logger LOG =
       LoggerFactory.getLogger(GoogleComputeProviderConfigurationValidator.class);
 
-  private static final String REGION_NOT_FOUND_MSG = "Region '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String REGION_NOT_FOUND_MSG = "Region '%s' not found for project '%s'.";
 
   private GoogleCredentials credentials;
 

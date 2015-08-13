@@ -91,8 +91,8 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
    * @param accumulator         the exception condition accumulator
    * @param localizationContext the localization context
    */
-  void checkTier(Configured configuration,
-      PluginExceptionConditionAccumulator accumulator, LocalizationContext localizationContext) {
+  void checkTier(Configured configuration, PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
 
     GoogleCredentials credentials = provider.getCredentials();
     SQLAdmin sqlAdmin = credentials.getSQLAdmin();
@@ -122,8 +122,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
    * @param accumulator         the exception condition accumulator
    * @param localizationContext the localization context
    */
-  static void checkPrefix(Configured configuration,
-      PluginExceptionConditionAccumulator accumulator,
+  static void checkPrefix(Configured configuration, PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
     String instanceNamePrefix = configuration.getConfigurationValue(INSTANCE_NAME_PREFIX, localizationContext);

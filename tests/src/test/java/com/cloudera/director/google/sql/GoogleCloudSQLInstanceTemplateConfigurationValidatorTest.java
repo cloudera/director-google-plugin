@@ -37,6 +37,8 @@ import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
 import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
 import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.SQLAdmin;
+import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.Tier;
+import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.TiersListResponse;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
@@ -53,6 +55,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Tests {@link GoogleCloudSQLInstanceTemplateConfigurationValidator}.
@@ -148,12 +151,32 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
 
   @Test
   public void testCheckTier() throws IOException {
+    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
+    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
+    TiersListResponse tierListResponse = new TiersListResponse();
+    Tier tier = new Tier();
+    tier.setTier(TIER_NAME);
+    tierListResponse.setItems(Arrays.asList(tier));
+
+    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
+    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
+    when(sqlAdminList.execute()).thenReturn(tierListResponse);
+
     checkTier(TIER_NAME);
     verifyClean();
   }
 
   @Test
   public void testCheckTier_WrongTier() throws IOException {
+    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
+    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
+    TiersListResponse tierListResponse = new TiersListResponse();
+    tierListResponse.setItems(null);
+
+    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
+    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
+    when(sqlAdminList.execute()).thenReturn(tierListResponse);
+
     checkTier(TIER_NAME_WRONG);
     verifySingleError(TIER, INVALID_TIER_MSG, TIER_NAME_WRONG);
   }

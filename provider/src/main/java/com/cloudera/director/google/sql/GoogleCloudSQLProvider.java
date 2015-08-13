@@ -45,12 +45,12 @@ import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.sqladmin.model.DatabaseInstance;
 import com.google.api.services.sqladmin.model.Operation;
 import com.google.api.services.sqladmin.model.OperationError;
 import com.google.api.services.sqladmin.model.OperationErrors;
 import com.google.api.services.sqladmin.model.Settings;
 import com.google.api.services.sqladmin.SQLAdmin;
-import com.google.api.services.sqladmin.model.DatabaseInstance;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,7 +161,6 @@ public class GoogleCloudSQLProvider
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
 
-
     SQLAdmin sqlAdmin = credentials.getSQLAdmin();
     String projectId = credentials.getProjectId();
 
@@ -209,6 +208,7 @@ public class GoogleCloudSQLProvider
     // This is the status of the Operations we're referring to, not of the Instances.
     List<Operation> successfulOperations = pollPendingOperations(projectId, dbCreationOperations, DONE_STATE,
         sqlAdmin, accumulator);
+
     int successfulOperationCount = successfulOperations.size() + preExistingDatabaseInstanceCount;
 
     if (successfulOperationCount < minCount) {

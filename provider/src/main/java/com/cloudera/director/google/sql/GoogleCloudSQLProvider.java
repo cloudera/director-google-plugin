@@ -46,6 +46,7 @@ import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.sqladmin.model.DatabaseInstance;
+import com.google.api.services.sqladmin.model.IpConfiguration;
 import com.google.api.services.sqladmin.model.Operation;
 import com.google.api.services.sqladmin.model.OperationError;
 import com.google.api.services.sqladmin.model.OperationErrors;
@@ -177,6 +178,10 @@ public class GoogleCloudSQLProvider
 
       String tierName = template.getConfigurationValue(TIER, templateLocalizationContext);
       settings.setTier(tierName);
+
+      IpConfiguration ipConfiguration = new IpConfiguration();
+      ipConfiguration.setIpv4Enabled(true);
+      settings.setIpConfiguration(ipConfiguration);
 
       // Compose the instance.
       DatabaseInstance instance = new DatabaseInstance();

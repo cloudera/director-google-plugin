@@ -26,9 +26,9 @@ import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.services.compute.Compute;
 import com.google.api.services.sqladmin.SQLAdmin;
 import com.google.api.services.sqladmin.model.Tier;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,8 @@ public class GoogleCloudSQLProviderConfigurationValidator implements Configurati
   private static final Logger LOG =
       LoggerFactory.getLogger(GoogleCloudSQLProviderConfigurationValidator.class);
 
-  private static final String REGION_NOT_FOUND_MSG = "Region '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String REGION_NOT_FOUND_MSG = "Region '%s' not found for project '%s'.";
 
   private GoogleCredentials credentials;
 

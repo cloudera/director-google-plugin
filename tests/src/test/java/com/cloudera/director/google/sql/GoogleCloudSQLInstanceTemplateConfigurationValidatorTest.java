@@ -52,10 +52,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Arrays;
 
 /**
  * Tests {@link GoogleCloudSQLInstanceTemplateConfigurationValidator}.
@@ -88,6 +88,18 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     when(sqlProvider.getConfigurationValue(eq(REGION_SQL), any(LocalizationContext.class))).thenReturn(REGION_NAME_1);
     when(credentials.getSQLAdmin()).thenReturn(sqlAdmin);
     when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+  }
+
+  private TiersListResponse mockSQLAdminToTiersListResponse() throws IOException {
+    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
+    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
+    TiersListResponse tiersListResponse = new TiersListResponse();
+
+    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
+    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
+    when(sqlAdminList.execute()).thenReturn(tiersListResponse);
+
+    return tiersListResponse;
   }
 
   @Test
@@ -151,16 +163,11 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
 
   @Test
   public void testCheckTier() throws IOException {
-    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
-    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
-    TiersListResponse tierListResponse = new TiersListResponse();
+    TiersListResponse tiersListResponse = mockSQLAdminToTiersListResponse();
+
     Tier tier = new Tier();
     tier.setTier(TIER_NAME);
-    tierListResponse.setItems(Arrays.asList(tier));
-
-    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
-    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
-    when(sqlAdminList.execute()).thenReturn(tierListResponse);
+    tiersListResponse.setItems(Arrays.asList(tier));
 
     checkTier(TIER_NAME);
     verifyClean();
@@ -168,14 +175,8 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
 
   @Test
   public void testCheckTier_WrongTier() throws IOException {
-    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
-    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
-    TiersListResponse tierListResponse = new TiersListResponse();
-    tierListResponse.setItems(null);
-
-    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
-    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
-    when(sqlAdminList.execute()).thenReturn(tierListResponse);
+    TiersListResponse tiersListResponse = mockSQLAdminToTiersListResponse();
+    tiersListResponse.setItems(null);
 
     checkTier(TIER_NAME_WRONG);
     verifySingleError(TIER, INVALID_TIER_MSG, TIER_NAME_WRONG);

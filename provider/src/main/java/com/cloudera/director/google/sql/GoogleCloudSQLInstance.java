@@ -22,6 +22,7 @@ import com.cloudera.director.spi.v1.model.DisplayPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleDisplayPropertyBuilder;
 import com.cloudera.director.spi.v1.util.DisplayPropertiesUtil;
 import com.google.api.services.sqladmin.model.DatabaseInstance;
+import com.google.api.services.sqladmin.model.IpMapping;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -45,8 +46,6 @@ public class GoogleCloudSQLInstance
 
   /**
    * Returns the list of display properties for a Google Cloud SQL instance, including inherited properties.
-   *
-   * @return the list of display properties for a Google Cloud SQL instance, including inherited properties
    */
   public static List<DisplayProperty> getDisplayProperties() {
     return DISPLAY_PROPERTIES;
@@ -122,11 +121,16 @@ public class GoogleCloudSQLInstance
   private static InetAddress getPrivateIpAddress(DatabaseInstance instance) {
     Preconditions.checkNotNull(instance, "instance is null");
 
-    String ipv6Adress = instance.getIpv6Address();
-    try {
-      return InetAddress.getByName(ipv6Adress);
-    } catch (UnknownHostException e) {
-      throw new IllegalArgumentException("Invalid private IP Address", e);
+    List<IpMapping> ipMappingList = instance.getIpAddresses();
+
+    if (ipMappingList == null || ipMappingList.size() == 0) {
+      throw new IllegalArgumentException("No network interfaces found for database instance '" + instance.getName() + "'.");
+    } else {
+      try {
+        return InetAddress.getByName(ipMappingList.get(0).getIpAddress());
+      } catch (UnknownHostException e) {
+        throw new IllegalArgumentException("Invalid IPv4 address", e);
+      }
     }
   }
 

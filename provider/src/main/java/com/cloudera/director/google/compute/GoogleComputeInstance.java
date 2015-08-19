@@ -51,8 +51,6 @@ public class GoogleComputeInstance
 
   /**
    * Returns the list of display properties for a Google instance, including inherited properties.
-   *
-   * @return the list of display properties for a Google instance, including inherited properties
    */
   public static List<DisplayProperty> getDisplayProperties() {
     return DISPLAY_PROPERTIES;

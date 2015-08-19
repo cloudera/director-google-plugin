@@ -61,8 +61,7 @@ public class GoogleCredentials {
       } else {
         Collection COMPUTE_SCOPES = Collections.singletonList(ComputeScopes.COMPUTE);
 
-        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY);
-        credential = credential.createScoped(COMPUTE_SCOPES);
+        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY).createScoped(COMPUTE_SCOPES);
       }
 
       return new Compute.Builder(httpTransport,
@@ -90,8 +89,7 @@ public class GoogleCredentials {
       } else {
         Collection SQLSERVICE_ADMIN_SCOPES = Collections.singletonList(SQLAdminScopes.SQLSERVICE_ADMIN);
 
-        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY);
-        credential = credential.createScoped(SQLSERVICE_ADMIN_SCOPES);
+        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY).createScoped(SQLSERVICE_ADMIN_SCOPES);
       }
 
       return new SQLAdmin.Builder(httpTransport,

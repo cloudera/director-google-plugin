@@ -16,6 +16,8 @@
 
 package com.cloudera.director.google.sql;
 
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
@@ -45,12 +47,14 @@ import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.sqladmin.model.AclEntry;
 import com.google.api.services.sqladmin.model.DatabaseInstance;
 import com.google.api.services.sqladmin.model.IpConfiguration;
 import com.google.api.services.sqladmin.model.Operation;
 import com.google.api.services.sqladmin.model.OperationError;
 import com.google.api.services.sqladmin.model.OperationErrors;
 import com.google.api.services.sqladmin.model.Settings;
+import com.google.api.services.sqladmin.model.User;
 import com.google.api.services.sqladmin.SQLAdmin;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
@@ -167,6 +171,8 @@ public class GoogleCloudSQLProvider
 
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
     List<Operation> dbCreationOperations = new ArrayList<Operation>();
+    List<Operation> userCreationOperations = new ArrayList<Operation>();
+    List<String> successfullyCreatedInstancesNames = new ArrayList<String>();
 
     int preExistingDatabaseInstanceCount = 0;
 
@@ -181,6 +187,14 @@ public class GoogleCloudSQLProvider
 
       IpConfiguration ipConfiguration = new IpConfiguration();
       ipConfiguration.setIpv4Enabled(true);
+
+      // TODO(kl3n1nz) Might want to whitelist only GCE instances.
+      AclEntry aclEntry = new AclEntry();
+      aclEntry.setValue("0.0.0.0/0");
+      aclEntry.setKind("sql#aclEntry");
+      aclEntry.setName("world");
+
+      ipConfiguration.setAuthorizedNetworks(Arrays.asList(aclEntry));
       settings.setIpConfiguration(ipConfiguration);
 
       // Compose the instance.
@@ -191,6 +205,7 @@ public class GoogleCloudSQLProvider
       instance.setRegion(regionName);
       instance.setSettings(settings);
 
+
       try {
         // This is an async operation. We must poll until it completes to confirm the disk exists.
         Operation dbCreationOperation = sqlAdmin.instances().insert(projectId, instance).execute();
@@ -199,8 +214,7 @@ public class GoogleCloudSQLProvider
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 409) {
           LOG.info("Database instance '{}' already exists.", instance.getName());
-
-          preExistingDatabaseInstanceCount++;
+          successfullyCreatedInstancesNames.add(decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -211,14 +225,29 @@ public class GoogleCloudSQLProvider
 
     // Wait for operations to reach DONE state before returning.
     // This is the status of the Operations we're referring to, not of the Instances.
-    List<Operation> successfulOperations = pollPendingOperations(projectId, dbCreationOperations, DONE_STATE,
-        sqlAdmin, accumulator);
+    successfullyCreatedInstancesNames.addAll(pollPendingOperations(projectId, dbCreationOperations, DONE_STATE,
+        sqlAdmin, accumulator));
 
-    int successfulOperationCount = successfulOperations.size() + preExistingDatabaseInstanceCount;
+    for (String instanceName : successfullyCreatedInstancesNames) {
+      User user = new User();
+      user.setName(template.getConfigurationValue(MASTER_USERNAME, templateLocalizationContext));
+      user.setPassword(template.getConfigurationValue(MASTER_USER_PASSWORD, templateLocalizationContext));
+
+      try {
+        Operation userCreationOperation = sqlAdmin.users().insert(projectId, instanceName, user).execute();
+
+        userCreationOperations.add(userCreationOperation);
+      } catch (IOException e) {
+        accumulator.addError(null, e.getMessage());
+      }
+    }
+
+    int successfulOperationCount =
+        pollPendingOperations(projectId, userCreationOperations, DONE_STATE, sqlAdmin, accumulator).size();
 
     if (successfulOperationCount < minCount) {
       LOG.info("Provisioned {} instances out of {}. minCount is {}. Tearing down provisioned instances.",
-      successfulOperationCount, instanceIds.size(), minCount);
+          successfulOperationCount, instanceIds.size(), minCount);
 
       tearDownResources(projectId, dbCreationOperations, sqlAdmin, accumulator);
 
@@ -275,10 +304,9 @@ public class GoogleCloudSQLProvider
       }
     }
 
-    List<Operation> successfulTearDownOperations = pollPendingOperations(projectId, tearDownOperations, DONE_STATE,
-        sqladmin, accumulator);
     int tearDownOperationCount = tearDownOperations.size();
-    int successfulTearDownOperationCount = successfulTearDownOperations.size();
+    int successfulTearDownOperationCount =
+        pollPendingOperations(projectId, tearDownOperations, DONE_STATE, sqladmin, accumulator).size();
 
     if (successfulTearDownOperationCount < tearDownOperationCount) {
         accumulator.addError(null, successfulTearDownOperationCount + " of the " + tearDownOperationCount +
@@ -296,7 +324,7 @@ public class GoogleCloudSQLProvider
     List<GoogleCloudSQLInstance> result = new ArrayList<GoogleCloudSQLInstance>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return result;
     }
 
@@ -331,7 +359,7 @@ public class GoogleCloudSQLProvider
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       for (String currentId : instanceIds) {
         result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
       }
@@ -376,7 +404,7 @@ public class GoogleCloudSQLProvider
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
     // So we shouldn't attempt to delete them, but we also shouldn't report an error.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return;
     }
 
@@ -449,7 +477,7 @@ public class GoogleCloudSQLProvider
   // The list is cloned and not directly modified.
   // All arguments are required and must be non-null.
   // Returns the number of operations that reached one of the acceptable states within the timeout period.
-  private static List<Operation> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
+  private static List<String> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
       List<String> acceptableStates, SQLAdmin sqlAdmin, PluginExceptionConditionAccumulator accumulator)
           throws InterruptedException {
     // Clone the list so we can prune it without modifying the original.
@@ -465,7 +493,7 @@ public class GoogleCloudSQLProvider
     int pollIncrement = 0;
 
     // Use this list to keep track of each operation that reached one of the acceptable states.
-    List<Operation> successfulOperations = new ArrayList<Operation>();
+    List<String> successfulTargets = new ArrayList<String>();
 
     while (pendingOperations.size() > 0 && !timeoutExceeded) {
       Thread.currentThread().sleep(pollInterval * 1000);
@@ -502,10 +530,10 @@ public class GoogleCloudSQLProvider
           }
 
           if (acceptableStates.contains(subjectOperation.getStatus())) {
-              completedOperations.add(pendingOperation);
+            completedOperations.add(pendingOperation);
 
             if (!isActualError) {
-              successfulOperations.add(pendingOperation);
+              successfulTargets.add(pendingOperation.getTargetId());
             }
           }
         } catch (IOException e) {
@@ -536,10 +564,10 @@ public class GoogleCloudSQLProvider
       }
     }
 
-    return successfulOperations;
+    return successfulTargets;
   }
 
-  private boolean prefixIsValid(GoogleCloudSQLInstanceTemplate template,
+  private boolean isPrefixValid(GoogleCloudSQLInstanceTemplate template,
       LocalizationContext templateLocalizationContext) {
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 

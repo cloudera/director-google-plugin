@@ -36,7 +36,6 @@ public final class Urls {
     }
 
     GenericUrl url = new GenericUrl(fullResourceUrl);
-
     return Iterables.getLast(url.getPathParts());
   }
 

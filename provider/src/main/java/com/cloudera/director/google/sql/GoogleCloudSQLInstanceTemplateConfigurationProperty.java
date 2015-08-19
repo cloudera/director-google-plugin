@@ -77,9 +77,7 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
       .required(true)
       .defaultDescription("The name of the database engine to be used for this instance.")
       .widget(ConfigurationProperty.Widget.LIST)
-      .addValidValues(
-         "MYSQL"
-      )
+      .addValidValues("MYSQL")
       .build());
 
   /**

@@ -497,7 +497,7 @@ public class GoogleComputeProvider
     List<GoogleComputeInstance> result = new ArrayList<GoogleComputeInstance>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return result;
     }
 
@@ -571,7 +571,7 @@ public class GoogleComputeProvider
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       for (String currentId : instanceIds) {
         result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
       }
@@ -617,7 +617,7 @@ public class GoogleComputeProvider
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
     // So we shouldn't attempt to delete them, but we also shouldn't report an error.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return;
     }
 
@@ -786,7 +786,7 @@ public class GoogleComputeProvider
     return successfulOperations;
   }
 
-  private boolean prefixIsValid(GoogleComputeInstanceTemplate template,
+  private boolean isPrefixValid(GoogleComputeInstanceTemplate template,
       LocalizationContext templateLocalizationContext) {
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 

@@ -25,6 +25,7 @@ import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilde
  */
 public enum GoogleCloudSQLProviderConfigurationProperty implements ConfigurationPropertyToken {
 
+  // TODO(kl3n1nz) Might want to make an API call to list valid values.
   REGION_SQL(new SimpleConfigurationPropertyBuilder()
       .configKey("region_sql")
       .name("Region")
@@ -35,8 +36,9 @@ public enum GoogleCloudSQLProviderConfigurationProperty implements Configuration
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues(
           "us-central",
-          "asia-east1",
-          "europe-west1")
+          "us-east1",
+          "europe-west1",
+          "asia-east1")
       .build());
 
   /**

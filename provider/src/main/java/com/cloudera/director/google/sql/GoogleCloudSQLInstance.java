@@ -108,7 +108,8 @@ public class GoogleCloudSQLInstance
    */
   protected GoogleCloudSQLInstance(GoogleCloudSQLInstanceTemplate template, String instanceId,
       DatabaseInstance instanceDetails) {
-    super(template, instanceId, getPrivateIpAddress(instanceDetails), null, instanceDetails);
+    // TODO(kl3n1nz) Might want to let the user specify a port number.
+    super(template, instanceId, getPrivateIpAddress(instanceDetails), 3306, instanceDetails);
   }
 
   /**

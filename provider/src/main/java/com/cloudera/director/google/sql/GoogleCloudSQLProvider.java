@@ -287,7 +287,7 @@ public class GoogleCloudSQLProvider
 
     // Iterate over each instance creation operation.
     for (Operation dbCreationOperation : dbCreationOperations) {
-      String dbName = Urls.getLocalName(dbCreationOperation.getTargetLink());
+      String dbName = dbCreationOperation.getTargetId();
 
       try {
         Operation tearDownOperation = sqladmin.instances().delete(projectId, dbName).execute();
@@ -377,7 +377,7 @@ public class GoogleCloudSQLProvider
 
           result.put(currentId, new SimpleInstanceState(instanceStatus));
         } catch (GoogleJsonResponseException e) {
-          if (e.getStatusCode() == 404) {
+          if (e.getStatusCode() == 404 || e.getStatusCode() == 403) {
             LOG.info("Instance '{}' not found.", decoratedInstanceName);
 
             result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
@@ -520,7 +520,7 @@ public class GoogleCloudSQLProvider
                 // We want insertion and deletion operations to be idempotent.
                 if (operationType.equals("insert") && errorCode.equals("RESOURCE_ALREADY_EXISTS")) {
                   LOG.info("Attempted to create resource '{}', but it already exists.",
-                      Urls.getLocalName(subjectOperation.getTargetLink()));
+                      subjectOperation.getTargetId());
                 } else {
                   accumulator.addError(null, error.getMessage());
                   isActualError = true;

@@ -54,7 +54,7 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleCredentialsProviderConfigurationProperty(
+  GoogleCredentialsProviderConfigurationProperty(
       ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }

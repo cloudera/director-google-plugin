@@ -36,8 +36,6 @@ import java.util.Map;
 public class GoogleCloudSQLInstance
     extends AbstractDatabaseServerInstance<GoogleCloudSQLInstanceTemplate, DatabaseInstance> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudSQLInstance.class);
-
   /**
    * The list of display properties (including inherited properties).
    */
@@ -54,7 +52,7 @@ public class GoogleCloudSQLInstance
   /**
    * Google Cloud SQL instance display properties.
    */
-  public static enum GoogleSQLInstanceDisplayPropertyToken implements DisplayPropertyToken {
+  public enum GoogleSQLInstanceDisplayPropertyToken implements DisplayPropertyToken {
 
     //TODO(kl3n1nz) Add other display properties.
     /**
@@ -78,7 +76,7 @@ public class GoogleCloudSQLInstance
      *
      * @param displayProperty the display property
      */
-    private GoogleSQLInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
+    GoogleSQLInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
       this.displayProperty = displayProperty;
     }
 

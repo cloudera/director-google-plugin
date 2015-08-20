@@ -1494,7 +1494,7 @@ public class GoogleComputeProviderTest {
 
       return polledOperation;
     }
-  };
+  }
 
   /**
    * Verifies that the properties of the specified attached disk match the specified arguments.

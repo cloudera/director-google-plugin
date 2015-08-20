@@ -31,11 +31,11 @@ public class GoogleCloudSQLInstanceTemplate extends DatabaseServerInstanceTempla
    * The list of configuration properties (including inherited properties).
    */
   private static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
-  ConfigurationPropertiesUtil.merge(
-      DatabaseServerInstanceTemplate.getConfigurationProperties(),
-      ConfigurationPropertiesUtil.asConfigurationPropertyList(
-          GoogleCloudSQLInstanceTemplateConfigurationProperty.values())
-  );
+      ConfigurationPropertiesUtil.merge(
+          DatabaseServerInstanceTemplate.getConfigurationProperties(),
+          ConfigurationPropertiesUtil.asConfigurationPropertyList(
+              GoogleCloudSQLInstanceTemplateConfigurationProperty.values())
+      );
 
   public static List<ConfigurationProperty> getConfigurationProperties() {
     return CONFIGURATION_PROPERTIES;

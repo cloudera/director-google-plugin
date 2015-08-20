@@ -89,7 +89,7 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleCloudSQLInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
+  GoogleCloudSQLInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
       this.configurationProperty = configurationProperty;
   }
 

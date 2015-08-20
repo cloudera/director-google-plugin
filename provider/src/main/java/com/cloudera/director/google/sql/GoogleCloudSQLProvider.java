@@ -74,8 +74,8 @@ public class GoogleCloudSQLProvider
 
   private static final Logger LOG = LoggerFactory.getLogger(GoogleCloudSQLProvider.class);
 
-  private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
-  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
+  private static final List<String> DONE_STATE = Arrays.asList("DONE");
+  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList("RUNNING", "DONE");
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
@@ -506,7 +506,7 @@ public class GoogleCloudSQLProvider
     List<String> successfulTargets = new ArrayList<String>();
 
     while (pendingOperations.size() > 0 && !timeoutExceeded) {
-      Thread.currentThread().sleep(pollInterval * 1000);
+      Thread.sleep(pollInterval * 1000);
 
       totalTimePollingSeconds += pollInterval;
 

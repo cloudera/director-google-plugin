@@ -191,7 +191,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     Map<String, String> configMap = Maps.newHashMap();
     configMap.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), prefix);
     Configured configuration = new SimpleConfiguration(configMap);
-    validator.checkPrefix(configuration, accumulator, localizationContext);
+    GoogleCloudSQLInstanceTemplateConfigurationValidator.checkPrefix(configuration, accumulator, localizationContext);
   }
 
   /**

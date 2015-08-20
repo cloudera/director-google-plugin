@@ -1033,7 +1033,7 @@ public class GoogleCloudSQLProviderTest {
       return polledOperation;
     }
 
-  };
+  }
 
   /**
    * Verifies that the specified plugin exception details contain exactly one condition, which must be an

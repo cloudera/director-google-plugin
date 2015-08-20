@@ -51,7 +51,7 @@ public enum GoogleCloudSQLProviderConfigurationProperty implements Configuration
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleCloudSQLProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
+  GoogleCloudSQLProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }
 

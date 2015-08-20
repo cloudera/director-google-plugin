@@ -86,8 +86,8 @@ public class GoogleComputeProvider
 
   private static final Logger LOG = LoggerFactory.getLogger(GoogleComputeProvider.class);
 
-  private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
-  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
+  private static final List<String> DONE_STATE = Arrays.asList("DONE");
+  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList("RUNNING", "DONE");
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
@@ -299,7 +299,7 @@ public class GoogleComputeProvider
       accessConfig.setType(accessConfigType);
       NetworkInterface networkInterface = new NetworkInterface();
       networkInterface.setNetwork(networkUrl);
-      networkInterface.setAccessConfigs(Arrays.asList(new AccessConfig[]{accessConfig}));
+      networkInterface.setAccessConfigs(Arrays.asList(accessConfig));
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
@@ -335,7 +335,7 @@ public class GoogleComputeProvider
       instance.setName(decoratedInstanceName);
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);
-      instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
+      instance.setNetworkInterfaces(Arrays.asList(networkInterface));
 
       // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
       // This is not the same as the template 'tags' which are propagated as instance metadata.
@@ -708,7 +708,7 @@ public class GoogleComputeProvider
     List<Operation> successfulOperations = new ArrayList<Operation>();
 
     while (pendingOperations.size() > 0 && !timeoutExceeded) {
-      Thread.currentThread().sleep(pollInterval * 1000);
+      Thread.sleep(pollInterval * 1000);
 
       totalTimePollingSeconds += pollInterval;
 

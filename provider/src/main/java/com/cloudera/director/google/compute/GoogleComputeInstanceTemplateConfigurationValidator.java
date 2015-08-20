@@ -371,7 +371,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
     if (dataDiskType != null && !DATA_DISK_TYPES.contains(dataDiskType)) {
       addError(accumulator, DATA_DISK_TYPE, localizationContext, null, INVALID_DATA_DISK_TYPE_MSG,
-          new Object[]{dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES)});
+          dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES));
     }
   }
 

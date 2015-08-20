@@ -59,7 +59,7 @@ public class GoogleComputeInstance
   /**
    * Google compute instance display properties.
    */
-  public static enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
+  public enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
 
     IMAGE_ID(new SimpleDisplayPropertyBuilder()
         .displayKey("imageId")
@@ -188,7 +188,7 @@ public class GoogleComputeInstance
      *
      * @param displayProperty the display property
      */
-    private GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
+    GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
       this.displayProperty = displayProperty;
     }
 

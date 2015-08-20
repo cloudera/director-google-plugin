@@ -24,7 +24,6 @@ import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
-
 /**
  * Google Cloud SQL instance template configuration properties.
  */

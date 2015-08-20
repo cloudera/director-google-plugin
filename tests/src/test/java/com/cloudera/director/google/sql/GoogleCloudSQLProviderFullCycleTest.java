@@ -157,10 +157,18 @@ public class GoogleCloudSQLProviderFullCycleTest {
         sqlAdmin.createResourceTemplate("template-1", templateConfiguration, tags);
     assertNotNull(template);
 
-    // Use the template to provision one resource.
-    LOG.info("About to provision an instance...");
+
     List<String> instanceIds = Arrays.asList(UUID.randomUUID().toString());
 
+    // Verify that instances are not created.
+    Collection<GoogleCloudSQLInstance> instances = sqlAdmin.find(template, instanceIds);
+    assertEquals(0, instances.size());
+
+    Map<String, InstanceState> instanceStates = sqlAdmin.getInstanceState(template, instanceIds);
+    assertEquals(instanceIds.size(), instanceStates.size());
+
+    // Use the template to provision one resource.
+    LOG.info("About to provision an instance...");
     try {
         sqlAdmin.allocate(template, instanceIds, 1);
     } catch (UnrecoverableProviderException e) {
@@ -175,8 +183,12 @@ public class GoogleCloudSQLProviderFullCycleTest {
 
     // Run a find by ID.
     LOG.info("About to lookup an instance...");
-    Collection<GoogleCloudSQLInstance> instances = sqlAdmin.find(template, instanceIds);
+    instances = sqlAdmin.find(template, instanceIds);
     assertEquals(1, instances.size());
+
+    // Verify that no exception is thrown.
+    instanceStates = sqlAdmin.getInstanceState(template, instanceIds);
+    assertEquals(instanceIds.size(), instanceStates.size());
 
     for (DatabaseServerInstance foundInstance : instances) {
       LOG.info("Found instance '" + foundInstance.getId() + "' with private ip " +
@@ -192,6 +204,10 @@ public class GoogleCloudSQLProviderFullCycleTest {
     sqlAdmin.allocate(template, instanceIds, 1);
     instances = sqlAdmin.find(template, instanceIds);
     assertEquals(1, instances.size());
+
+    // Verify that no exception is thrown.
+    instanceStates = sqlAdmin.getInstanceState(template, instanceIds);
+    assertEquals(instanceIds.size(), instanceStates.size());
 
     // Verify the id of the returned instance.
     instance = instances.iterator().next();
@@ -223,8 +239,13 @@ public class GoogleCloudSQLProviderFullCycleTest {
     pollInstanceState(sqlAdmin, template, instanceIds, InstanceStatus.UNKNOWN);
 
     // Verify that the instance has been deleted.
+    System.out.println("EK:VERIFY THAT THE INSTANCE HAS BEEN DELETED.");
     instances = sqlAdmin.find(template, instanceIds);
     assertEquals(0, instances.size());
+
+    // Verify that no exception is thrown.
+    instanceStates = sqlAdmin.getInstanceState(template, instanceIds);
+    assertEquals(instanceIds.size(), instanceStates.size());
 
     LOG.info("About to delete the same instance again...");
     try {
@@ -251,7 +272,7 @@ public class GoogleCloudSQLProviderFullCycleTest {
 
     Map<String, InstanceState> idToInstanceStateMap = sqlAdmin.getInstanceState(template, instanceIds);
 
-    assertEquals(1, idToInstanceStateMap.size());
+    assertEquals(instanceIds.size(), idToInstanceStateMap.size());
 
     for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
       LOG.info(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));

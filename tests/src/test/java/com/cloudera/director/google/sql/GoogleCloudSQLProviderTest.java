@@ -219,12 +219,12 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful user insertion operation.
     SQLAdmin.Users sqlAdminUsers = mockSQLAdminUsers();
     SQLAdmin.Users.Insert sqlAdminUsersInsert = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName);
-    Operation usrCreationOperation = buildInitialOperation("CREATE_USER", decoratedInstanceName);
-    when(sqlAdminUsersInsert.execute()).thenReturn(usrCreationOperation);
+    Operation userCreationOperation = buildInitialOperation("CREATE_USER", decoratedInstanceName);
+    when(sqlAdminUsersInsert.execute()).thenReturn(userCreationOperation);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation.getName())).thenReturn(sqlAdminUserOperationsGet);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation.getName())).thenReturn(sqlAdminUserOperationsGet);
     when(sqlAdminUserOperationsGet.execute()).then(
-        new OperationAnswer(usrCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     sqlProvider.allocate(template, Lists.newArrayList(instanceName), 1);
 
@@ -290,21 +290,21 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for first successful user insertion operation.
     SQLAdmin.Users sqlAdminUsers = mockSQLAdminUsers();
     SQLAdmin.Users.Insert sqlAdminUsersInsert1 = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName1);
-    Operation usrCreationOperation1 = buildInitialOperation("CREATE_USER", decoratedInstanceName1);
-    when(sqlAdminUsersInsert1.execute()).thenReturn(usrCreationOperation1);
+    Operation userCreationOperation1 = buildInitialOperation("CREATE_USER", decoratedInstanceName1);
+    when(sqlAdminUsersInsert1.execute()).thenReturn(userCreationOperation1);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet1 = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation1.getName())).thenReturn(sqlAdminUserOperationsGet1);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation1.getName())).thenReturn(sqlAdminUserOperationsGet1);
     when(sqlAdminUserOperationsGet1.execute()).then(
-        new OperationAnswer(usrCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for second successful user insertion operation.
     SQLAdmin.Users.Insert sqlAdminUsersInsert2 = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName2);
-    Operation usrCreationOperation2 = buildInitialOperation("CREATE_USER", decoratedInstanceName2);
-    when(sqlAdminUsersInsert2.execute()).thenReturn(usrCreationOperation2);
+    Operation userCreationOperation2 = buildInitialOperation("CREATE_USER", decoratedInstanceName2);
+    when(sqlAdminUsersInsert2.execute()).thenReturn(userCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation2.getName())).thenReturn(sqlAdminUserOperationsGet2);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation2.getName())).thenReturn(sqlAdminUserOperationsGet2);
     when(sqlAdminUserOperationsGet2.execute()).then(
-        new OperationAnswer(usrCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for first successful instance deletion operation.
     SQLAdmin.Instances.Delete sqlAdminInstancesDelete1 =
@@ -399,21 +399,21 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for first successful user insertion operation.
     SQLAdmin.Users sqlAdminUsers = mockSQLAdminUsers();
     SQLAdmin.Users.Insert sqlAdminUsersInsert1 = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName1);
-    Operation usrCreationOperation1 = buildInitialOperation("CREATE_USER", decoratedInstanceName1);
-    when(sqlAdminUsersInsert1.execute()).thenReturn(usrCreationOperation1);
+    Operation userCreationOperation1 = buildInitialOperation("CREATE_USER", decoratedInstanceName1);
+    when(sqlAdminUsersInsert1.execute()).thenReturn(userCreationOperation1);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet1 = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation1.getName())).thenReturn(sqlAdminUserOperationsGet1);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation1.getName())).thenReturn(sqlAdminUserOperationsGet1);
     when(sqlAdminUserOperationsGet1.execute()).then(
-        new OperationAnswer(usrCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for second successful user insertion operation.
     SQLAdmin.Users.Insert sqlAdminUsersInsert2 = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName2);
-    Operation usrCreationOperation2 = buildInitialOperation("CREATE_USER", decoratedInstanceName2);
-    when(sqlAdminUsersInsert2.execute()).thenReturn(usrCreationOperation2);
+    Operation userCreationOperation2 = buildInitialOperation("CREATE_USER", decoratedInstanceName2);
+    when(sqlAdminUsersInsert2.execute()).thenReturn(userCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation2.getName())).thenReturn(sqlAdminUserOperationsGet2);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation2.getName())).thenReturn(sqlAdminUserOperationsGet2);
     when(sqlAdminUserOperationsGet2.execute()).then(
-        new OperationAnswer(usrCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation2, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     sqlProvider.allocate(template, Lists.newArrayList(instanceName1, instanceName2), 1);
 
@@ -467,12 +467,12 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for unsuccessful user insertion operation.
     SQLAdmin.Users sqlAdminUsers = mockSQLAdminUsers();
     SQLAdmin.Users.Insert sqlAdminUsersInsert = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName);
-    Operation usrCreationOperation = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName);
-    when(sqlAdminUsersInsert.execute()).thenReturn(usrCreationOperation);
+    Operation userCreationOperation = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName);
+    when(sqlAdminUsersInsert.execute()).thenReturn(userCreationOperation);
     SQLAdmin.Operations.Get sqlAdminUserOperationsGet = mock(SQLAdmin.Operations.Get.class);
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation.getName())).thenReturn(sqlAdminUserOperationsGet);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation.getName())).thenReturn(sqlAdminUserOperationsGet);
     when(sqlAdminUserOperationsGet.execute()).then(
-        new OperationAnswer(usrCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
+        new OperationAnswer(userCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
             "SOME_ERROR_CODE", "Some error message..."));
 
     // Configure stub for first successful instance deletion operation.
@@ -526,13 +526,13 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful user insertion operation.
     SQLAdmin.Users sqlAdminUsers = mockSQLAdminUsers();
     SQLAdmin.Users.Insert sqlAdminUsersInsert = mockSQLAdminUsersInsert(sqlAdminUsers, decoratedInstanceName);
-    Operation usrCreationOperation = buildInitialOperation("CREATE_USER", decoratedInstanceName);
-    when(sqlAdminUsersInsert.execute()).thenReturn(usrCreationOperation);
+    Operation userCreationOperation = buildInitialOperation("CREATE_USER", decoratedInstanceName);
+    when(sqlAdminUsersInsert.execute()).thenReturn(userCreationOperation);
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
     SQLAdmin.Operations sqlAdminOperations = mockSQLAdminToOperations();
-    when(sqlAdminOperations.get(PROJECT_ID, usrCreationOperation.getName())).thenReturn(sqlAdminOperationsGet2);
+    when(sqlAdminOperations.get(PROJECT_ID, userCreationOperation.getName())).thenReturn(sqlAdminOperationsGet2);
     when(sqlAdminOperationsGet2.execute()).then(
-        new OperationAnswer(usrCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+        new OperationAnswer(userCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     sqlProvider.allocate(template, Lists.newArrayList(instanceName), 1);
 
@@ -593,7 +593,7 @@ public class GoogleCloudSQLProviderTest {
     Collection<GoogleCloudSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
 
     // Verify that both of the two requested instances were returned.
-    assertThat(foundInstances.size()).isEqualTo(2);
+    assertThat(foundInstances.size()).isEqualTo(instanceIds.size());
 
     // Verify the properties of the first returned instance.
     Iterator<GoogleCloudSQLInstance> instanceIterator = foundInstances.iterator();
@@ -621,7 +621,9 @@ public class GoogleCloudSQLProviderTest {
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+    String instanceName3 = UUID.randomUUID().toString();
+    String decoratedInstanceName3 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName3;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2, instanceName3);
 
     // Configure stub for successful instance retrieval.
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
@@ -639,12 +641,18 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for unsuccessful instance retrieval (throws 404).
     SQLAdmin.Instances.Get sqlAdminInstancesGet2 = mockSQLAdminInstancesGet(sqlAdminInstances, decoratedInstanceName2);
     GoogleJsonResponseException exception =
-        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 403, "not authorized");
     when(sqlAdminInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    SQLAdmin.Instances.Get sqlAdminInstancesGet3 = mockSQLAdminInstancesGet(sqlAdminInstances, decoratedInstanceName3);
+    GoogleJsonResponseException exception2 =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(sqlAdminInstancesGet3.execute()).thenThrow(exception2);
 
     Collection<GoogleCloudSQLInstance> foundInstances = sqlProvider.find(template, instanceIds);
 
-    // Verify that exactly one of the two requested instances was returned.
+    // Verify that exactly one of the three requested instances was returned.
     assertThat(foundInstances.size()).isEqualTo(1);
 
     // Verify the properties of the returned instance.
@@ -738,25 +746,33 @@ public class GoogleCloudSQLProviderTest {
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
+    String instanceName3 = UUID.randomUUID().toString();
+    String decoratedInstanceName3 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName3;
+    List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2, instanceName3);
 
-    // Configure stub for first successful instance retrieval.
+    // Configure stub for successful instance retrieval.
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Get sqlAdminInstancesGet1 = mockSQLAdminInstancesGet(sqlAdminInstances, decoratedInstanceName1);
     DatabaseInstance instance1 = new DatabaseInstance();
     instance1.setState("PENDING_CREATE");
     when(sqlAdminInstancesGet1.execute()).thenReturn(instance1);
 
-    // Configure stub for unsuccessful instance retrieval (throws 404).
+    // Configure stub for unsuccessful instance retrieval (throws 403).
     SQLAdmin.Instances.Get sqlAdminInstancesGet2 = mockSQLAdminInstancesGet(sqlAdminInstances, decoratedInstanceName2);
     GoogleJsonResponseException exception =
-        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 403, "not authorized");
     when(sqlAdminInstancesGet2.execute()).thenThrow(exception);
+
+    // Configure stub for unsuccessful instance retrieval (throws 404).
+    SQLAdmin.Instances.Get sqlAdminInstancesGet3 = mockSQLAdminInstancesGet(sqlAdminInstances, decoratedInstanceName3);
+    GoogleJsonResponseException exception2 =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(sqlAdminInstancesGet3.execute()).thenThrow(exception2);
 
     Map<String, InstanceState> instanceStates = sqlProvider.getInstanceState(template, instanceIds);
 
-    // Verify that the state of both instances was returned.
-    assertThat(instanceStates.size()).isEqualTo(2);
+    // Verify that the states of all instances were returned.
+    assertThat(instanceStates.size()).isEqualTo(instanceIds.size());
 
     // Verify the state of the first instance.
     InstanceState instanceState1 = instanceStates.get(instanceName1);
@@ -765,6 +781,10 @@ public class GoogleCloudSQLProviderTest {
     // Verify the state of the second instance.
     InstanceState instanceState2 = instanceStates.get(instanceName2);
     assertThat(instanceState2.getInstanceStatus()).isEqualTo(InstanceStatus.UNKNOWN);
+
+    // Verify the state of the third instance.
+    InstanceState instanceState3 = instanceStates.get(instanceName3);
+    assertThat(instanceState3.getInstanceStatus()).isEqualTo(InstanceStatus.UNKNOWN);
   }
 
   @Test

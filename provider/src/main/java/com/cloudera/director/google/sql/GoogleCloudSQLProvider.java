@@ -89,7 +89,7 @@ public class GoogleCloudSQLProvider
   public static final ResourceProviderMetadata METADATA = SimpleDatabaseServerProviderMetadata
       .databaseServerProviderMetadataBuilder()
       .id(ID)
-      .name("GoogleCloudSQL")
+      .name("Google Cloud SQL")
       .description("Google Cloud SQL provider")
       .providerClass(GoogleCloudSQLProvider.class)
       .providerConfigurationProperties(CONFIGURATION_PROPERTIES)
@@ -173,8 +173,6 @@ public class GoogleCloudSQLProvider
     List<Operation> dbCreationOperations = new ArrayList<Operation>();
     List<Operation> userCreationOperations = new ArrayList<Operation>();
     List<String> successfullyCreatedInstancesNames = new ArrayList<String>();
-
-    int preExistingDatabaseInstanceCount = 0;
 
     for (String instanceId : instanceIds) {
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
@@ -280,7 +278,7 @@ public class GoogleCloudSQLProvider
 
   // Delete all instances.
   private void tearDownResources(String projectId, List<Operation> dbCreationOperations,
-      SQLAdmin sqladmin, PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
+      SQLAdmin sqlAdmin, PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
 
     // Use this list to keep track of database instance deletion operations.
     List<Operation> tearDownOperations = new ArrayList<Operation>();
@@ -290,7 +288,7 @@ public class GoogleCloudSQLProvider
       String dbName = dbCreationOperation.getTargetId();
 
       try {
-        Operation tearDownOperation = sqladmin.instances().delete(projectId, dbName).execute();
+        Operation tearDownOperation = sqlAdmin.instances().delete(projectId, dbName).execute();
 
         tearDownOperations.add(tearDownOperation);
       } catch (GoogleJsonResponseException e) {
@@ -306,7 +304,7 @@ public class GoogleCloudSQLProvider
 
     int tearDownOperationCount = tearDownOperations.size();
     int successfulTearDownOperationCount =
-        pollPendingOperations(projectId, tearDownOperations, DONE_STATE, sqladmin, accumulator).size();
+        pollPendingOperations(projectId, tearDownOperations, DONE_STATE, sqlAdmin, accumulator).size();
 
     if (successfulTearDownOperationCount < tearDownOperationCount) {
         accumulator.addError(null, successfulTearDownOperationCount + " of the " + tearDownOperationCount +
@@ -337,8 +335,12 @@ public class GoogleCloudSQLProvider
         DatabaseInstance instance = sqlAdmin.instances().get(projectId, decoratedInstanceName).execute();
         result.add(new GoogleCloudSQLInstance(template, currentId, instance));
       } catch (GoogleJsonResponseException e) {
+        // There are two ways of saying that instance doesn't exist. If it was just deleted it will throw 404 Error.
+        // If it never existed for some long time it will throw 403 Error.
         if (e.getStatusCode() == 404) {
-          LOG.info("Instance '{}' not found.", decoratedInstanceName);
+          LOG.info("Database instance '{}' doesn't exist anymore.", decoratedInstanceName);
+        } else if (e.getStatusCode() == 403) {
+          LOG.info("Database instance '{}' not found.", decoratedInstanceName);
         } else {
           throw new RuntimeException(e);
         }
@@ -377,8 +379,15 @@ public class GoogleCloudSQLProvider
 
           result.put(currentId, new SimpleInstanceState(instanceStatus));
         } catch (GoogleJsonResponseException e) {
-          if (e.getStatusCode() == 404 || e.getStatusCode() == 403) {
-            LOG.info("Instance '{}' not found.", decoratedInstanceName);
+          // There are two ways of saying that instance doesn't exist. If it was just deleted it will throw 404 Error.
+          // If it never existed for some long time it will throw 403 Error.
+          if (e.getStatusCode() == 404) {
+            LOG.info("Database instance '{}' doesn't exist anymore.", decoratedInstanceName);
+
+            // Might want to return DELETED instead but in this case a lot has to be refactored.
+            result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
+          } else if (e.getStatusCode() == 403) {
+            LOG.info("Database instance '{}' not found.", decoratedInstanceName);
 
             result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
           } else {
@@ -408,7 +417,7 @@ public class GoogleCloudSQLProvider
       return;
     }
 
-    SQLAdmin sqladmin = credentials.getSQLAdmin();
+    SQLAdmin sqlAdmin = credentials.getSQLAdmin();
     String projectId = credentials.getProjectId();
 
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to delete() returning.
@@ -418,14 +427,15 @@ public class GoogleCloudSQLProvider
       String decoratedInstanceName = decorateInstanceName(template, currentId, templateLocalizationContext);
 
       try {
-        Operation dbDeletionOperation = sqladmin.instances().delete(projectId, decoratedInstanceName).execute();
+        Operation dbDeletionOperation = sqlAdmin.instances().delete(projectId, decoratedInstanceName).execute();
 
         dbDeletionOperations.add(dbDeletionOperation);
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          LOG.info("Attempted to delete instance '{}', but it does not exist.", decoratedInstanceName);
+          LOG.info("Attempted to delete database instance '{}', but it does not exist.", decoratedInstanceName);
         } else if (e.getStatusCode() == 409) {
-          LOG.info("Attempted to delete instance '{}', but it's already in the process of being deleted.", decoratedInstanceName);
+          LOG.info("Attempted to delete instance '{}', but it's already in the process of being deleted.",
+              decoratedInstanceName);
         } else {
           accumulator.addError(null, e.getMessage());
         }
@@ -437,7 +447,7 @@ public class GoogleCloudSQLProvider
     // Wait for operations to reach RUNNING or DONE state before returning.
     // Quotas are verified prior to reaching the RUNNING state.
     // This is the status of the Operations we're referring to, not of the Instances.
-    pollPendingOperations(projectId, dbDeletionOperations, RUNNING_OR_DONE_STATES, sqladmin, accumulator);
+    pollPendingOperations(projectId, dbDeletionOperations, RUNNING_OR_DONE_STATES, sqlAdmin, accumulator);
 
     if (accumulator.hasError()) {
       PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
@@ -514,17 +524,8 @@ public class GoogleCloudSQLProvider
 
             if (errorsList != null) {
               for (OperationError error : errorsList) {
-                String operationType = subjectOperation.getOperationType();
-                String errorCode = error.getCode();
-
-                // We want insertion and deletion operations to be idempotent.
-                if (operationType.equals("insert") && errorCode.equals("RESOURCE_ALREADY_EXISTS")) {
-                  LOG.info("Attempted to create resource '{}', but it already exists.",
-                      subjectOperation.getTargetId());
-                } else {
-                  accumulator.addError(null, error.getMessage());
-                  isActualError = true;
-                }
+                accumulator.addError(null, error.getMessage());
+                isActualError = true;
               }
             }
           }

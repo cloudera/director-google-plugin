@@ -259,7 +259,7 @@ public class GoogleComputeProviderFullCycleTest {
 
     Map<String, InstanceState> idToInstanceStateMap = compute.getInstanceState(template, instanceIds);
 
-    assertEquals(1, idToInstanceStateMap.size());
+    assertEquals(instanceIds.size(), idToInstanceStateMap.size());
 
     for (Map.Entry<String, InstanceState> entry : idToInstanceStateMap.entrySet()) {
       LOG.info(entry.getKey() + " -> " + entry.getValue().getInstanceStateDescription(DEFAULT_LOCALIZATION_CONTEXT));

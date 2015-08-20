@@ -157,7 +157,6 @@ public class GoogleCloudSQLProviderFullCycleTest {
         sqlAdmin.createResourceTemplate("template-1", templateConfiguration, tags);
     assertNotNull(template);
 
-
     List<String> instanceIds = Arrays.asList(UUID.randomUUID().toString());
 
     // Verify that instances are not created.

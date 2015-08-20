@@ -384,7 +384,7 @@ public class GoogleCloudSQLProvider
           if (e.getStatusCode() == 404) {
             LOG.info("Database instance '{}' doesn't exist anymore.", decoratedInstanceName);
 
-            // Might want to return DELETED instead but in this case a lot has to be refactored.
+            // Might want to return DELETED instead but in this case a lot of code has to be refactored.
             result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
           } else if (e.getStatusCode() == 403) {
             LOG.info("Database instance '{}' not found.", decoratedInstanceName);

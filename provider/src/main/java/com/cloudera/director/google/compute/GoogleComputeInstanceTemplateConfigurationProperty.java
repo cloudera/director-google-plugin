@@ -75,6 +75,17 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(true)
       .build()),
 
+  BOOT_DISK_TYPE(new SimpleConfigurationPropertyBuilder()
+      .configKey("bootDiskType")
+      .name("Boot Disk Type")
+      .addValidValues("SSD", "Standard")
+      .defaultDescription("The type of boot disk to create (SSD, Standard).<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/disks/'>More Information</a>")
+      .defaultValue("SSD")
+      .widget(ConfigurationProperty.Widget.LIST)
+      .required(false)
+      .build()),
+
   BOOT_DISK_SIZE_GB(new SimpleConfigurationPropertyBuilder()
       .configKey("bootDiskSizeGb")
       .name("Boot Disk Size (GB)")

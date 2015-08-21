@@ -17,6 +17,7 @@
 package com.cloudera.director.google.compute;
 
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
@@ -81,6 +82,11 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
   @VisibleForTesting
   static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
+
+  @VisibleForTesting
+  static final List<String> BOOT_DISK_TYPES = ImmutableList.of("SSD", "Standard");
+  static final String INVALID_BOOT_DISK_TYPE_MSG =
+      "Invalid boot disk type '%s'. Available options: %s";
 
   @VisibleForTesting
   static final String INVALID_BOOT_DISK_SIZE_FORMAT_MSG = "Boot disk size must be an integer: '%s'.";
@@ -158,6 +164,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
     checkZone(configuration, accumulator, localizationContext);
     checkImage(configuration, accumulator, localizationContext);
+    checkBootDiskType(configuration, accumulator, localizationContext);
     checkBootDiskSize(configuration, accumulator, localizationContext);
     checkDataDiskCount(configuration, accumulator, localizationContext);
     checkDataDiskType(configuration, accumulator, localizationContext);
@@ -254,6 +261,25 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       } else {
         addError(accumulator, IMAGE, localizationContext, null, MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND, imageAlias);
       }
+    }
+  }
+
+  /**
+   * Validates the configured boot disk type.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkBootDiskType(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String bootDiskType = configuration.getConfigurationValue(BOOT_DISK_TYPE, localizationContext);
+
+    if (bootDiskType != null && !BOOT_DISK_TYPES.contains(bootDiskType)) {
+      addError(accumulator, BOOT_DISK_TYPE, localizationContext, null, INVALID_BOOT_DISK_TYPE_MSG,
+          new Object[]{bootDiskType, Joiner.on(", ").join(BOOT_DISK_TYPES)});
     }
   }
 

@@ -25,7 +25,6 @@ import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.sqladmin.SQLAdmin;
 import com.google.api.services.sqladmin.model.Tier;
 import com.google.common.annotations.VisibleForTesting;

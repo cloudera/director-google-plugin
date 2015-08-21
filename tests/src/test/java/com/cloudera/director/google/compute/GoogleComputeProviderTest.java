@@ -102,7 +102,6 @@ public class GoogleComputeProviderTest {
   private GoogleComputeProvider computeProvider;
   private GoogleCredentials credentials;
   private Compute compute;
-  private GoogleComputeInstanceTemplateConfigurationValidator validator;
 
   @Before
   public void setUp() throws IOException {

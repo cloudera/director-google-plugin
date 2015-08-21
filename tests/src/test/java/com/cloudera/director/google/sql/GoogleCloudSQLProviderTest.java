@@ -95,7 +95,6 @@ public class GoogleCloudSQLProviderTest {
   private GoogleCloudSQLProvider sqlProvider;
   private GoogleCredentials credentials;
   private SQLAdmin sqlAdmin;
-  private GoogleCloudSQLInstanceTemplateConfigurationValidator validator;
 
   @Before
   public void setUp() throws IOException {
@@ -205,7 +204,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation dbCreationOperation = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName);
@@ -263,7 +261,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for first successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation dbCreationOperation1 = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName1);
@@ -278,7 +275,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     Operation dbCreationOperation2 = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName2);
     ongoingInsertionStub.thenReturn(dbCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
@@ -372,7 +368,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation dbCreationOperation1 = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName1);
@@ -387,7 +382,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     Operation dbCreationOperation2 = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName2);
     ongoingInsertionStub.thenReturn(dbCreationOperation2);
     SQLAdmin.Operations.Get sqlAdminOperationsGet2 = mock(SQLAdmin.Operations.Get.class);
@@ -453,7 +447,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     Operation dbCreationOperation = buildInitialOperation("CREATE_DATABASE", decoratedInstanceName);
@@ -516,7 +509,6 @@ public class GoogleCloudSQLProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName);
     SQLAdmin.Instances sqlAdminInstances = mockSQLAdminToInstances();
     SQLAdmin.Instances.Insert sqlAdminInstancesInsert = mockSQLAdminInstancesInsert(sqlAdminInstances);
     GoogleJsonResponseException exception =
@@ -834,10 +826,8 @@ public class GoogleCloudSQLProviderTest {
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
-    String instanceUrl2 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance deletion operation.
@@ -915,7 +905,6 @@ public class GoogleCloudSQLProviderTest {
 
     String instanceName1 = UUID.randomUUID().toString();
     String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
-    String instanceUrl1 = TestUtils.buildDatabaseInstanceUrl(PROJECT_ID, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
     String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
@@ -965,7 +954,7 @@ public class GoogleCloudSQLProviderTest {
     String instanceName2 = UUID.randomUUID().toString();
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
-    // NPE would be thrown (due to lack of mocks) if the Goocle Cloud SQL provider attempted actual calls against Google
+    // NPE would be thrown (due to lack of mocks) if the Google Cloud SQL provider attempted actual calls against Google
     // Cloud SQL. When the instance name prefix is deemed invalid, no calls are attempted against Google Cloud SQL.
     // If no NPE's are thrown, the test is a success.
     sqlProvider.delete(template, instanceIds);
@@ -1039,7 +1028,7 @@ public class GoogleCloudSQLProviderTest {
    * Verifies that the specified plugin exception details contain exactly one condition, which must be an
    * error with the specified message.
    *
-   * @param pluginExceptionDetails the exception details containins the error conditions
+   * @param pluginExceptionDetails the exception details contains the error conditions
    * @param errorMsg               the expected error message
    */
   private static void verifySingleError(PluginExceptionDetails pluginExceptionDetails, String errorMsg) {

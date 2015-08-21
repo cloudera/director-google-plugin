@@ -25,8 +25,6 @@ import com.google.api.services.sqladmin.model.DatabaseInstance;
 import com.google.api.services.sqladmin.model.IpMapping;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -65,7 +63,7 @@ public class GoogleCloudSQLInstance
         .build()) {
       @Override
       protected String getPropertyValue(DatabaseInstance instance) {
-        return instance.getName();
+      return instance.getName();
       }
     };
 

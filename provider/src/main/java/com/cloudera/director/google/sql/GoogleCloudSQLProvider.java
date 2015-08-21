@@ -22,7 +22,6 @@ import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateCon
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 
-import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.database.DatabaseType;
 import com.cloudera.director.spi.v1.database.util.AbstractDatabaseServerInstance;

@@ -17,6 +17,7 @@
 package com.cloudera.director.google.compute;
 
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
@@ -195,11 +196,16 @@ public class GoogleComputeProvider
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();
 
       // Compose the boot disk.
+      String bootDiskType = template.getConfigurationValue(
+          BOOT_DISK_TYPE,
+          templateLocalizationContext);
+      String bootDiskTypeUrl = Urls.buildDiskTypeUrl(projectId, zone, bootDiskType);
       long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           BOOT_DISK_SIZE_GB,
           templateLocalizationContext));
       AttachedDiskInitializeParams bootDiskInitializeParams = new AttachedDiskInitializeParams();
       bootDiskInitializeParams.setSourceImage(sourceImageUrl);
+      bootDiskInitializeParams.setDiskType(bootDiskTypeUrl);
       bootDiskInitializeParams.setDiskSizeGb(bootDiskSizeGb);
       AttachedDisk bootDisk = new AttachedDisk();
       bootDisk.setBoot(true);

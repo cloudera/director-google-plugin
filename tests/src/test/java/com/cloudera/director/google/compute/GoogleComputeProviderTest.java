@@ -16,6 +16,7 @@
 
 package com.cloudera.director.google.compute;
 
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
@@ -257,7 +258,65 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList.size()).isEqualTo(3);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+  }
+
+  @Test
+  public void testAllocate_LocalSSD_StandardBoot() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(BOOT_DISK_TYPE.unwrap().getConfigKey(), "Standard");
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    // Configure stub for successful instance insertion operation.
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
+    when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
+
+    // Verify instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor.capture());
+    Instance insertedInstance = argumentCaptor.getValue();
+
+    // Verify instance name and metadata.
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
+    assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
+    assertThat(attachedDiskList.size()).isEqualTo(3);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "Standard"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -358,7 +417,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList1.size()).isEqualTo(3);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -380,7 +440,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList2.size()).isEqualTo(3);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -455,7 +516,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList1.size()).isEqualTo(3);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -477,7 +539,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList2.size()).isEqualTo(3);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -558,7 +621,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList.size()).isEqualTo(2);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -721,7 +785,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList1.size()).isEqualTo(2);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList1.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -739,7 +804,8 @@ public class GoogleComputeProviderTest {
     assertThat(attachedDiskList2.size()).isEqualTo(2);
 
     // Verify boot disk.
-    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true, null, 60L,
+    verifyAttachedDiskAttributes(attachedDiskList2.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
         TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
 
     // Verify data disk.
@@ -754,6 +820,66 @@ public class GoogleComputeProviderTest {
 
     // Verify instance deletion call was made (of instance one).
     verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName1));
+  }
+
+  @Test
+  public void testAllocate_RESOURCE_ALREADY_EXISTS() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    // Configure stub for unsuccessful instance insertion operation of instance that already exists.
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation = buildOperation(ZONE_NAME, UUID.randomUUID().toString(), instanceUrl, "PENDING");
+    when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"},
+            "RESOURCE_ALREADY_EXISTS", "Some error message..."));
+
+    // An UnrecoverableProviderException would be thrown if the compute provider did not treat an error code of
+    // RESOURCE_ALREADY_EXISTS on insertion as acceptable.
+    // If no UnrecoverableProviderException is thrown, the test is a success.
+    computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
+
+    // Verify instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor.capture());
+    Instance insertedInstance = argumentCaptor.getValue();
+
+    // Verify instance name and metadata.
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
+    assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
+    assertThat(attachedDiskList.size()).isEqualTo(3);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L,
+        TestUtils.buildImageUrl(IMAGE_PROJECT_ID, IMAGE_NAME), null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
   }
 
   @Test

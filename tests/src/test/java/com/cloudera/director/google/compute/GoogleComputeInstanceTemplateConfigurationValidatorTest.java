@@ -42,6 +42,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_PREFIX_LENGTH_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.INVALID_PREFIX_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MACHINE_TYPE_NOT_FOUND_IN_ZONE_MSG;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MALFORMED_IMAGE_URL_MSG;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MAX_LOCAL_SSD_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationValidator.MIN_BOOT_DISK_SIZE_GB;
@@ -99,8 +100,17 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String ZONE_NAME = "us-central1-a";
   private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";
-  private static final String IMAGE_PROJECT_ID = "centos-cloud";
-  private static final String IMAGE_NAME = "centos-6-v20150526";
+  private static final String IMAGE_PROJECT_ID_CENTOS = "centos-cloud";
+  private static final String IMAGE_NAME_CENTOS = "centos-6-v20150526";
+  private static final String IMAGE_URL_UBUNTU =
+      "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150805";
+  private static final String IMAGE_URL_UBUNTU_WRONG =
+      "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150805x";
+  private static final String IMAGE_PROJECT_ID_UBUNTU = "ubuntu-os-cloud";
+  private static final String IMAGE_NAME_UBUNTU = "ubuntu-1404-trusty-v20150805";
+  private static final String IMAGE_URL_MALFORMED_1 = "https://";
+  private static final String IMAGE_URL_MALFORMED_2 = "https://some-host-name";
+  private static final String IMAGE_URL_MALFORMED_3 = "https://some-host-name/some-path";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
   private static final String NETWORK_NAME_VALUE = "some-network";
   private static final String DISK_TYPE_SSD = "SSD";
@@ -196,19 +206,19 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
     verifySingleError(ZONE, ZONE_NOT_FOUND_MSG, ZONE_NAME, PROJECT_ID);
   }
 
-  private Compute.Images.Get mockComputeToImage() throws IOException {
+  private Compute.Images.Get mockComputeToImage(String imageProjectId, String imageName) throws IOException {
     Compute.Images computeImages = mock(Compute.Images.class);
     Compute.Images.Get computeImagesGet = mock(Compute.Images.Get.class);
 
     when(compute.images()).thenReturn(computeImages);
-    when(computeImages.get(IMAGE_PROJECT_ID, IMAGE_NAME)).thenReturn(computeImagesGet);
+    when(computeImages.get(imageProjectId, imageName)).thenReturn(computeImagesGet);
 
     return computeImagesGet;
   }
 
   @Test
-  public void testCheckImage() throws IOException {
-    Compute.Images.Get computeImagesGet = mockComputeToImage();
+  public void testCheckImageAlias() throws IOException {
+    Compute.Images.Get computeImagesGet = mockComputeToImage(IMAGE_PROJECT_ID_CENTOS, IMAGE_NAME_CENTOS);
 
     // We don't need to actually return an image, we just need to not throw a 404.
     when(computeImagesGet.execute()).thenReturn(null);
@@ -219,8 +229,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   }
 
   @Test
-  public void testCheckImage_NotFound() throws IOException {
-    Compute.Images.Get computeImagesGet = mockComputeToImage();
+  public void testCheckImageAlias_ImageNotFound() throws IOException {
+    Compute.Images.Get computeImagesGet = mockComputeToImage(IMAGE_PROJECT_ID_CENTOS, IMAGE_NAME_CENTOS);
 
     GoogleJsonResponseException exception =
         GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
@@ -228,13 +238,56 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
 
     checkImage(IMAGE_ALIAS_CENTOS);
     verify(computeImagesGet).execute();
-    verifySingleError(IMAGE, IMAGE_NOT_FOUND_MSG, IMAGE_NAME, IMAGE_PROJECT_ID);
+    verifySingleError(IMAGE, IMAGE_NOT_FOUND_MSG, IMAGE_NAME_CENTOS, IMAGE_PROJECT_ID_CENTOS);
   }
 
   @Test
-  public void testCheckImage_AliasNotFound() {
+  public void testCheckImageAlias_MappingNotFound() {
     checkImage(IMAGE_ALIAS_UBUNTU);
     verifySingleError(IMAGE, MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND, IMAGE_ALIAS_UBUNTU);
+  }
+
+  @Test
+  public void testCheckImageUrl() throws IOException {
+    Compute.Images.Get computeImagesGet = mockComputeToImage(IMAGE_PROJECT_ID_UBUNTU, IMAGE_NAME_UBUNTU);
+
+    // We don't need to actually return an image, we just need to not throw a 404.
+    when(computeImagesGet.execute()).thenReturn(null);
+
+    checkImage(IMAGE_URL_UBUNTU);
+    verify(computeImagesGet).execute();
+    verifyClean();
+  }
+
+  @Test
+  public void testCheckImageUrl_ImageNotFound() throws IOException {
+    Compute.Images.Get computeImagesGet = mockComputeToImage(IMAGE_PROJECT_ID_UBUNTU, IMAGE_NAME_UBUNTU + "x");
+
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeImagesGet.execute()).thenThrow(exception);
+
+    checkImage(IMAGE_URL_UBUNTU_WRONG);
+    verify(computeImagesGet).execute();
+    verifySingleError(IMAGE, IMAGE_NOT_FOUND_MSG, IMAGE_NAME_UBUNTU + "x", IMAGE_PROJECT_ID_UBUNTU);
+  }
+
+  @Test
+  public void testCheckImageUrl_Malformed_1() throws IOException {
+    checkImage(IMAGE_URL_MALFORMED_1);
+    verifySingleError(IMAGE, MALFORMED_IMAGE_URL_MSG, IMAGE_URL_MALFORMED_1);
+  }
+
+  @Test
+  public void testCheckImageUrl_Malformed_2() throws IOException {
+    checkImage(IMAGE_URL_MALFORMED_2);
+    verifySingleError(IMAGE, MALFORMED_IMAGE_URL_MSG, IMAGE_URL_MALFORMED_2);
+  }
+
+  @Test
+  public void testCheckImageUrl_Malformed_3() throws IOException {
+    checkImage(IMAGE_URL_MALFORMED_3);
+    verifySingleError(IMAGE, MALFORMED_IMAGE_URL_MSG, IMAGE_URL_MALFORMED_3);
   }
 
   @Test

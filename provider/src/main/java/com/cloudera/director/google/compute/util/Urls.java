@@ -45,8 +45,13 @@ public final class Urls {
       return null;
     }
 
-    GenericUrl url = new GenericUrl(fullResourceUrl);
-    String[] urlParts = Iterables.toArray(url.getPathParts(), String.class);
+    List<String> pathParts = new GenericUrl(fullResourceUrl).getPathParts();
+
+    if (pathParts == null) {
+      throw new IllegalArgumentException(String.format(MALFORMED_RESOURCE_URL_MSG, fullResourceUrl));
+    }
+
+    String[] urlParts = Iterables.toArray(pathParts, String.class);
 
     // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526
     // The path parts begin after the host and include a leading "" path part to force the leading slash.

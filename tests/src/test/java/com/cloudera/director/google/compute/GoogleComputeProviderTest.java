@@ -289,7 +289,7 @@ public class GoogleComputeProviderTest {
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
     Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);

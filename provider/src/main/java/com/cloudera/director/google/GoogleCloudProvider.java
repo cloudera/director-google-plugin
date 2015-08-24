@@ -41,9 +41,12 @@ import java.util.NoSuchElementException;
 public class GoogleCloudProvider extends AbstractCloudProvider {
 
   public static final String ID = "google";
+  private static boolean featureFlag = true;
 
-  private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA =
-      Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleCloudSQLProvider.METADATA));
+  private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA = featureFlag ?
+      Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleCloudSQLProvider.METADATA)) :
+      Collections.singletonList(GoogleComputeProvider.METADATA);
+
 
   private GoogleCredentials credentials;
   private Config applicationProperties;
@@ -73,7 +76,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     ConfigurationValidator providerSpecificValidator;
     if (resourceProviderMetadata.getId().equals(GoogleComputeProvider.METADATA.getId())) {
       providerSpecificValidator = new GoogleComputeProviderConfigurationValidator(credentials);
-    } else if (resourceProviderMetadata.getId().equals(GoogleCloudSQLProvider.METADATA.getId())) {
+    } else if (featureFlag && resourceProviderMetadata.getId().equals(GoogleCloudSQLProvider.METADATA.getId())) {
       providerSpecificValidator = new GoogleCloudSQLProviderConfigurationValidator(credentials);
     } else {
       throw new NoSuchElementException("Invalid provider id: " + resourceProviderMetadata.getId());
@@ -88,7 +91,7 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
       return new GoogleComputeProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
-    } else if (GoogleCloudSQLProvider.METADATA.getId().equals(resourceProviderId)) {
+    } else if (featureFlag && GoogleCloudSQLProvider.METADATA.getId().equals(resourceProviderId)) {
       return new GoogleCloudSQLProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
     }

@@ -63,7 +63,7 @@ public class GoogleCloudSQLInstance
         .build()) {
       @Override
       protected String getPropertyValue(DatabaseInstance instance) {
-      return instance.getName();
+        return instance.getName();
       }
     };
 

@@ -245,7 +245,18 @@ public class GoogleComputeProviderFullCycleTest {
     assertEquals(0, instances.size());
 
     LOG.info("About to delete the same instance again...");
-    compute.delete(template, instanceIds);
+    try {
+      compute.delete(template, instanceIds);
+    } catch (UnrecoverableProviderException e) {
+      PluginExceptionDetails details = e.getDetails();
+
+      System.out.println(e);
+      if (details != null) {
+        LOG.info("Caught on delete():" + details.getConditionsByKey());
+      }
+
+      throw e;
+    }
   }
 
   private static void pollInstanceState(

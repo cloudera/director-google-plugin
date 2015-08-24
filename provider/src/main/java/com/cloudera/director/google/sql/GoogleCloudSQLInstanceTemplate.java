@@ -46,4 +46,3 @@ public class GoogleCloudSQLInstanceTemplate extends DatabaseServerInstanceTempla
     super(name, configuration, tags, providerLocalizationContext);
   }
 }
-

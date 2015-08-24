@@ -19,6 +19,7 @@ package com.cloudera.director.google.sql;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.ENGINE;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static junit.framework.Assert.assertEquals;
@@ -80,6 +81,7 @@ public class GoogleCloudSQLProviderFullCycleTest {
   private static final String MY_USER_PASSWORD = "admin";
   private static final String MY_USERNAME = "admin";
   private static final String MY_DATABASE_TYPE = "MYSQL";
+  private static final String MY_PREFERRED_LOCATION = "us-central1-f";
 
   private static TestFixture testFixture;
 
@@ -136,6 +138,7 @@ public class GoogleCloudSQLProviderFullCycleTest {
     templateConfig.put(MASTER_USERNAME.unwrap().getConfigKey(), MY_USERNAME);
     templateConfig.put(MASTER_USER_PASSWORD.unwrap().getConfigKey(), MY_USER_PASSWORD);
     templateConfig.put(ENGINE.unwrap().getConfigKey(), MY_DATABASE_TYPE);
+    templateConfig.put(PREFERRED_LOCATION.unwrap().getConfigKey(), MY_PREFERRED_LOCATION);
 
     Map<String, String> tags = new HashMap<String, String>();
     tags.put("test-tag-1", "some-value-1");
@@ -145,8 +148,7 @@ public class GoogleCloudSQLProviderFullCycleTest {
 
     // Validate the template configuration.
     LOG.info("About to validate the template configuration...");
-    ConfigurationValidator templateConfigurationValidator =
-    sqlAdmin.getResourceTemplateConfigurationValidator();
+    ConfigurationValidator templateConfigurationValidator = sqlAdmin.getResourceTemplateConfigurationValidator();
     accumulator = new PluginExceptionConditionAccumulator();
     templateConfigurationValidator.validate("instance resource template", templateConfiguration, accumulator,
         DEFAULT_LOCALIZATION_CONTEXT);
@@ -238,7 +240,6 @@ public class GoogleCloudSQLProviderFullCycleTest {
     pollInstanceState(sqlAdmin, template, instanceIds, InstanceStatus.UNKNOWN);
 
     // Verify that the instance has been deleted.
-    System.out.println("EK:VERIFY THAT THE INSTANCE HAS BEEN DELETED.");
     instances = sqlAdmin.find(template, instanceIds);
     assertEquals(0, instances.size());
 

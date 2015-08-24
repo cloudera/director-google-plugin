@@ -17,24 +17,31 @@
 package com.cloudera.director.google.sql;
 
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
+//import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_MSG;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFIX_MISSING_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.INVALID_PREFIX_LENGTH_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.INVALID_PREFIX_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.INVALID_TIER_MSG;
-import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFIX_MISSING_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
-
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
+import com.cloudera.director.google.compute.util.ComputeUrls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
 import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
+import com.cloudera.director.google.shaded.com.google.api.services.compute.Compute;
+import com.cloudera.director.google.shaded.com.google.api.services.compute.model.Zone;
 import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.SQLAdmin;
 import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.Tier;
 import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.TiersListResponse;
@@ -63,6 +70,10 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
 
   private static final String PROJECT_ID = "some-project";
   private static final String REGION_NAME_1 = "us-central";
+  private static final String REGION_NAME_2 = "europe-west1";
+  private static final String REGION_URL_1 = ComputeUrls.buildRegionalUrl(PROJECT_ID, "us-central1");
+  private static final String REGION_URL_2 = ComputeUrls.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
+  private static final String PREFERRED_LOCATION_NAME = "us-central1-f";
   private static final String TIER_NAME = "D4";
   private static final String TIER_NAME_WRONG = "D15";
 
@@ -70,6 +81,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
   private GoogleCloudSQLProvider sqlProvider;
   private GoogleCredentials credentials;
   private SQLAdmin sqlAdmin;
+  private Compute compute;
   private GoogleCloudSQLInstanceTemplateConfigurationValidator validator;
   private PluginExceptionConditionAccumulator accumulator;
   private LocalizationContext localizationContext = new DefaultLocalizationContext(Locale.getDefault(), "");
@@ -79,14 +91,26 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     sqlProvider = mock(GoogleCloudSQLProvider.class);
     credentials = mock(GoogleCredentials.class);
     sqlAdmin = mock(SQLAdmin.class);
+    compute = mock(Compute.class);
     validator = new GoogleCloudSQLInstanceTemplateConfigurationValidator(sqlProvider);
     accumulator = new PluginExceptionConditionAccumulator();
 
     when(sqlProvider.getCredentials()).thenReturn(credentials);
     when(sqlProvider.getGoogleConfig()).thenReturn(TestUtils.buildGoogleConfig());
     when(sqlProvider.getConfigurationValue(eq(REGION_SQL), any(LocalizationContext.class))).thenReturn(REGION_NAME_1);
+    when(credentials.getCompute()).thenReturn(compute);
     when(credentials.getSQLAdmin()).thenReturn(sqlAdmin);
     when(credentials.getProjectId()).thenReturn(PROJECT_ID);
+  }
+
+  private Compute.Zones.Get mockComputeToZone() throws IOException {
+    Compute.Zones computeZones = mock(Compute.Zones.class);
+    Compute.Zones.Get computeZonesGet = mock(Compute.Zones.Get.class);
+
+    when(compute.zones()).thenReturn(computeZones);
+    when(computeZones.get(PROJECT_ID, PREFERRED_LOCATION_NAME)).thenReturn(computeZonesGet);
+
+    return computeZonesGet;
   }
 
   private TiersListResponse mockSQLAdminToTiersListResponse() throws IOException {
@@ -110,6 +134,51 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     checkPrefix("c-d");
     checkPrefix("ends-with-digit-1");
     verifyClean();
+  }
+
+  @Test
+  public void testCheckPreferredLocation() throws IOException {
+    Zone zone = new Zone();
+    zone.setName(PREFERRED_LOCATION_NAME);
+    zone.setRegion(REGION_URL_1);
+
+    Compute.Zones.Get computeZonesGet = mockComputeToZone();
+    when(computeZonesGet.execute()).thenReturn(zone);
+
+    checkPreferredLocation(PREFERRED_LOCATION_NAME);
+    verify(computeZonesGet).execute();
+    verifyClean();
+  }
+
+  @Test
+  public void testCheckPreferredLocation_WrongRegion() throws IOException {
+    Zone zone = new Zone();
+    zone.setName(PREFERRED_LOCATION_NAME);
+    zone.setRegion(REGION_URL_2);
+
+    Compute.Zones.Get computeZonesGet = mockComputeToZone();
+    when(computeZonesGet.execute()).thenReturn(zone);
+
+    checkPreferredLocation(PREFERRED_LOCATION_NAME);
+    verify(computeZonesGet).execute();
+    verifySingleError(PREFERRED_LOCATION, PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG, PREFERRED_LOCATION_NAME, REGION_NAME_1, PROJECT_ID);
+  }
+
+  @Test
+  public void testCheckPreferredLocation_NotFound() throws IOException {
+    Zone zone = new Zone();
+    zone.setName(PREFERRED_LOCATION_NAME);
+    zone.setRegion(REGION_URL_2);
+
+    Compute.Zones.Get computeZonesGet = mockComputeToZone();
+
+    GoogleJsonResponseException exception =
+        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
+    when(computeZonesGet.execute()).thenThrow(exception);
+
+    checkPreferredLocation(PREFERRED_LOCATION_NAME);
+    verify(computeZonesGet).execute();
+    verifySingleError(PREFERRED_LOCATION, PREFERRED_LOCATION_NOT_FOUND_MSG, PREFERRED_LOCATION_NAME, PROJECT_ID);
   }
 
   @Test
@@ -182,6 +251,18 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
   }
 
   /**
+   * Invokes checkPreferredLocation with the specified configuration.
+   *
+   * @param preferredLocation the preferred location name.
+   */
+  protected void checkPreferredLocation(String preferredLocation) {
+    Map<String, String> configMap = Maps.newHashMap();
+    configMap.put(PREFERRED_LOCATION.unwrap().getConfigKey(), preferredLocation);
+    Configured configuration = new SimpleConfiguration(configMap);
+    validator.checkPreferredLocation(configuration, accumulator, localizationContext);
+  }
+
+  /**
    * Invokes checkPrefix with the specified configuration.
    *
    * @param prefix the instance name prefix
@@ -190,7 +271,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     Map<String, String> configMap = Maps.newHashMap();
     configMap.put(INSTANCE_NAME_PREFIX.unwrap().getConfigKey(), prefix);
     Configured configuration = new SimpleConfiguration(configMap);
-    GoogleCloudSQLInstanceTemplateConfigurationValidator.checkPrefix(configuration, accumulator, localizationContext);
+    validator.checkPrefix(configuration, accumulator, localizationContext);
   }
 
   /**

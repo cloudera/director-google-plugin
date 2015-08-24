@@ -44,8 +44,7 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
           "D16",
           "D32")
       .required(true)
-      .build()
-  ),
+      .build()),
 
   /**
    * The name of the master user for the client DB instance.
@@ -65,6 +64,14 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
       .widget(ConfigurationProperty.Widget.PASSWORD)
       .sensitive(true)
       .defaultDescription("The password for the master database user. Password must contain 8-30 alphanumeric characters.")
+      .build()),
+
+  PREFERRED_LOCATION(new SimpleConfigurationPropertyBuilder()
+      .configKey("preferredLocation")
+      .name("Preferred Location Zone")
+      .defaultDescription("You can use this setting to store your data close to Compute Engine hosted within a particular region. This will reduce latency and improve availability for services in the preferred location you choose. You can store your data in a Compute Engine zone.")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .required(false)
       .build()),
 
   /**

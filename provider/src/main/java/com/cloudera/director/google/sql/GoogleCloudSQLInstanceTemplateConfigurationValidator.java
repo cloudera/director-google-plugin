@@ -16,20 +16,28 @@
 
 package com.cloudera.director.google.sql;
 
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
 import com.cloudera.director.spi.v1.model.exception.PluginExceptionConditionAccumulator;
+import com.cloudera.director.spi.v1.model.exception.PluginExceptionDetails;
 import com.cloudera.director.spi.v1.model.exception.TransientProviderException;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.services.compute.Compute;
+import com.google.api.services.compute.model.Zone;
 import com.google.api.services.sqladmin.model.Tier;
 import com.google.api.services.sqladmin.SQLAdmin;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +59,10 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
   static final String INVALID_PREFIX_MSG = "Instance name prefix must follow this pattern: " +
       "The first character must be a lowercase letter, and all following characters must be a dash, lowercase " +
       "letter, or digit.";
+  @VisibleForTesting
+  static final String PREFERRED_LOCATION_NOT_FOUND_MSG = "Preferred location '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG = "Preferred location '%s' not found in region '%s' for project '%s'.";
 
   /**
    * The Google Cloud SQL provider.
@@ -80,6 +92,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
       PluginExceptionConditionAccumulator accumulator, LocalizationContext localizationContext) {
 
     checkTier(configuration, accumulator, localizationContext);
+    checkPreferredLocation(configuration, accumulator, localizationContext);
     checkPrefix(configuration, accumulator, localizationContext);
   }
 
@@ -115,6 +128,52 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
   }
 
   /**
+   * Validates the preferred location.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  void checkPreferredLocation(Configured configuration, PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String preferredLocation = configuration.getConfigurationValue(PREFERRED_LOCATION, localizationContext);
+
+    if (preferredLocation != null && !preferredLocation.isEmpty()) {
+      LOG.info(">> Querying zone '{}'", preferredLocation);
+
+      GoogleCredentials credentials = provider.getCredentials();
+      Compute compute = credentials.getCompute();
+      String projectId = credentials.getProjectId();
+      String regionName = provider.getConfigurationValue(REGION_SQL, localizationContext);
+
+      // US region is called differently in GCE and Google Cloud SQL.
+      String computeRegionName = regionName;
+      if (computeRegionName.equals("us-central")) {
+        computeRegionName = "us-central1";
+      }
+
+      try {
+        Zone zone = compute.zones().get(projectId, preferredLocation).execute();
+
+        if (!Urls.getLocalName(zone.getRegion()).equals(computeRegionName)) {
+          addError(accumulator, PREFERRED_LOCATION, localizationContext, null, PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG,
+              preferredLocation, regionName, projectId);
+        }
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          addError(accumulator, PREFERRED_LOCATION, localizationContext, null, PREFERRED_LOCATION_NOT_FOUND_MSG,
+              preferredLocation, projectId);
+        } else {
+          throw new TransientProviderException(e);
+        }
+      } catch (IOException e) {
+        throw new TransientProviderException(e);
+      }
+    }
+  }
+
+  /**
    * Validates the configured prefix.
    *
    * @param configuration       the configuration to be validated
@@ -126,7 +185,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
 
     String instanceNamePrefix = configuration.getConfigurationValue(INSTANCE_NAME_PREFIX, localizationContext);
 
-    LOG.info(">> Validating prefix '{}'", instanceNamePrefix);
+    LOG.info(">> Querying prefix '{}'", instanceNamePrefix);
 
     if (instanceNamePrefix == null) {
       addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, PREFIX_MISSING_MSG);

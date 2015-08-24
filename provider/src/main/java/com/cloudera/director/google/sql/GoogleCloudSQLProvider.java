@@ -18,6 +18,7 @@ package com.cloudera.director.google.sql;
 
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
@@ -49,6 +50,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.sqladmin.model.AclEntry;
 import com.google.api.services.sqladmin.model.DatabaseInstance;
 import com.google.api.services.sqladmin.model.IpConfiguration;
+import com.google.api.services.sqladmin.model.LocationPreference;
 import com.google.api.services.sqladmin.model.Operation;
 import com.google.api.services.sqladmin.model.OperationError;
 import com.google.api.services.sqladmin.model.OperationErrors;
@@ -193,6 +195,16 @@ public class GoogleCloudSQLProvider
 
       ipConfiguration.setAuthorizedNetworks(Arrays.asList(aclEntry));
       settings.setIpConfiguration(ipConfiguration);
+
+      String preferredLocation = template.getConfigurationValue(PREFERRED_LOCATION, templateLocalizationContext);
+      if (preferredLocation != null && !preferredLocation.isEmpty()) {
+
+        // Set the preferred location.
+        LocationPreference locationPreference = new LocationPreference();
+        locationPreference.setKind("sql#locationPreference");
+        locationPreference.setZone(preferredLocation);
+        settings.setLocationPreference(locationPreference);
+      }
 
       // Compose the instance.
       DatabaseInstance instance = new DatabaseInstance();

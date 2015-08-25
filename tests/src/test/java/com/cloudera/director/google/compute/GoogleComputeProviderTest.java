@@ -1336,6 +1336,44 @@ public class GoogleComputeProviderTest {
     verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName));
   }
 
+  @Test
+  public void testDelete_RESOURCE_NOT_READY() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    List<String> instanceIds = Lists.newArrayList(instanceName);
+
+    // Configure stub for unsuccessful instance deletion operation of instance that does not exist.
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Delete computeInstancesDelete =
+        mockComputeInstancesDelete(computeInstances, decoratedInstanceName);
+    Operation vmDeletionOperation = buildInitialOperation(ZONE_NAME, "delete", instanceUrl);
+    when(computeInstancesDelete.execute()).thenReturn(vmDeletionOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmDeletionOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmDeletionOperation, new String[]{"PENDING", "DONE"},
+            "RESOURCE_NOT_READY", "Some error message..."));
+
+    // An UnrecoverableProviderException would be thrown if the compute provider did not treat an error code of
+    // RESOURCE_NOT_READY on deletion as acceptable.
+    // If no UnrecoverableProviderException is thrown, the test is a success.
+    computeProvider.delete(template, instanceIds);
+
+    // Verify instance deletion call was made.
+    verify(computeInstances).delete(eq(PROJECT_ID), eq(ZONE_NAME), eq(decoratedInstanceName));
+  }
+
   private static Operation buildInitialOperation(String zone, String operationType, String targetLinkUrl) {
     return buildOperation(zone, UUID.randomUUID().toString(), operationType, targetLinkUrl, "PENDING");
   }

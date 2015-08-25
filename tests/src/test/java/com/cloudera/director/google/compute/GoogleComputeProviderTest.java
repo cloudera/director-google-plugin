@@ -1404,7 +1404,7 @@ public class GoogleComputeProviderTest {
 
     String instanceName = UUID.randomUUID().toString();
     String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
-    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    String instanceUrl = TestUtils.buildComputeInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     List<String> instanceIds = Lists.newArrayList(instanceName);
 
     // Configure stub for unsuccessful instance deletion operation of instance that does not exist.

@@ -728,6 +728,9 @@ public class GoogleComputeProvider
                 } else if (operationType.equals("delete") && errorCode.equals("RESOURCE_NOT_FOUND")) {
                   LOG.info("Attempted to delete resource '{}', but it does not exist.",
                       Urls.getLocalName(subjectOperation.getTargetLink()));
+                } else if (operationType.equals("delete") && errorCode.equals("RESOURCE_NOT_READY")) {
+                  LOG.info("Attempted to delete resource '{}', but it is not ready.",
+                      Urls.getLocalName(subjectOperation.getTargetLink()));
                 } else {
                   accumulator.addError(null, errors.getMessage());
                   isActualError = true;

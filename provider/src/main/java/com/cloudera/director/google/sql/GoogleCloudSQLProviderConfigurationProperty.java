@@ -36,7 +36,6 @@ public enum GoogleCloudSQLProviderConfigurationProperty implements Configuration
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues(
           "us-central",
-          "us-east1",
           "europe-west1",
           "asia-east1")
       .build());

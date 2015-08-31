@@ -82,6 +82,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   static final String MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND = "Mapping for image alias '%s' not found.";
   @VisibleForTesting
   static final String IMAGE_NOT_FOUND_MSG = "Image '%s' not found for project '%s'.";
+  @VisibleForTesting
+  static final String MALFORMED_IMAGE_URL_MSG = "Malformed image url '%s'.";
 
   @VisibleForTesting
   static final List<String> BOOT_DISK_TYPES = ImmutableList.of("SSD", "Standard");
@@ -226,40 +228,49 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       PluginExceptionConditionAccumulator accumulator,
       LocalizationContext localizationContext) {
 
-    String imageAlias = configuration.getConfigurationValue(IMAGE, localizationContext);
+    String imageAliasOrUrl = configuration.getConfigurationValue(IMAGE, localizationContext);
 
-    if (imageAlias != null) {
-      LOG.info(">> Querying image '{}'", imageAlias);
+    if (imageAliasOrUrl != null) {
+      LOG.info(">> Querying image '{}'", imageAliasOrUrl);
 
       Config googleConfig = provider.getGoogleConfig();
       String sourceImageUrl = null;
 
       try {
-        sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
+        sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAliasOrUrl);
       } catch (ConfigException e) {
         // We don't need to propagate this message since we check sourceImageUrl directly below.
         LOG.info(e.getMessage());
+
+        if (imageAliasOrUrl.startsWith("https://")) {
+          sourceImageUrl = imageAliasOrUrl;
+        }
       }
 
       if (sourceImageUrl != null && !sourceImageUrl.isEmpty()) {
         GoogleCredentials credentials = provider.getCredentials();
         Compute compute = credentials.getCompute();
-        String projectId = Urls.getProject(sourceImageUrl);
-        String imageLocalName = Urls.getLocalName(sourceImageUrl);
 
         try {
-          compute.images().get(projectId, imageLocalName).execute();
-        } catch (GoogleJsonResponseException e) {
-          if (e.getStatusCode() == 404) {
-            addError(accumulator, IMAGE, localizationContext, null, IMAGE_NOT_FOUND_MSG, imageLocalName, projectId);
-          } else {
+          String projectId = Urls.getProject(sourceImageUrl);
+          String imageLocalName = Urls.getLocalName(sourceImageUrl);
+
+          try {
+            compute.images().get(projectId, imageLocalName).execute();
+          } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 404) {
+              addError(accumulator, IMAGE, localizationContext, null, IMAGE_NOT_FOUND_MSG, imageLocalName, projectId);
+            } else {
+              throw new TransientProviderException(e);
+            }
+          } catch (IOException e) {
             throw new TransientProviderException(e);
           }
-        } catch (IOException e) {
-          throw new TransientProviderException(e);
+        } catch (IllegalArgumentException e) {
+          addError(accumulator, IMAGE, localizationContext, null, MALFORMED_IMAGE_URL_MSG, imageAliasOrUrl);
         }
       } else {
-        addError(accumulator, IMAGE, localizationContext, null, MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND, imageAlias);
+        addError(accumulator, IMAGE, localizationContext, null, MAPPING_FOR_IMAGE_ALIAS_NOT_FOUND, imageAliasOrUrl);
       }
     }
   }

@@ -68,6 +68,7 @@ import com.google.api.services.compute.model.Operation;
 import com.google.api.services.compute.model.Tags;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,8 +191,15 @@ public class GoogleComputeProvider
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
 
       // Resolve the source image.
-      String imageAlias = template.getConfigurationValue(IMAGE, templateLocalizationContext);
-      String sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAlias);
+      String imageAliasOrUrl = template.getConfigurationValue(IMAGE, templateLocalizationContext);
+      String sourceImageUrl = null;
+
+      // This property has already been validated. It will contain either an alias or a full image url.
+      try {
+        sourceImageUrl = googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + imageAliasOrUrl);
+      } catch (ConfigException e) {
+        sourceImageUrl = imageAliasOrUrl;
+      }
 
       // Compose attached disks.
       List<AttachedDisk> attachedDiskList = new ArrayList<AttachedDisk>();

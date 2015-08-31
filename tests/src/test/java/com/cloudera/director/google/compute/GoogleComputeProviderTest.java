@@ -90,9 +90,11 @@ public class GoogleComputeProviderTest {
   private static final String PROJECT_ID = "some-project";
   private static final String REGION_NAME_1 = "us-central1";
   private static final String ZONE_NAME = "us-central1-a";
-  private static final String IMAGE_ALIAS_CENTOS = "rhel6";
+  private static final String IMAGE_ALIAS_RHEL = "rhel6";
   private static final String IMAGE_PROJECT_ID = "rhel-cloud";
   private static final String IMAGE_NAME = "rhel-6-v20150526";
+  private static final String IMAGE_URL_UBUNTU =
+      "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150805";
   private static final String MACHINE_TYPE_NAME = "n1-standard-1";
   private static final String NETWORK_NAME_VALUE = "some-network";
   private static final String INVALID_INSTANCE_NAME_PREFIX = "-starts-with-dash";
@@ -219,7 +221,7 @@ public class GoogleComputeProviderTest {
   public void testAllocate_LocalSSD() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -276,7 +278,7 @@ public class GoogleComputeProviderTest {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
     templateConfig.put(BOOT_DISK_TYPE.unwrap().getConfigKey(), "Standard");
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -329,10 +331,65 @@ public class GoogleComputeProviderTest {
   }
 
   @Test
+  public void testAllocate_LocalSSD_FullImageUrl() throws InterruptedException, IOException {
+    // Prepare configuration for resource template.
+    Map<String, String> templateConfig = new HashMap<String, String>();
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_URL_UBUNTU);
+    templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
+    templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
+    templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
+
+    // Create the resource template.
+    GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
+        new SimpleConfiguration(templateConfig), new HashMap<String, String>());
+
+    // Configure stub for successful instance insertion operation.
+    String instanceName = UUID.randomUUID().toString();
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
+    Compute.Instances computeInstances = mockComputeToInstances();
+    Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
+    Operation vmCreationOperation = buildInitialOperation(ZONE_NAME, "insert", instanceUrl);
+    when(computeInstancesInsert.execute()).thenReturn(vmCreationOperation);
+    Compute.ZoneOperations computeZoneOperations = mockComputeToZoneOperations();
+    Compute.ZoneOperations.Get computeZoneOperationsGet = mock(Compute.ZoneOperations.Get.class);
+    when(computeZoneOperations.get(PROJECT_ID, ZONE_NAME,
+        vmCreationOperation.getName())).thenReturn(computeZoneOperationsGet);
+    when(computeZoneOperationsGet.execute()).then(
+        new OperationAnswer(vmCreationOperation, new String[]{"PENDING", "RUNNING", "DONE"}));
+
+    computeProvider.allocate(template, Lists.newArrayList(instanceName), 1);
+
+    // Verify instance insertion call was made.
+    ArgumentCaptor<Instance> argumentCaptor = ArgumentCaptor.forClass(Instance.class);
+    verify(computeInstances).insert(eq(PROJECT_ID), eq(ZONE_NAME), argumentCaptor.capture());
+    Instance insertedInstance = argumentCaptor.getValue();
+
+    // Verify instance name and metadata.
+    assertThat(insertedInstance.getName()).isEqualTo(decoratedInstanceName);
+    assertThat(insertedInstance.getMetadata().getItems()).isEqualTo(Lists.newArrayList());
+
+    List<AttachedDisk> attachedDiskList = insertedInstance.getDisks();
+    assertThat(attachedDiskList.size()).isEqualTo(3);
+
+    // Verify boot disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(0), true, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "SSD"), 60L, IMAGE_URL_UBUNTU, null, null, null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(1), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+
+    // Verify data disk.
+    verifyAttachedDiskAttributes(attachedDiskList.get(2), null, true,
+        Urls.buildDiskTypeUrl(PROJECT_ID, ZONE_NAME, "LocalSSD"), null, null, "SCSI", "SCRATCH", null);
+  }
+
+  @Test
   public void testAllocate_LocalSSD_CreationFails_BelowMinCount() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -463,7 +520,7 @@ public class GoogleComputeProviderTest {
   public void testAllocate_LocalSSD_CreationFails_ReachesMinCount() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -560,7 +617,7 @@ public class GoogleComputeProviderTest {
   public void testAllocate_Standard() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -638,7 +695,7 @@ public class GoogleComputeProviderTest {
   public void testAllocate_SSD_CreationFails_BelowMinCount() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);
@@ -830,7 +887,7 @@ public class GoogleComputeProviderTest {
   public void testAllocate_RESOURCE_ALREADY_EXISTS() throws InterruptedException, IOException {
     // Prepare configuration for resource template.
     Map<String, String> templateConfig = new HashMap<String, String>();
-    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_CENTOS);
+    templateConfig.put(IMAGE.unwrap().getConfigKey(), IMAGE_ALIAS_RHEL);
     templateConfig.put(TYPE.unwrap().getConfigKey(), MACHINE_TYPE_NAME);
     templateConfig.put(NETWORK_NAME.unwrap().getConfigKey(), NETWORK_NAME_VALUE);
     templateConfig.put(ZONE.unwrap().getConfigKey(), ZONE_NAME);

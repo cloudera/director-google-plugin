@@ -31,8 +31,8 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .configKey(ComputeInstanceTemplateConfigurationPropertyToken.IMAGE.unwrap().getConfigKey())
       .name("Image Alias or URL")
       .addValidValues("centos6", "rhel6")
-      .defaultDescription("The image alias from plugin configuration or a full image url.")
-      .defaultErrorMessage("Image alias or url is mandatory")
+      .defaultDescription("The image alias from plugin configuration or a full image URL.")
+      .defaultErrorMessage("Image alias or URL is mandatory")
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .required(true)
       .build()),

@@ -41,7 +41,7 @@ import java.util.NoSuchElementException;
 public class GoogleCloudProvider extends AbstractCloudProvider {
 
   public static final String ID = "google";
-  public static boolean featureFlag = Boolean.parseBoolean(System.getenv("DIRECTOR_ENABLE_GOOGLE_CLOUD_SQL_INTERGRATION"));
+  public static boolean featureFlag = Boolean.parseBoolean(System.getenv("DIRECTOR_ENABLE_GOOGLE_CLOUD_SQL_INTEGRATION"));
 
   private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA = featureFlag ?
       Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleCloudSQLProvider.METADATA)) :

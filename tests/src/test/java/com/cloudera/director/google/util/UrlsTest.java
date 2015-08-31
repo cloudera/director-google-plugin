@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute.util;
+package com.cloudera.director.google.util;
 
 import static junit.framework.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.cloudera.director.google.compute.util.ComputeUrls;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
@@ -109,25 +110,25 @@ public class UrlsTest {
 
   @Test
   public void testBuildZonalUrl() {
-    assertThat(Urls.buildZonalUrl("some-project", "us-central1-f")).endsWith("/some-project/zones/us-central1-f");
+    assertThat(ComputeUrls.buildZonalUrl("some-project", "us-central1-f")).endsWith("/some-project/zones/us-central1-f");
 
-    assertThat(Urls.buildZonalUrl("some-project", "us-central1-f", "some", "resource"))
+    assertThat(ComputeUrls.buildZonalUrl("some-project", "us-central1-f", "some", "resource"))
         .endsWith("/some-project/zones/us-central1-f/some/resource");
   }
 
   @Test
   public void testBuildRegionalUrl() {
-    assertThat(Urls.buildRegionalUrl("some-project", "us-central1")).endsWith("/some-project/regions/us-central1");
+    assertThat(ComputeUrls.buildRegionalUrl("some-project", "us-central1")).endsWith("/some-project/regions/us-central1");
 
-    assertThat(Urls.buildRegionalUrl("some-project", "us-central1", "some", "resource"))
+    assertThat(ComputeUrls.buildRegionalUrl("some-project", "us-central1", "some", "resource"))
         .endsWith("/some-project/regions/us-central1/some/resource");
   }
 
   @Test
   public void testBuildGlobalUrl() {
-    assertThat(Urls.buildGlobalUrl("some-project")).endsWith("/some-project/global");
+    assertThat(ComputeUrls.buildGlobalUrl("some-project")).endsWith("/some-project/global");
 
-    assertThat(Urls.buildGlobalUrl("some-project", "some", "resource"))
+    assertThat(ComputeUrls.buildGlobalUrl("some-project", "some", "resource"))
         .endsWith("/some-project/global/some/resource");
   }
 }

@@ -25,8 +25,9 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
-import com.cloudera.director.google.compute.util.Names;
 import com.cloudera.director.google.internal.GoogleCredentials;
+import com.cloudera.director.google.sql.GoogleCloudSQLProvider;
+import com.cloudera.director.google.util.Names;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
@@ -93,7 +94,7 @@ public class GoogleCloudProviderTest {
     environmentConfig.put(JSON_KEY.unwrap().getConfigKey(), testFixture.getJsonKey());
 
     LocalizationContext cloudLocalizationContext =
-            GoogleCloudProvider.METADATA.getLocalizationContext(DEFAULT_PLUGIN_LOCALIZATION_CONTEXT);
+        GoogleCloudProvider.METADATA.getLocalizationContext(DEFAULT_PLUGIN_LOCALIZATION_CONTEXT);
 
     GoogleCredentials googleCredentials = googleCredentialsProvider.createCredentials(
         new SimpleConfiguration(environmentConfig), cloudLocalizationContext);
@@ -112,6 +113,7 @@ public class GoogleCloudProviderTest {
     assertSame(googleProviderMetadata, googleProvider.getProviderMetadata());
 
     ResourceProviderMetadata computeResourceProviderMetadata = null;
+    ResourceProviderMetadata sqlResourceProviderMetadata = null;
     List<ResourceProviderMetadata> resourceProviderMetadatas = googleProviderMetadata.getResourceProviderMetadata();
 
     for (ResourceProviderMetadata resourceProviderMetadata : resourceProviderMetadatas) {
@@ -119,15 +121,23 @@ public class GoogleCloudProviderTest {
 
       if (GoogleComputeProvider.ID.equals(resourceProviderId)) {
         computeResourceProviderMetadata = resourceProviderMetadata;
+      } else if (GoogleCloudSQLProvider.ID.equals(resourceProviderId)) {
+        sqlResourceProviderMetadata = resourceProviderMetadata;
       } else {
         throw new IllegalArgumentException("Unexpected resource provider: " + resourceProviderId);
       }
     }
     assertNotNull(computeResourceProviderMetadata);
+    assertNotNull(sqlResourceProviderMetadata);
 
     ResourceProvider<?, ?> computeResourceProvider =
         googleProvider.createResourceProvider(GoogleComputeProvider.ID,
             new SimpleConfiguration(Collections.<String, String>emptyMap()));
     Assert.assertEquals(GoogleComputeProvider.class, computeResourceProvider.getClass());
+
+    ResourceProvider<?, ?> sqlResourceProvider =
+        googleProvider.createResourceProvider(GoogleCloudSQLProvider.ID,
+            new SimpleConfiguration(Collections.<String, String>emptyMap()));
+    Assert.assertEquals(GoogleCloudSQLProvider.class, sqlResourceProvider.getClass());
   }
 }

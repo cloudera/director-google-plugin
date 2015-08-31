@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute.util;
+package com.cloudera.director.google.util;
 
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import com.typesafe.config.Config;
 
-import java.util.Date;
+public class Names {
 
-public class Dates {
-
-  private static final DateTimeFormatter DATE_TIME_FORMATTER_ISO8601 = ISODateTimeFormat.dateTime();
-
-  public static Date getDateFromTimestamp(String timestamp) {
-    if (timestamp != null && !timestamp.isEmpty()) {
-      return DATE_TIME_FORMATTER_ISO8601.parseDateTime(timestamp).toDate();
-    }
-
-    return null;
+  public static String buildApplicationNameVersionTag(Config applicationProperties) {
+    return applicationProperties.getString("application.name") + "/" +
+        applicationProperties.getString("application.version");
   }
 }

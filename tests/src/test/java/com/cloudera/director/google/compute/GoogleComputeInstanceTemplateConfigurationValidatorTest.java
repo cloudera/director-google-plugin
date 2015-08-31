@@ -62,7 +62,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cloudera.director.google.TestUtils;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.compute.util.ComputeUrls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
@@ -95,8 +95,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String PROJECT_ID = "some-project";
   private static final String REGION_NAME_1 = "us-central1";
   private static final String REGION_NAME_2 = "europe-west1";
-  private static final String REGION_URL_1 = Urls.buildRegionalUrl(PROJECT_ID, REGION_NAME_1);
-  private static final String REGION_URL_2 = Urls.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
+  private static final String REGION_URL_1 = ComputeUrls.buildRegionalUrl(PROJECT_ID, REGION_NAME_1);
+  private static final String REGION_URL_2 = ComputeUrls.buildRegionalUrl(PROJECT_ID, REGION_NAME_2);
   private static final String ZONE_NAME = "us-central1-a";
   private static final String IMAGE_ALIAS_CENTOS = "centos6";
   private static final String IMAGE_ALIAS_UBUNTU = "ubuntu";
@@ -754,8 +754,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
    * @param errorMsgFormat the expected error message
    * @param args           the error message arguments
    */
-  private void verifySingleError(ConfigurationPropertyToken token, Optional<String> errorMsgFormat,
-      Object... args) {
+  private void verifySingleError(ConfigurationPropertyToken token, Optional<String> errorMsgFormat, Object... args) {
     Map<String, Collection<PluginExceptionCondition>> conditionsByKey = accumulator.getConditionsByKey();
     assertThat(conditionsByKey).hasSize(1);
     String configKey = token.unwrap().getConfigKey();

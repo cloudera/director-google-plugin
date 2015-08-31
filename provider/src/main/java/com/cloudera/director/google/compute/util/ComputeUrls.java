@@ -16,51 +16,15 @@
 
 package com.cloudera.director.google.compute.util;
 
-import com.google.api.client.http.GenericUrl;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.cloudera.director.google.util.Urls;
 
 import java.util.List;
 
-public final class Urls {
+public class ComputeUrls {
 
-  @VisibleForTesting
-  static final String MALFORMED_RESOURCE_URL_MSG = "Malformed resource url '%s'.";
-
-  private Urls() {}
-
-  public static String getLocalName(String fullResourceUrl) {
-    if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
-      return null;
-    }
-
-    GenericUrl url = new GenericUrl(fullResourceUrl);
-
-    return Iterables.getLast(url.getPathParts());
-  }
-
-  public static String getProject(String fullResourceUrl) {
-    if (fullResourceUrl == null || fullResourceUrl.isEmpty()) {
-      return null;
-    }
-
-    List<String> pathParts = new GenericUrl(fullResourceUrl).getPathParts();
-
-    if (pathParts == null) {
-      throw new IllegalArgumentException(String.format(MALFORMED_RESOURCE_URL_MSG, fullResourceUrl));
-    }
-
-    String[] urlParts = Iterables.toArray(pathParts, String.class);
-
-    // Resource urls look like so: https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150526
-    // The path parts begin after the host and include a leading "" path part to force the leading slash.
-    if (urlParts.length < 8) {
-      throw new IllegalArgumentException(String.format(MALFORMED_RESOURCE_URL_MSG, fullResourceUrl));
-    } else {
-      return urlParts[urlParts.length - 4];
-    }
-  }
+  private ComputeUrls() {}
 
   public static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
     String diskTypePath;
@@ -97,7 +61,7 @@ public final class Urls {
       pathParts.addAll(Lists.newArrayList(resourcePathParts));
     }
 
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+    return buildGoogleComputeApisUrl(projectId, Iterables.toArray(pathParts, String.class));
   }
 
   public static String buildRegionalUrl(String projectId, String region, String... resourcePathParts) {
@@ -107,7 +71,7 @@ public final class Urls {
       pathParts.addAll(Lists.newArrayList(resourcePathParts));
     }
 
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+    return buildGoogleComputeApisUrl(projectId, Iterables.toArray(pathParts, String.class));
   }
 
   public static String buildGlobalUrl(String projectId, String... resourcePathParts) {
@@ -117,24 +81,10 @@ public final class Urls {
       pathParts.addAll(Lists.newArrayList(resourcePathParts));
     }
 
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
+    return buildGoogleComputeApisUrl(projectId, Iterables.toArray(pathParts, String.class));
   }
 
-  static String buildGoogleApisUrl(String projectId, String... resourcePathParts) {
-    GenericUrl genericUrl = new GenericUrl();
-    genericUrl.setScheme("https");
-    genericUrl.setHost("www.googleapis.com");
-
-    List<String> pathParts = Lists.newArrayList("", "compute", "v1");
-    pathParts.add("projects");
-    pathParts.add(projectId);
-
-    if (resourcePathParts != null) {
-      pathParts.addAll(Lists.newArrayList(resourcePathParts));
-    }
-
-    genericUrl.setPathParts(pathParts);
-
-    return genericUrl.build();
+  static String buildGoogleComputeApisUrl(String projectId, String... resourcePathParts) {
+    return Urls.buildGenericApisUrl("compute", "v1", projectId, resourcePathParts);
   }
 }

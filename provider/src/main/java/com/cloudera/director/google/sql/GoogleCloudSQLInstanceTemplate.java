@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute;
+package com.cloudera.director.google.sql;
 
-import com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate;
+import com.cloudera.director.spi.v1.database.DatabaseServerInstanceTemplate;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
@@ -25,24 +25,25 @@ import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
 import java.util.List;
 import java.util.Map;
 
-public class GoogleComputeInstanceTemplate extends ComputeInstanceTemplate {
+public class GoogleCloudSQLInstanceTemplate extends DatabaseServerInstanceTemplate {
 
   /**
    * The list of configuration properties (including inherited properties).
    */
   private static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
-      ConfigurationPropertiesUtil.merge(
-          ComputeInstanceTemplate.getConfigurationProperties(),
-          ConfigurationPropertiesUtil.asConfigurationPropertyList(
-              GoogleComputeInstanceTemplateConfigurationProperty.values())
-      );
+  ConfigurationPropertiesUtil.merge(
+      DatabaseServerInstanceTemplate.getConfigurationProperties(),
+      ConfigurationPropertiesUtil.asConfigurationPropertyList(
+          GoogleCloudSQLInstanceTemplateConfigurationProperty.values())
+  );
 
   public static List<ConfigurationProperty> getConfigurationProperties() {
     return CONFIGURATION_PROPERTIES;
   }
 
-  public GoogleComputeInstanceTemplate(String name, Configured configuration, Map<String, String> tags,
+  public GoogleCloudSQLInstanceTemplate(String name, Configured configuration, Map<String, String> tags,
       LocalizationContext providerLocalizationContext) {
     super(name, configuration, tags, providerLocalizationContext);
   }
 }
+

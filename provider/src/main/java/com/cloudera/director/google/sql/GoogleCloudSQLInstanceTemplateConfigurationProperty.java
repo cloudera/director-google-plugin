@@ -52,7 +52,7 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
   MASTER_USERNAME(new SimpleConfigurationPropertyBuilder()
       .configKey(ADMIN_USERNAME.unwrap().getConfigKey())
       .name("Master username")
-      .defaultDescription("The name of the master user for the client DB instance.")
+      .defaultDescription("The name of the master user for the client DB instance. Username must contain up to 16 characters.")
       .build()),
 
   /**
@@ -63,7 +63,7 @@ public enum GoogleCloudSQLInstanceTemplateConfigurationProperty implements Confi
       .name("Master user password")
       .widget(ConfigurationProperty.Widget.PASSWORD)
       .sensitive(true)
-      .defaultDescription("The password for the master database user. Password must contain 8-30 alphanumeric characters.")
+      .defaultDescription("The password for the master database user. Password must contain up to 16 characters.")
       .build()),
 
   PREFERRED_LOCATION(new SimpleConfigurationPropertyBuilder()

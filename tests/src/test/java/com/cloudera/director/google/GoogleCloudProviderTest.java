@@ -128,7 +128,9 @@ public class GoogleCloudProviderTest {
       }
     }
     assertNotNull(computeResourceProviderMetadata);
-    assertNotNull(sqlResourceProviderMetadata);
+    if (GoogleCloudProvider.featureFlag) {
+      assertNotNull(sqlResourceProviderMetadata);
+    }
 
     ResourceProvider<?, ?> computeResourceProvider =
         googleProvider.createResourceProvider(GoogleComputeProvider.ID,
@@ -136,8 +138,7 @@ public class GoogleCloudProviderTest {
     Assert.assertEquals(GoogleComputeProvider.class, computeResourceProvider.getClass());
 
     ResourceProvider<?, ?> sqlResourceProvider =
-        googleProvider.createResourceProvider(GoogleCloudSQLProvider.ID,
-            new SimpleConfiguration(Collections.<String, String>emptyMap()));
+        googleProvider.createResourceProvider(GoogleCloudSQLProvider.ID, new SimpleConfiguration(Collections.<String, String>emptyMap()));
     Assert.assertEquals(GoogleCloudSQLProvider.class, sqlResourceProvider.getClass());
   }
 }

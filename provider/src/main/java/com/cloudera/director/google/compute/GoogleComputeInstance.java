@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google.compute;
 
-import com.cloudera.director.google.compute.util.Dates;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Dates;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.model.DisplayProperty;
 import com.cloudera.director.spi.v1.model.DisplayPropertyToken;
@@ -51,8 +51,6 @@ public class GoogleComputeInstance
 
   /**
    * Returns the list of display properties for a Google instance, including inherited properties.
-   *
-   * @return the list of display properties for a Google instance, including inherited properties
    */
   public static List<DisplayProperty> getDisplayProperties() {
     return DISPLAY_PROPERTIES;
@@ -61,7 +59,7 @@ public class GoogleComputeInstance
   /**
    * Google compute instance display properties.
    */
-  public static enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
+  public enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
 
     IMAGE_ID(new SimpleDisplayPropertyBuilder()
         .displayKey("imageId")
@@ -190,7 +188,7 @@ public class GoogleComputeInstance
      *
      * @param displayProperty the display property
      */
-    private GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
+    GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
       this.displayProperty = displayProperty;
     }
 

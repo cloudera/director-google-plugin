@@ -31,8 +31,9 @@ import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.Compu
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 
 import com.cloudera.director.google.Configurations;
-import com.cloudera.director.google.compute.util.Names;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.compute.util.ComputeUrls;
+import com.cloudera.director.google.util.Names;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeProvider;
@@ -85,8 +86,8 @@ public class GoogleComputeProvider
 
   private static final Logger LOG = LoggerFactory.getLogger(GoogleComputeProvider.class);
 
-  private static final List<String> DONE_STATE = Arrays.asList(new String[]{"DONE"});
-  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList(new String[]{"RUNNING", "DONE"});
+  private static final List<String> DONE_STATE = Arrays.asList("DONE");
+  private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList("RUNNING", "DONE");
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
       ConfigurationPropertiesUtil.asConfigurationPropertyList(
@@ -208,7 +209,7 @@ public class GoogleComputeProvider
       String bootDiskType = template.getConfigurationValue(
           BOOT_DISK_TYPE,
           templateLocalizationContext);
-      String bootDiskTypeUrl = Urls.buildDiskTypeUrl(projectId, zone, bootDiskType);
+      String bootDiskTypeUrl = ComputeUrls.buildDiskTypeUrl(projectId, zone, bootDiskType);
       long bootDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           BOOT_DISK_SIZE_GB,
           templateLocalizationContext));
@@ -229,7 +230,7 @@ public class GoogleComputeProvider
       String dataDiskType = template.getConfigurationValue(
           DATA_DISK_TYPE,
           templateLocalizationContext);
-      String dataDiskTypeUrl = Urls.buildDiskTypeUrl(projectId, zone, dataDiskType);
+      String dataDiskTypeUrl = ComputeUrls.buildDiskTypeUrl(projectId, zone, dataDiskType);
       boolean dataDisksAreLocalSSD = dataDiskType.equals("LocalSSD");
       long dataDiskSizeGb = Long.parseLong(template.getConfigurationValue(
           DATA_DISK_SIZE_GB,
@@ -277,7 +278,7 @@ public class GoogleComputeProvider
             accumulator.addError(null, e.getMessage());
           }
 
-          String persistentDiskUrl = Urls.buildDiskUrl(projectId, zone, persistentDisk.getName());
+          String persistentDiskUrl = ComputeUrls.buildDiskUrl(projectId, zone, persistentDisk.getName());
           attachedDisk.setType("PERSISTENT");
           attachedDisk.setSource(persistentDiskUrl);
         }
@@ -288,7 +289,7 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
-      String networkUrl = Urls.buildNetworkUrl(projectId, networkName);
+      String networkUrl = ComputeUrls.buildNetworkUrl(projectId, networkName);
 
       // Compose the network interface.
       String accessConfigName = "External NAT";
@@ -298,11 +299,11 @@ public class GoogleComputeProvider
       accessConfig.setType(accessConfigType);
       NetworkInterface networkInterface = new NetworkInterface();
       networkInterface.setNetwork(networkUrl);
-      networkInterface.setAccessConfigs(Arrays.asList(new AccessConfig[]{accessConfig}));
+      networkInterface.setAccessConfigs(Arrays.asList(accessConfig));
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
-      String machineTypeUrl = Urls.buildMachineTypeUrl(projectId, zone, machineTypeName);
+      String machineTypeUrl = ComputeUrls.buildMachineTypeUrl(projectId, zone, machineTypeName);
 
       // Compose the instance metadata containing the SSH public key, user name and tags.
       List<Metadata.Items> metadataItemsList = new ArrayList<Metadata.Items>();
@@ -334,7 +335,7 @@ public class GoogleComputeProvider
       instance.setName(decoratedInstanceName);
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);
-      instance.setNetworkInterfaces(Arrays.asList(new NetworkInterface[]{networkInterface}));
+      instance.setNetworkInterfaces(Arrays.asList(networkInterface));
 
       // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
       // This is not the same as the template 'tags' which are propagated as instance metadata.
@@ -496,7 +497,7 @@ public class GoogleComputeProvider
     List<GoogleComputeInstance> result = new ArrayList<GoogleComputeInstance>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return result;
     }
 
@@ -570,7 +571,7 @@ public class GoogleComputeProvider
     Map<String, InstanceState> result = new HashMap<String, InstanceState>();
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       for (String currentId : instanceIds) {
         result.put(currentId, new SimpleInstanceState(InstanceStatus.UNKNOWN));
       }
@@ -616,7 +617,7 @@ public class GoogleComputeProvider
 
     // If the prefix is not valid, there is no way the instances could have been created in the first place.
     // So we shouldn't attempt to delete them, but we also shouldn't report an error.
-    if (!prefixIsValid(template, templateLocalizationContext)) {
+    if (!isPrefixValid(template, templateLocalizationContext)) {
       return;
     }
 
@@ -707,7 +708,7 @@ public class GoogleComputeProvider
     List<Operation> successfulOperations = new ArrayList<Operation>();
 
     while (pendingOperations.size() > 0 && !timeoutExceeded) {
-      Thread.currentThread().sleep(pollInterval * 1000);
+      Thread.sleep(pollInterval * 1000);
 
       totalTimePollingSeconds += pollInterval;
 
@@ -785,7 +786,7 @@ public class GoogleComputeProvider
     return successfulOperations;
   }
 
-  private boolean prefixIsValid(GoogleComputeInstanceTemplate template,
+  private boolean isPrefixValid(GoogleComputeInstanceTemplate template,
       LocalizationContext templateLocalizationContext) {
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 

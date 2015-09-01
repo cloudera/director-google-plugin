@@ -16,6 +16,8 @@
 
 package com.cloudera.director.google.sql;
 
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION_SQL;
@@ -50,19 +52,27 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
       LoggerFactory.getLogger(GoogleCloudSQLInstanceTemplateConfigurationValidator.class);
 
   @VisibleForTesting
-  static final String INVALID_TIER_MSG = "Tier '%s' not found.";
+  static final String INVALID_TIER_MSG = "Database instance tier '%s' not found.";
   @VisibleForTesting
-  static final String PREFIX_MISSING_MSG = "Instance name prefix must be provided.";
+  static final String PASSWORD_MISSING_MSG = "Database instance user password must be provided.";
   @VisibleForTesting
-  static final String INVALID_PREFIX_LENGTH_MSG = "Instance name prefix must be between 1 and 26 characters.";
+  static final String PREFIX_MISSING_MSG = "Database instance name prefix must be provided.";
   @VisibleForTesting
-  static final String INVALID_PREFIX_MSG = "Instance name prefix must follow this pattern: " +
+  static final String INVALID_PASSWORD_LENGTH_MSG = "Database instance user password must be between 1 and 16 characters.";
+  @VisibleForTesting
+  static final String INVALID_PREFIX_LENGTH_MSG = "Database instance name prefix must be between 1 and 26 characters.";
+  @VisibleForTesting
+  static final String INVALID_USERNAME_LENGTH_MSG = "Database instance username must be between 1 and 16 characters.";
+  @VisibleForTesting
+  static final String INVALID_PREFIX_MSG = "Database instance name prefix must follow this pattern: " +
       "The first character must be a lowercase letter, and all following characters must be a dash, lowercase " +
       "letter, or digit.";
   @VisibleForTesting
   static final String PREFERRED_LOCATION_NOT_FOUND_MSG = "Preferred location '%s' not found for project '%s'.";
   @VisibleForTesting
   static final String PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG = "Preferred location '%s' not found in region '%s' for project '%s'.";
+  @VisibleForTesting
+  static final String USERNAME_MISSING_MSG = "Database instance username must be provided.";
 
   /**
    * The Google Cloud SQL provider.
@@ -94,6 +104,8 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
     checkTier(configuration, accumulator, localizationContext);
     checkPreferredLocation(configuration, accumulator, localizationContext);
     checkPrefix(configuration, accumulator, localizationContext);
+    checkUsername(configuration, accumulator, localizationContext);
+    checkPassword(configuration, accumulator, localizationContext);
   }
 
   /**
@@ -124,6 +136,31 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
       addError(accumulator, TIER, localizationContext, null, INVALID_TIER_MSG, tierName);
     } catch (IOException e) {
       throw new TransientProviderException(e);
+    }
+  }
+
+  /**
+   * Validates the configured password.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  static void checkPassword(Configured configuration, PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String instancePassword = configuration.getConfigurationValue(MASTER_USER_PASSWORD, localizationContext);
+
+    LOG.info(">> Validating password");
+
+    if (instancePassword == null) {
+      addError(accumulator, instancePassword, localizationContext, null, PASSWORD_MISSING_MSG);
+    } else {
+      int length = instancePassword.length();
+
+      if (length < 1 || length > 16) {
+        addError(accumulator, MASTER_USER_PASSWORD, localizationContext, null, INVALID_PASSWORD_LENGTH_MSG);
+      }
     }
   }
 
@@ -185,7 +222,7 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
 
     String instanceNamePrefix = configuration.getConfigurationValue(INSTANCE_NAME_PREFIX, localizationContext);
 
-    LOG.info(">> Querying prefix '{}'", instanceNamePrefix);
+    LOG.info(">> Validating prefix '{}'", instanceNamePrefix);
 
     if (instanceNamePrefix == null) {
       addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, PREFIX_MISSING_MSG);
@@ -196,6 +233,31 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidator implements Con
         addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, INVALID_PREFIX_LENGTH_MSG);
       } else if (!instanceNamePrefixPattern.matcher(instanceNamePrefix).matches()) {
         addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, INVALID_PREFIX_MSG);
+      }
+    }
+  }
+
+  /**
+   * Validates the configured username.
+   *
+   * @param configuration       the configuration to be validated
+   * @param accumulator         the exception condition accumulator
+   * @param localizationContext the localization context
+   */
+  static void checkUsername(Configured configuration, PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String instanceUsername = configuration.getConfigurationValue(MASTER_USERNAME, localizationContext);
+
+    LOG.info(">> Validating username '{}'", instanceUsername);
+
+    if (instanceUsername == null) {
+      addError(accumulator, MASTER_USERNAME, localizationContext, null, USERNAME_MISSING_MSG);
+    } else {
+      int length = instanceUsername.length();
+
+      if (length < 1 || length > 16) {
+        addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, INVALID_USERNAME_LENGTH_MSG);
       }
     }
   }

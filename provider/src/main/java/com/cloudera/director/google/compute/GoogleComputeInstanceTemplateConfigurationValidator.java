@@ -503,7 +503,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
     String instanceNamePrefix = configuration.getConfigurationValue(INSTANCE_NAME_PREFIX, localizationContext);
 
-    LOG.info(">> Querying prefix '{}'", instanceNamePrefix);
+    LOG.info(">> Validating prefix '{}'", instanceNamePrefix);
 
     if (instanceNamePrefix == null) {
       addError(accumulator, INSTANCE_NAME_PREFIX, localizationContext, null, PREFIX_MISSING_MSG);

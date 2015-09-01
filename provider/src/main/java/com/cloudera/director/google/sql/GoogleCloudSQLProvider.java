@@ -69,6 +69,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 public class GoogleCloudSQLProvider
     extends AbstractDatabaseServerProvider<GoogleCloudSQLInstance, GoogleCloudSQLInstanceTemplate> {
@@ -79,8 +80,9 @@ public class GoogleCloudSQLProvider
   private static final List<String> RUNNING_OR_DONE_STATES = Arrays.asList("RUNNING", "DONE");
 
   protected static final List<ConfigurationProperty> CONFIGURATION_PROPERTIES =
-      ConfigurationPropertiesUtil.asConfigurationPropertyList(
-          GoogleCloudSQLProviderConfigurationProperty.values());
+      ConfigurationPropertiesUtil.asConfigurationPropertyList(GoogleCloudSQLProviderConfigurationProperty.values());
+
+  private final static Pattern instanceNamePrefixPattern = Pattern.compile("[a-z][-a-z0-9]*");
 
   /**
    * The resource provider ID.
@@ -157,6 +159,7 @@ public class GoogleCloudSQLProvider
     return new GoogleCloudSQLInstanceTemplate(name, configuration, tags, getLocalizationContext());
   }
 
+
   @Override
   public void allocate(GoogleCloudSQLInstanceTemplate template,
       Collection<String> instanceIds, int minCount) throws InterruptedException {
@@ -166,6 +169,13 @@ public class GoogleCloudSQLProvider
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
+
+    for (String instanceId : instanceIds) {
+      String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
+      if (!instanceNamePrefixPattern.matcher(decoratedInstanceName).matches()) {
+        throw new InterruptedException("The database instance name " + decoratedInstanceName + " doesn't meet Google Cloud SQL requirements. It can only contain lowercase letters, numbers and hyphens. After an instance is created this identifier cannot be changed.");
+      }
+    }
 
     SQLAdmin sqlAdmin = credentials.getSQLAdmin();
     String projectId = credentials.getProjectId();
@@ -326,6 +336,7 @@ public class GoogleCloudSQLProvider
   @Override
   public Collection<GoogleCloudSQLInstance> find(GoogleCloudSQLInstanceTemplate template, Collection<String> instanceIds)
       throws InterruptedException {
+
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
@@ -365,6 +376,7 @@ public class GoogleCloudSQLProvider
   @Override
   public Map<String, InstanceState> getInstanceState(GoogleCloudSQLInstanceTemplate template,
       Collection<String> instanceIds) {
+
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);

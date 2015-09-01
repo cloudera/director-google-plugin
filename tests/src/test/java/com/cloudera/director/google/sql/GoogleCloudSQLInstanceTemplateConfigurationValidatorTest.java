@@ -18,7 +18,6 @@ package com.cloudera.director.google.sql;
 
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
-//import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFIX_MISSING_MSG;
@@ -123,6 +122,20 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     when(sqlAdminList.execute()).thenReturn(tiersListResponse);
 
     return tiersListResponse;
+  }
+
+  @Test
+  public void testCheckPassword() throws IOException {
+    checkPassword("admin");
+    checkPassword("p");
+    verifyClean();
+  }
+
+  @Test
+  public void testCheckUsername() throws IOException {
+    checkPassword("admin");
+    checkPassword("u");
+    verifyClean();
   }
 
   @Test
@@ -263,6 +276,18 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
   }
 
   /**
+   * Invokes checkPassword with the specified configuration.
+   *
+   * @param password the password
+   */
+  protected void checkPassword(String password) {
+    Map<String, String> configMap = Maps.newHashMap();
+    configMap.put(MASTER_USER_PASSWORD.unwrap().getConfigKey(), password);
+    Configured configuration = new SimpleConfiguration(configMap);
+    validator.checkPassword(configuration, accumulator, localizationContext);
+  }
+
+  /**
    * Invokes checkPrefix with the specified configuration.
    *
    * @param prefix the instance name prefix
@@ -284,6 +309,18 @@ public class GoogleCloudSQLInstanceTemplateConfigurationValidatorTest {
     configMap.put(TIER.unwrap().getConfigKey(), tier);
     Configured configuration = new SimpleConfiguration(configMap);
     validator.checkTier(configuration, accumulator, localizationContext);
+  }
+
+  /**
+   * Invokes checkUsername with the specified configuration.
+   *
+   * @param username the instance username
+   */
+  protected void checkUsername(String username) {
+    Map<String, String> configMap = Maps.newHashMap();
+    configMap.put(MASTER_USERNAME.unwrap().getConfigKey(), username);
+    Configured configuration = new SimpleConfiguration(configMap);
+    validator.checkUsername(configuration, accumulator, localizationContext);
   }
 
   /**

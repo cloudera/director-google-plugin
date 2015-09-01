@@ -159,7 +159,6 @@ public class GoogleCloudSQLProvider
     return new GoogleCloudSQLInstanceTemplate(name, configuration, tags, getLocalizationContext());
   }
 
-
   @Override
   public void allocate(GoogleCloudSQLInstanceTemplate template,
       Collection<String> instanceIds, int minCount) throws InterruptedException {
@@ -173,7 +172,7 @@ public class GoogleCloudSQLProvider
     for (String instanceId : instanceIds) {
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
       if (!instanceNamePrefixPattern.matcher(decoratedInstanceName).matches()) {
-        throw new InterruptedException("The database instance name " + decoratedInstanceName + " doesn't meet Google Cloud SQL requirements. It can only contain lowercase letters, numbers and hyphens. After an instance is created this identifier cannot be changed.");
+        throw new InterruptedException("The database instance name " + decoratedInstanceName + " doesn't meet Google Cloud SQL requirements. It can only contain lowercase letters, numbers and hyphens and start with a lowercase letter.");
       }
     }
 

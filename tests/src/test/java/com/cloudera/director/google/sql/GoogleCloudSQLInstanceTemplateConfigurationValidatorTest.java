@@ -16,8 +16,10 @@
 
 package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USERNAME;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.MASTER_USER_PASSWORD;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.PREFERRED_LOCATION;
+import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationProperty.TIER;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_IN_REGION_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFERRED_LOCATION_NOT_FOUND_MSG;
 import static com.cloudera.director.google.sql.GoogleCloudSQLInstanceTemplateConfigurationValidator.PREFIX_MISSING_MSG;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute.util;
+package com.cloudera.director.google.util;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;

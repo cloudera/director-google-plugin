@@ -49,7 +49,7 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleComputeProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
+  GoogleComputeProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }
 

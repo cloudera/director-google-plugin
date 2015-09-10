@@ -16,8 +16,8 @@
 
 package com.cloudera.director.google.compute;
 
-import com.cloudera.director.google.compute.util.Dates;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Dates;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.spi.v1.compute.util.AbstractComputeInstance;
 import com.cloudera.director.spi.v1.model.DisplayProperty;
 import com.cloudera.director.spi.v1.model.DisplayPropertyToken;
@@ -38,6 +38,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Google Compute instance.
+ */
 public class GoogleComputeInstance
     extends AbstractComputeInstance<GoogleComputeInstanceTemplate, Instance> {
 
@@ -61,7 +64,7 @@ public class GoogleComputeInstance
   /**
    * Google compute instance display properties.
    */
-  public static enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
+  public enum GoogleComputeInstanceDisplayPropertyToken implements DisplayPropertyToken {
 
     IMAGE_ID(new SimpleDisplayPropertyBuilder()
         .displayKey("imageId")
@@ -190,7 +193,7 @@ public class GoogleComputeInstance
      *
      * @param displayProperty the display property
      */
-    private GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
+    GoogleComputeInstanceDisplayPropertyToken(DisplayProperty displayProperty) {
       this.displayProperty = displayProperty;
     }
 
@@ -239,7 +242,7 @@ public class GoogleComputeInstance
 
     List<NetworkInterface> networkInterfaceList = instance.getNetworkInterfaces();
 
-    if (networkInterfaceList == null || networkInterfaceList.size() == 0) {
+    if (networkInterfaceList == null || networkInterfaceList.isEmpty()) {
       throw new IllegalArgumentException("No network interfaces found for instance '" + instance.getName() + "'.");
     } else {
       try {

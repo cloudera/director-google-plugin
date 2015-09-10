@@ -18,6 +18,8 @@ package com.cloudera.director.google;
 
 import com.cloudera.director.google.compute.GoogleComputeProvider;
 import com.cloudera.director.google.compute.GoogleComputeProviderConfigurationValidator;
+import com.cloudera.director.google.sql.GoogleCloudSQLProvider;
+import com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationValidator;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
@@ -31,6 +33,7 @@ import com.cloudera.director.spi.v1.provider.util.AbstractCloudProvider;
 import com.cloudera.director.spi.v1.provider.util.SimpleCloudProviderMetadataBuilder;
 import com.typesafe.config.Config;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -38,8 +41,10 @@ import java.util.NoSuchElementException;
 public class GoogleCloudProvider extends AbstractCloudProvider {
 
   public static final String ID = "google";
+  public static boolean featureFlag = Boolean.parseBoolean(System.getenv("DIRECTOR_ENABLE_GOOGLE_CLOUD_SQL_INTEGRATION"));
 
-  private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA =
+  private static final List<ResourceProviderMetadata> RESOURCE_PROVIDER_METADATA = featureFlag ?
+      Collections.unmodifiableList(Arrays.asList(GoogleComputeProvider.METADATA, GoogleCloudSQLProvider.METADATA)) :
       Collections.singletonList(GoogleComputeProvider.METADATA);
 
   private GoogleCredentials credentials;
@@ -70,6 +75,8 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
     ConfigurationValidator providerSpecificValidator;
     if (resourceProviderMetadata.getId().equals(GoogleComputeProvider.METADATA.getId())) {
       providerSpecificValidator = new GoogleComputeProviderConfigurationValidator(credentials);
+    } else if (resourceProviderMetadata.getId().equals(GoogleCloudSQLProvider.METADATA.getId())) {
+      providerSpecificValidator = new GoogleCloudSQLProviderConfigurationValidator(credentials);
     } else {
       throw new NoSuchElementException("Invalid provider id: " + resourceProviderMetadata.getId());
     }
@@ -82,6 +89,9 @@ public class GoogleCloudProvider extends AbstractCloudProvider {
 
     if (GoogleComputeProvider.METADATA.getId().equals(resourceProviderId)) {
       return new GoogleComputeProvider(configuration, credentials, applicationProperties, googleConfig,
+          getLocalizationContext());
+    } else if (GoogleCloudSQLProvider.METADATA.getId().equals(resourceProviderId)) {
+      return new GoogleCloudSQLProvider(configuration, credentials, applicationProperties, googleConfig,
           getLocalizationContext());
     }
 

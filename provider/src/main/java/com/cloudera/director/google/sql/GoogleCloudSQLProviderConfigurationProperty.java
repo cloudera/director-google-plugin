@@ -14,34 +14,30 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google;
+package com.cloudera.director.google.sql;
 
 import com.cloudera.director.spi.v1.model.ConfigurationProperty;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.util.SimpleConfigurationPropertyBuilder;
 
 /**
- * An enum of properties required for building credentials.
+ * Google Cloud SQL configuration properties.
  */
-public enum GoogleCredentialsProviderConfigurationProperty implements ConfigurationPropertyToken {
+public enum GoogleCloudSQLProviderConfigurationProperty implements ConfigurationPropertyToken {
 
-  PROJECT_ID(new SimpleConfigurationPropertyBuilder()
-      .configKey("projectId")
-      .name("Project ID")
-      .defaultDescription("Google Cloud Project ID.")
-      .defaultErrorMessage("Project ID is mandatory")
-      .required(true)
-      .build()),
-
-  JSON_KEY(new SimpleConfigurationPropertyBuilder()
-      .configKey("jsonKey")
-      .name("Client ID JSON Key")
+  // TODO(kl3n1nz) Might want to make an API call to list valid values.
+  REGION(new SimpleConfigurationPropertyBuilder()
+      .configKey("region_sql")
+      .name("Region")
+      .defaultValue("us-central")
       .defaultDescription(
-          "Google Cloud service account JSON key.<br />" +
-          "Leave unset to get Google credentials from the environment.<br />" +
-          "<a target='_blank' href='https://cloud.google.com/compute/docs/authentication#general'>More Information</a>")
-      .widget(ConfigurationProperty.Widget.FILE)
-      .sensitive(true)
+          "Region to target for deployment.<br />" +
+          "<a target='_blank' href='https://cloud.google.com/compute/docs/zones'>More Information</a>")
+      .widget(ConfigurationProperty.Widget.OPENLIST)
+      .addValidValues(
+          "us-central",
+          "europe-west1",
+          "asia-east1")
       .build());
 
   /**
@@ -54,13 +50,13 @@ public enum GoogleCredentialsProviderConfigurationProperty implements Configurat
    *
    * @param configurationProperty the configuration property
    */
-  GoogleCredentialsProviderConfigurationProperty(
-      ConfigurationProperty configurationProperty) {
+  GoogleCloudSQLProviderConfigurationProperty(ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }
 
   @Override
   public ConfigurationProperty unwrap() {
-    return configurationProperty;
+      return configurationProperty;
   }
 }
+

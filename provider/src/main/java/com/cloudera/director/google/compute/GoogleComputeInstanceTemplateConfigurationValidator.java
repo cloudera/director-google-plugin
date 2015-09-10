@@ -30,7 +30,7 @@ import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTempla
 import static com.cloudera.director.spi.v1.model.util.Validations.addError;
 
 import com.cloudera.director.google.Configurations;
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.util.Urls;
 import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.spi.v1.model.ConfigurationValidator;
 import com.cloudera.director.spi.v1.model.Configured;
@@ -151,8 +151,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   private final static Pattern instanceNamePrefixPattern = Pattern.compile("[a-z][-a-z0-9]*");
 
   /**
-   * Creates a Google compute instance template configuration validator with the specified
-   * parameters.
+   * Creates a Google compute instance template configuration validator with the specified parameters.
    *
    * @param provider the Google compute provider
    */
@@ -372,7 +371,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
     if (dataDiskType != null && !DATA_DISK_TYPES.contains(dataDiskType)) {
       addError(accumulator, DATA_DISK_TYPE, localizationContext, null, INVALID_DATA_DISK_TYPE_MSG,
-          new Object[]{dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES)});
+          dataDiskType, Joiner.on(", ").join(DATA_DISK_TYPES));
     }
   }
 

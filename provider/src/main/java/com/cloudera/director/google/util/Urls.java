@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute.util;
+package com.cloudera.director.google.util;
 
 import com.google.api.client.http.GenericUrl;
 import com.google.common.annotations.VisibleForTesting;
@@ -36,7 +36,6 @@ public final class Urls {
     }
 
     GenericUrl url = new GenericUrl(fullResourceUrl);
-
     return Iterables.getLast(url.getPathParts());
   }
 
@@ -62,70 +61,12 @@ public final class Urls {
     }
   }
 
-  public static String buildDiskTypeUrl(String projectId, String zone, String dataDiskType) {
-    String diskTypePath;
-
-    if (dataDiskType.equals("LocalSSD")) {
-      diskTypePath = "local-ssd";
-    } else if (dataDiskType.equals("SSD")) {
-      diskTypePath = "pd-ssd";
-    } else {
-      // The value will already have been checked by the validator.
-      // Assume 'Standard'.
-      diskTypePath = "pd-standard";
-    }
-
-    return buildZonalUrl(projectId, zone, "diskTypes", diskTypePath);
-  }
-
-  public static String buildDiskUrl(String projectId, String zone, String diskName) {
-    return buildZonalUrl(projectId, zone, "disks", diskName);
-  }
-
-  public static String buildMachineTypeUrl(String projectId, String zone, String machineType) {
-    return buildZonalUrl(projectId, zone, "machineTypes", machineType);
-  }
-
-  public static String buildNetworkUrl(String projectId, String networkName) {
-    return buildGlobalUrl(projectId, "networks", networkName);
-  }
-
-  public static String buildZonalUrl(String projectId, String zone, String... resourcePathParts) {
-    List<String> pathParts = Lists.newArrayList("zones", zone);
-
-    if (resourcePathParts != null) {
-      pathParts.addAll(Lists.newArrayList(resourcePathParts));
-    }
-
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
-  }
-
-  public static String buildRegionalUrl(String projectId, String region, String... resourcePathParts) {
-    List<String> pathParts = Lists.newArrayList("regions", region);
-
-    if (resourcePathParts != null) {
-      pathParts.addAll(Lists.newArrayList(resourcePathParts));
-    }
-
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
-  }
-
-  public static String buildGlobalUrl(String projectId, String... resourcePathParts) {
-    List<String> pathParts = Lists.newArrayList("global");
-
-    if (resourcePathParts != null) {
-      pathParts.addAll(Lists.newArrayList(resourcePathParts));
-    }
-
-    return buildGoogleApisUrl(projectId, Iterables.toArray(pathParts, String.class));
-  }
-
-  static String buildGoogleApisUrl(String projectId, String... resourcePathParts) {
+  public static String buildGenericApisUrl(String domainName, String version, String projectId, String... resourcePathParts) {
     GenericUrl genericUrl = new GenericUrl();
     genericUrl.setScheme("https");
     genericUrl.setHost("www.googleapis.com");
 
-    List<String> pathParts = Lists.newArrayList("", "compute", "v1");
+    List<String> pathParts = Lists.newArrayList("", domainName, version);
     pathParts.add("projects");
     pathParts.add(projectId);
 

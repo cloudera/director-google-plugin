@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute.util;
+package com.cloudera.director.google.sql.util;
 
-import com.typesafe.config.Config;
+import com.cloudera.director.google.util.Urls;
 
-public class Names {
+public class SQLUrls {
 
-  public static String buildApplicationNameVersionTag(Config applicationProperties) {
-    return applicationProperties.getString("application.name") + "/" +
-        applicationProperties.getString("application.version");
+  public static String buildGoogleCloudSQLApisUrl(String projectId, String... resourcePathParts) {
+    return Urls.buildGenericApisUrl("sql", "v1beta4", projectId, resourcePathParts);
   }
 }

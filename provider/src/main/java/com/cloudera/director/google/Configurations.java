@@ -50,4 +50,9 @@ public class Configurations {
    * The HOCON path prefix for image aliases configuration.
    */
   public static final String IMAGE_ALIASES_SECTION = "google.compute.imageAliases.";
+
+  /**
+   * The HOCON path prefix for Cloud SQL regions configuration.
+   */
+  public static final String CLOUD_SQL_REGIONS_ALIASES_SECTION = "google.cloudSQL.regions.toComputeRegion.";
 }

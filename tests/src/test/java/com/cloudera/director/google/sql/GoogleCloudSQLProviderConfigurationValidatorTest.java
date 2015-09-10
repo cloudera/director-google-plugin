@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.cloudera.director.google.compute;
+package com.cloudera.director.google.sql;
 
-import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
-import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationValidator.REGION_NOT_FOUND_MSG;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationProperty.REGION;
+import static com.cloudera.director.google.sql.GoogleCloudSQLProviderConfigurationValidator.REGION_NOT_FOUND_MSG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -30,7 +30,9 @@ import com.cloudera.director.google.internal.GoogleCredentials;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.cloudera.director.google.shaded.com.google.api.client.googleapis.testing.json.GoogleJsonResponseExceptionFactoryTesting;
 import com.cloudera.director.google.shaded.com.google.api.client.testing.json.MockJsonFactory;
-import com.cloudera.director.google.shaded.com.google.api.services.compute.Compute;
+import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.SQLAdmin;
+import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.Tier;
+import com.cloudera.director.google.shaded.com.google.api.services.sqladmin.model.TiersListResponse;
 import com.cloudera.director.spi.v1.model.ConfigurationPropertyToken;
 import com.cloudera.director.spi.v1.model.Configured;
 import com.cloudera.director.spi.v1.model.LocalizationContext;
@@ -44,70 +46,71 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Tests {@link GoogleComputeProviderConfigurationValidator}.
+ * Tests {@link GoogleCloudSQLProviderConfigurationValidator}.
  */
-public class GoogleComputeProviderConfigurationValidatorTest {
+public class GoogleCloudSQLProviderConfigurationValidatorTest {
 
   private static final String PROJECT_ID = "some-project";
-  private static final String REGION_NAME = "us-central1";
+  private static final String REGION_NAME = "us-central";
 
-  private GoogleComputeProvider computeProvider;
+  private GoogleCloudSQLProvider sqlAdminProvider;
   private GoogleCredentials credentials;
-  private Compute compute;
-  private GoogleComputeProviderConfigurationValidator validator;
+  private SQLAdmin sqlAdmin;
+  private GoogleCloudSQLProviderConfigurationValidator validator;
   private PluginExceptionConditionAccumulator accumulator;
   private LocalizationContext localizationContext = new DefaultLocalizationContext(Locale.getDefault(), "");
 
   @Before
   public void setUp() throws IOException {
-    computeProvider = mock(GoogleComputeProvider.class);
+    sqlAdminProvider = mock(GoogleCloudSQLProvider.class);
     credentials = mock(GoogleCredentials.class);
-    compute = mock(Compute.class);
-    validator = new GoogleComputeProviderConfigurationValidator(credentials);
+    sqlAdmin = mock(SQLAdmin.class);
+    validator = new GoogleCloudSQLProviderConfigurationValidator(credentials);
     accumulator = new PluginExceptionConditionAccumulator();
 
-    when(computeProvider.getCredentials()).thenReturn(credentials);
-    when(computeProvider.getGoogleConfig()).thenReturn(TestUtils.buildGoogleConfig());
-    when(computeProvider.getConfigurationValue(eq(REGION), any(LocalizationContext.class))).thenReturn(REGION_NAME);
-    when(credentials.getCompute()).thenReturn(compute);
+    when(sqlAdminProvider.getCredentials()).thenReturn(credentials);
+    when(sqlAdminProvider.getGoogleConfig()).thenReturn(TestUtils.buildGoogleConfig());
+    when(sqlAdminProvider.getConfigurationValue(eq(REGION), any(LocalizationContext.class))).thenReturn(REGION_NAME);
+    when(credentials.getSQLAdmin()).thenReturn(sqlAdmin);
     when(credentials.getProjectId()).thenReturn(PROJECT_ID);
   }
 
-  private Compute.Regions.Get mockComputeToRegion() throws IOException {
-    Compute.Regions computeRegions = mock(Compute.Regions.class);
-    Compute.Regions.Get computeRegionsGet = mock(Compute.Regions.Get.class);
+  private TiersListResponse mockSQLAdminToTiersListResponse() throws IOException {
+    SQLAdmin.Tiers sqlAdminTiers = mock(SQLAdmin.Tiers.class);
+    SQLAdmin.Tiers.List sqlAdminList = mock(SQLAdmin.Tiers.List.class);
+    TiersListResponse tiersListResponse = new TiersListResponse();
 
-    when(compute.regions()).thenReturn(computeRegions);
-    when(computeRegions.get(PROJECT_ID, REGION_NAME)).thenReturn(computeRegionsGet);
+    when(sqlAdmin.tiers()).thenReturn(sqlAdminTiers);
+    when(sqlAdminTiers.list(PROJECT_ID)).thenReturn(sqlAdminList);
+    when(sqlAdminList.execute()).thenReturn(tiersListResponse);
 
-    return computeRegionsGet;
+    return tiersListResponse;
   }
 
   @Test
   public void testCheckRegion() throws IOException {
-    Compute.Regions.Get computeRegionsGet = mockComputeToRegion();
-    when(computeRegionsGet.execute()).thenReturn(null);
+    TiersListResponse tiersListResponse = mockSQLAdminToTiersListResponse();
+
+    Tier tier = new Tier();
+    tier.setRegion(Arrays.asList(REGION_NAME));
+    tiersListResponse.setItems(Arrays.asList(tier));
 
     checkRegion(REGION_NAME);
-    verify(computeRegionsGet).execute();
     verifyClean();
   }
 
   @Test
   public void testCheckRegion_NotFound() throws IOException {
-    Compute.Regions.Get computeRegionsGet = mockComputeToRegion();
-
-    GoogleJsonResponseException exception =
-        GoogleJsonResponseExceptionFactoryTesting.newMock(new MockJsonFactory(), 404, "not found");
-    when(computeRegionsGet.execute()).thenThrow(exception);
+    TiersListResponse tiersListResponse = mockSQLAdminToTiersListResponse();
+    tiersListResponse.setItems(null);
 
     checkRegion(REGION_NAME);
-    verify(computeRegionsGet).execute();
     verifySingleError(REGION, REGION_NOT_FOUND_MSG, REGION_NAME, PROJECT_ID);
   }
 
@@ -172,8 +175,8 @@ public class GoogleComputeProviderConfigurationValidatorTest {
    * @param errorMsgFormat the expected error message format
    * @param args           the error message arguments
    */
-  private void verifySingleErrorCondition(PluginExceptionCondition condition,
-      Optional<String> errorMsgFormat, Object... args) {
+  private void verifySingleErrorCondition(PluginExceptionCondition condition, Optional<String> errorMsgFormat,
+      Object... args) {
     assertThat(condition.isError()).isTrue();
     if (errorMsgFormat.isPresent()) {
       assertThat(condition.getMessage()).isEqualTo(String.format(errorMsgFormat.get(), args));

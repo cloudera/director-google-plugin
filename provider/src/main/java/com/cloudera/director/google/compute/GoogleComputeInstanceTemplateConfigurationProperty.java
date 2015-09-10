@@ -154,7 +154,7 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
    *
    * @param configurationProperty the configuration property
    */
-  private GoogleComputeInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
+  GoogleComputeInstanceTemplateConfigurationProperty(ConfigurationProperty configurationProperty) {
     this.configurationProperty = configurationProperty;
   }
 

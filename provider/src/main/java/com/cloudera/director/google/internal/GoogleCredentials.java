@@ -16,7 +16,7 @@
 
 package com.cloudera.director.google.internal;
 
-import com.cloudera.director.google.compute.util.Names;
+import com.cloudera.director.google.util.Names;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
@@ -24,6 +24,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.ComputeScopes;
+import com.google.api.services.sqladmin.SQLAdmin;
+import com.google.api.services.sqladmin.SQLAdminScopes;
 import com.typesafe.config.Config;
 
 import java.io.ByteArrayInputStream;
@@ -36,12 +38,14 @@ public class GoogleCredentials {
   private final String projectId;
   private final String jsonKey;
   private final Compute compute;
+  private final SQLAdmin sqlAdmin;
 
   public GoogleCredentials(Config applicationProperties, String projectId, String jsonKey) {
     this.applicationProperties = applicationProperties;
     this.projectId = projectId;
     this.jsonKey = jsonKey;
     this.compute = buildCompute();
+    this.sqlAdmin = buildSQLAdmin();
   }
 
   private Compute buildCompute() {
@@ -57,11 +61,42 @@ public class GoogleCredentials {
       } else {
         Collection COMPUTE_SCOPES = Collections.singletonList(ComputeScopes.COMPUTE);
 
-        credential = GoogleCredential.getApplicationDefault(httpTransport, JSON_FACTORY);
-        credential = credential.createScoped(COMPUTE_SCOPES);
+        credential = GoogleCredential
+            .getApplicationDefault(httpTransport, JSON_FACTORY)
+            .createScoped(COMPUTE_SCOPES);
       }
 
       return new Compute.Builder(httpTransport,
+          JSON_FACTORY,
+          null)
+          .setApplicationName(Names.buildApplicationNameVersionTag(applicationProperties))
+          .setHttpRequestInitializer(credential)
+          .build();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private SQLAdmin buildSQLAdmin() {
+    try {
+      JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+      HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+      GoogleCredential credential;
+
+      if (jsonKey != null) {
+        credential = GoogleCredential.fromStream(
+            new ByteArrayInputStream(jsonKey.getBytes()), httpTransport, JSON_FACTORY)
+            .createScoped(Collections.singleton(SQLAdminScopes.SQLSERVICE_ADMIN));
+      } else {
+        Collection SQLSERVICE_ADMIN_SCOPES = Collections.singletonList(SQLAdminScopes.SQLSERVICE_ADMIN);
+
+        credential = GoogleCredential
+            .getApplicationDefault(httpTransport, JSON_FACTORY)
+            .createScoped(SQLSERVICE_ADMIN_SCOPES);
+      }
+
+      return new SQLAdmin.Builder(httpTransport,
           JSON_FACTORY,
           null)
           .setApplicationName(Names.buildApplicationNameVersionTag(applicationProperties))
@@ -83,6 +118,10 @@ public class GoogleCredentials {
 
   public Compute getCompute() {
     return compute;
+  }
+
+  public SQLAdmin getSQLAdmin() {
+    return sqlAdmin;
   }
 
   public boolean match(String projectId, String jsonKey) {

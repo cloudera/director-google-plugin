@@ -18,9 +18,10 @@ package com.cloudera.director.google;
 
 import static org.junit.Assert.fail;
 
-import com.cloudera.director.google.compute.util.Urls;
+import com.cloudera.director.google.compute.util.ComputeUrls;
 import com.cloudera.director.google.shaded.com.typesafe.config.Config;
 import com.cloudera.director.google.shaded.com.typesafe.config.ConfigFactory;
+import com.cloudera.director.google.sql.util.SQLUrls;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -69,15 +70,25 @@ public class TestUtils {
     googleConfig.put(
         Configurations.IMAGE_ALIASES_SECTION + "rhel6",
         buildImageUrl("rhel-cloud", "rhel-6-v20150526"));
+    googleConfig.put(
+        Configurations.CLOUD_SQL_REGIONS_ALIASES_SECTION + "us-central", "us-central1");
+    googleConfig.put(
+        Configurations.CLOUD_SQL_REGIONS_ALIASES_SECTION + "europe-west1", "europe-west1");
+    googleConfig.put(
+        Configurations.CLOUD_SQL_REGIONS_ALIASES_SECTION + "asia-east1", "asia-east1");
 
     return ConfigFactory.parseMap(googleConfig);
   }
 
   public static String buildImageUrl(String projectId, String image) {
-    return Urls.buildGlobalUrl(projectId, "images", image);
+    return ComputeUrls.buildGlobalUrl(projectId, "images", image);
   }
 
-  public static String buildInstanceUrl(String projectId, String zone, String instanceName) {
-    return Urls.buildZonalUrl(projectId, zone, "instances", instanceName);
+  public static String buildComputeInstanceUrl(String projectId, String zone, String instanceName) {
+    return ComputeUrls.buildZonalUrl(projectId, zone, "instances", instanceName);
+  }
+
+  public static String buildDatabaseInstanceUrl(String projectId, String instanceName) {
+    return SQLUrls.buildGoogleCloudSQLApisUrl(projectId, "instances", instanceName);
   }
 }

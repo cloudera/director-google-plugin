@@ -85,8 +85,8 @@ public class GoogleLauncher extends AbstractLauncher {
    */
   private static Config parseConfigFromClasspath(String configPath) {
     ConfigParseOptions options = ConfigParseOptions.defaults()
-            .setSyntax(ConfigSyntax.CONF)
-            .setAllowMissing(false);
+        .setSyntax(ConfigSyntax.CONF)
+        .setAllowMissing(false);
 
     return ConfigFactory.parseResourcesAnySyntax(GoogleLauncher.class, configPath, options);
   }
@@ -99,8 +99,8 @@ public class GoogleLauncher extends AbstractLauncher {
    */
   private static Config parseConfigFromFile(File configFile) {
     ConfigParseOptions options = ConfigParseOptions.defaults()
-            .setSyntax(ConfigSyntax.CONF)
-            .setAllowMissing(false);
+        .setSyntax(ConfigSyntax.CONF)
+        .setAllowMissing(false);
 
     return ConfigFactory.parseFileAnySyntax(configFile, options);
   }
@@ -132,7 +132,7 @@ public class GoogleLauncher extends AbstractLauncher {
         compute.regions().list(projectId).execute();
       } catch (IOException e) {
         throw new InvalidCredentialsException(
-                "Invalid cloud provider credentials for project '" + projectId + "'.", e);
+            "Invalid cloud provider credentials for project '" + projectId + "'.", e);
       }
     }
 

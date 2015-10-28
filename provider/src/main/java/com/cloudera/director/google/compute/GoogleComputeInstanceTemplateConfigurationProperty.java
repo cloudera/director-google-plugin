@@ -142,6 +142,21 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .defaultValue("SCSI")
       .widget(ConfigurationProperty.Widget.LIST)
       .required(false)
+      .build()),
+
+  USE_PREEMPTIBLE_INSTANCES(new SimpleConfigurationPropertyBuilder()
+      .configKey("usePreemptibleInstances")
+      .name("Use Preemptible Instances")
+      .defaultDescription(
+          "Whether to use preemptible virtual machine (VM) instances. " +
+              "Since preemptible instances can be terminated unexpectedly, " +
+              "they should be used only for workers, and not for nodes that must be reliable, " +
+              "such as masters and data nodes.<br />" +
+              "<a target='_blank' href='https://cloud.google.com/compute/docs/instances/preemptible/'>More Information</a>")
+      .defaultValue("false")
+      .type(Property.Type.BOOLEAN)
+      .widget(ConfigurationProperty.Widget.CHECKBOX)
+      .required(false)
       .build());
 
   /**

@@ -25,6 +25,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.USE_PREEMPTIBLE_INSTANCES;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_USERNAME;
@@ -66,6 +67,7 @@ import com.google.api.services.compute.model.Instance;
 import com.google.api.services.compute.model.Metadata;
 import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
+import com.google.api.services.compute.model.Scheduling;
 import com.google.api.services.compute.model.Tags;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
@@ -332,6 +334,11 @@ public class GoogleComputeProvider
 
       Metadata metadata = new Metadata().setItems(metadataItemsList);
 
+      boolean usePreemptibleInstances =
+          Boolean.parseBoolean(template.getConfigurationValue(USE_PREEMPTIBLE_INSTANCES, templateLocalizationContext));
+      Scheduling scheduling = new Scheduling();
+      scheduling.setPreemptible(usePreemptibleInstances);
+
       // Compose the instance.
       Instance instance = new Instance();
       instance.setMetadata(metadata);
@@ -339,6 +346,7 @@ public class GoogleComputeProvider
       instance.setMachineType(machineTypeUrl);
       instance.setDisks(attachedDiskList);
       instance.setNetworkInterfaces(Arrays.asList(networkInterface));
+      instance.setScheduling(scheduling);
 
       // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
       // This is not the same as the template 'tags' which are propagated as instance metadata.

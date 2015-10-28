@@ -21,6 +21,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.USE_PREEMPTIBLE_INSTANCES;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_PORT;
@@ -106,6 +107,15 @@ public class GoogleComputeProviderFullCycleTest {
 
   @Test
   public void testFullCycle() throws InterruptedException, IOException {
+    doTestFullCycle(null);
+  }
+
+  @Test
+  public void testFullCyclePreemptible() throws InterruptedException, IOException {
+    doTestFullCycle(true);
+  }
+
+  public void doTestFullCycle(Boolean usePreemptibleInstances) throws InterruptedException, IOException {
 
     // Retrieve and list out the provider configuration properties for Google compute provider.
     ResourceProviderMetadata computeMetadata = GoogleComputeProvider.METADATA;
@@ -154,6 +164,11 @@ public class GoogleComputeProviderFullCycleTest {
     templateConfig.put(SSH_OPENSSH_PUBLIC_KEY.unwrap().getConfigKey(), testFixture.getSshPublicKey());
     templateConfig.put(SSH_USERNAME.unwrap().getConfigKey(), testFixture.getUserName());
     templateConfig.put(SSH_PORT.unwrap().getConfigKey(), "22");
+
+    LOG.info("Use preemptible instances: " + usePreemptibleInstances);
+    if (usePreemptibleInstances != null) {
+      templateConfig.put(USE_PREEMPTIBLE_INSTANCES.unwrap().getConfigKey(), usePreemptibleInstances.toString());
+    }
 
     Map<String, String> tags = new HashMap<String, String>();
     tags.put("test-tag-1", "some-value-1");

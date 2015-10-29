@@ -32,7 +32,7 @@
 
         <launcher-class>com.cloudera.director.google.GoogleLauncher</launcher-class>
         <director-spi-v1.version>1.0.0</director-spi-v1.version>
-        <google-api-services-compute.version>v1-rev54-1.20.0</google-api-services-compute.version>
+        <google-api-services-compute.version>v1-rev80-1.20.0</google-api-services-compute.version>
         <google-api-services-sqladmin.version>v1beta4-rev8-1.20.0</google-api-services-sqladmin.version>
         <slf4j.version>1.7.10</slf4j.version>
         <typesafe-config.version>1.2.0</typesafe-config.version>

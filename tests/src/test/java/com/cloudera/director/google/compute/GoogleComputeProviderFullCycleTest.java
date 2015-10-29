@@ -20,8 +20,8 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
-import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.USE_PREEMPTIBLE_INSTANCES;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_OPENSSH_PUBLIC_KEY;
 import static com.cloudera.director.spi.v1.compute.ComputeInstanceTemplate.ComputeInstanceTemplateConfigurationPropertyToken.SSH_PORT;

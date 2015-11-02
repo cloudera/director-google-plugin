@@ -12,8 +12,11 @@ If you are running Cloudera Director on a Google Compute Engine VM instance with
 
 If you are running Cloudera Director outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
 * Point your browser at your [Google Developers Console](https://console.developers.google.com/).
-* Navigate to: Projects->{your-project-name}->APIs & auth->APIs
-* Enable the Google Compute Engine API.
+* Navigate to: Projects->{your-project-name}->APIs & auth->APIs.
+* Ensure the following APIs are enabled:
+  * Google Cloud SQL
+  * Google Cloud SQL API
+  * Google Compute Engine
 * Navigate to: Projects->{your-project-name}->APIs & auth->Credentials.
 * Select "Add credentials->Service account".
 * Ensure "JSON" option is enabled.

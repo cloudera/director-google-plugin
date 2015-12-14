@@ -68,6 +68,7 @@ public class GoogleComputeInstance
 
     IMAGE_ID(new SimpleDisplayPropertyBuilder()
         .displayKey("imageId")
+        .name("Image ID")
         .defaultDescription("The ID of the image used to launch the instance.")
         .sensitive(false)
         .build()) {
@@ -82,6 +83,7 @@ public class GoogleComputeInstance
      */
     INSTANCE_ID(new SimpleDisplayPropertyBuilder()
         .displayKey("instanceId")
+        .name("Instance ID")
         .defaultDescription("The ID of the instance.")
         .sensitive(false)
         .build()) {
@@ -96,6 +98,7 @@ public class GoogleComputeInstance
      */
     INSTANCE_TYPE(new SimpleDisplayPropertyBuilder()
         .displayKey("instanceType")
+        .name("Machine type")
         .defaultDescription("The instance type.")
         .sensitive(false)
         .build()) {
@@ -110,6 +113,7 @@ public class GoogleComputeInstance
      */
     LAUNCH_TIME(new SimpleDisplayPropertyBuilder()
         .displayKey("launchTime")
+        .name("Launch time")
         .defaultDescription("The time the instance was launched.")
         .sensitive(false)
         .build()) {
@@ -144,6 +148,7 @@ public class GoogleComputeInstance
      */
     PRIVATE_IP_ADDRESS(new SimpleDisplayPropertyBuilder()
         .displayKey("privateIpAddress")
+        .name("Internal IP")
         .defaultDescription("The private IP address assigned to the instance.")
         .sensitive(false)
         .build()) {
@@ -164,6 +169,7 @@ public class GoogleComputeInstance
      */
     PUBLIC_IP_ADDRESS(new SimpleDisplayPropertyBuilder()
         .displayKey("publicIpAddress")
+        .name("External IP")
         .defaultDescription("The public IP address assigned to the instance.")
         .sensitive(false)
         .build()) {

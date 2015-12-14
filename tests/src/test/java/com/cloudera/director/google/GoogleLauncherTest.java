@@ -27,6 +27,8 @@ import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.Launcher;
+
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,18 +57,13 @@ import java.util.Map;
  */
 public class GoogleLauncherTest {
 
-  private static TestFixture testFixture;
-
-  @BeforeClass
-  public static void beforeClass() throws IOException {
-    testFixture = TestFixture.newTestFixture(false);
-  }
-
   @Rule
   public TemporaryFolder TEMPORARY_FOLDER = new TemporaryFolder();
 
   @Test
   public void testLauncher() throws IOException {
+    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
+    TestFixture testFixture = TestFixture.newTestFixture(false);
 
     Launcher launcher = new GoogleLauncher();
     launcher.initialize(TEMPORARY_FOLDER.getRoot(), null);

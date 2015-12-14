@@ -57,20 +57,13 @@ import java.util.Map;
  */
 public class GoogleLauncherTest {
 
-  private static TestFixture testFixture;
-
-  @BeforeClass
-  public static void beforeClass() throws IOException {
-    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
-
-    testFixture = TestFixture.newTestFixture(false);
-  }
-
   @Rule
   public TemporaryFolder TEMPORARY_FOLDER = new TemporaryFolder();
 
   @Test
   public void testLauncher() throws IOException {
+    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
+    TestFixture testFixture = TestFixture.newTestFixture(false);
 
     Launcher launcher = new GoogleLauncher();
     launcher.initialize(TEMPORARY_FOLDER.getRoot(), null);

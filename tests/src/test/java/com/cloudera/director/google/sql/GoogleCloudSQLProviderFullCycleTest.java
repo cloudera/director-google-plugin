@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -87,7 +88,9 @@ public class GoogleCloudSQLProviderFullCycleTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-      testFixture = TestFixture.newTestFixture(false);
+    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
+
+    testFixture = TestFixture.newTestFixture(false);
   }
 
   public GoogleCloudSQLProviderFullCycleTest() {}

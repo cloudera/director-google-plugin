@@ -37,6 +37,7 @@ import com.cloudera.director.spi.v1.provider.CredentialsProviderMetadata;
 import com.cloudera.director.spi.v1.provider.ResourceProvider;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,6 +65,8 @@ public class GoogleCloudProviderTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
+    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
+
     testFixture = TestFixture.newTestFixture(false);
   }
 

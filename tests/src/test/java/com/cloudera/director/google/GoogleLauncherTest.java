@@ -27,6 +27,8 @@ import com.cloudera.director.spi.v1.model.util.SimpleConfiguration;
 import com.cloudera.director.spi.v1.provider.CloudProvider;
 import com.cloudera.director.spi.v1.provider.CloudProviderMetadata;
 import com.cloudera.director.spi.v1.provider.Launcher;
+
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,6 +61,8 @@ public class GoogleLauncherTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
+    Assume.assumeFalse(System.getProperty("GCP_PROJECT_ID", "").isEmpty());
+
     testFixture = TestFixture.newTestFixture(false);
   }
 

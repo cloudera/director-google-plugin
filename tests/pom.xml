@@ -29,6 +29,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <director-spi-v1.version>1.0.0</director-spi-v1.version>
+        <commons-codec.version>1.10</commons-codec.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <slf4j.version>1.7.10</slf4j.version>
         <logback.version>1.1.2</logback.version>
@@ -45,6 +46,12 @@
             <groupId>com.cloudera.director</groupId>
             <artifactId>director-spi-v1</artifactId>
             <version>${director-spi-v1.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons-codec.version}</version>
         </dependency>
 
         <dependency>

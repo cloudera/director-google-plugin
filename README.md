@@ -44,13 +44,20 @@ The `SSH_USER_NAME` env variable must contain the name of the user you intend to
 Without JSON key (using credentials obtained automatically from the Google Compute Engine environment):
 
 ```bash
-mvn clean install -DGCP_PROJECT_ID=$GCP_PROJECT_ID -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH -DSSH_USER_NAME=$SSH_USER_NAME
+mvn clean install \
+    -DGCP_PROJECT_ID=$GCP_PROJECT_ID \
+    -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH \
+    -DSSH_USER_NAME=$SSH_USER_NAME
 ```
 
 With JSON key:
 
 ```bash
-mvn clean install -DGCP_PROJECT_ID=$GCP_PROJECT_ID -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH -DSSH_USER_NAME=$SSH_USER_NAME -DJSON_KEY_PATH=$JSON_KEY_PATH
+mvn clean install \
+    -DGCP_PROJECT_ID=$GCP_PROJECT_ID \
+    -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH \
+    -DSSH_USER_NAME=$SSH_USER_NAME \
+    -DJSON_KEY_PATH=$JSON_KEY_PATH
 ```
 
 There are various unit tests in the test suite (some of them require 'live' access to your Google Cloud Platform project) and one [integration test](https://github.com/cloudera/director-google-plugin/blob/master/tests/src/test/java/com/cloudera/director/google/compute/GoogleComputeProviderFullCycleTest.java). The integration test will provision 2 new instances (one centos6, one rhel6) with attached local SSD data disks, attempt to provision each again (to verify idempotency), and then tear down the instances. It will poll for status and verify the operation results at each stage.
@@ -60,13 +67,22 @@ If you set the optional property `HALT_AFTER_ALLOCATION` to true, the integratio
 Without JSON key (using credentials obtained automatically from the Google Compute Engine environment):
 
 ```bash
-mvn clean install -DGCP_PROJECT_ID=$GCP_PROJECT_ID -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH -DSSH_USER_NAME=$SSH_USER_NAME -DHALT_AFTER_ALLOCATION=true
+mvn clean install \
+    -DGCP_PROJECT_ID=$GCP_PROJECT_ID \
+    -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH \
+    -DSSH_USER_NAME=$SSH_USER_NAME \
+    -DHALT_AFTER_ALLOCATION=true
 ```
 
 With JSON key:
 
 ```bash
-mvn clean install -DGCP_PROJECT_ID=$GCP_PROJECT_ID -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH -DSSH_USER_NAME=$SSH_USER_NAME -DJSON_KEY_PATH=$JSON_KEY_PATH -DHALT_AFTER_ALLOCATION=true
+mvn clean install \
+    -DGCP_PROJECT_ID=$GCP_PROJECT_ID \
+    -DSSH_PUBLIC_KEY_PATH=$SSH_PUBLIC_KEY_PATH \
+    -DSSH_USER_NAME=$SSH_USER_NAME \
+    -DJSON_KEY_PATH=$JSON_KEY_PATH \
+    -DHALT_AFTER_ALLOCATION=true
 ```
 
 You can then access the Google Developers Console to view the resulting instances by navigating to: Projects->{your-project-name}->Compute->Compute Engine->VM instances.

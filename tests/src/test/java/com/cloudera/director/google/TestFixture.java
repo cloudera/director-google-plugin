@@ -16,6 +16,8 @@
 
 package com.cloudera.director.google;
 
+import org.apache.commons.codec.binary.Base64;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 
@@ -39,6 +41,17 @@ public final class TestFixture {
   public static TestFixture newTestFixture(boolean sshPublicKeyAndUserNameAreRequired) throws IOException {
     String projectId = TestUtils.readRequiredSystemProperty("GCP_PROJECT_ID");
     String jsonKey = TestUtils.readFileIfSpecified(System.getProperty("JSON_KEY_PATH", ""));
+
+    // If the path to a json key file was not provided, check if the key was passed explicitly.
+    if (jsonKey == null) {
+      String jsonKeyInline = System.getProperty("JSON_KEY_INLINE", "");
+
+      if (!jsonKeyInline.isEmpty()) {
+        // If so, we must base64-decode it.
+        jsonKey = new String(Base64.decodeBase64(jsonKeyInline));
+      }
+    }
+
     String sshPublicKey = null;
     String userName = null;
 

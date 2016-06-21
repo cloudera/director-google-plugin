@@ -56,6 +56,7 @@ import com.cloudera.director.spi.v1.model.util.SimpleResourceTemplate;
 import com.cloudera.director.spi.v1.provider.ResourceProviderMetadata;
 import com.cloudera.director.spi.v1.provider.util.SimpleResourceProviderMetadata;
 import com.cloudera.director.spi.v1.util.ConfigurationPropertiesUtil;
+import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.compute.model.AccessConfig;
@@ -188,6 +189,7 @@ public class GoogleComputeProvider
     // Use this list to collect the operations that must reach a RUNNING or DONE state prior to allocate() returning.
     List<Operation> vmCreationOperations = new ArrayList<Operation>();
 
+    int preExistingVmCount = 0;
     for (String instanceId : instanceIds) {
       String zone = template.getConfigurationValue(ZONE, templateLocalizationContext);
       String decoratedInstanceName = decorateInstanceName(template, instanceId, templateLocalizationContext);
@@ -366,7 +368,14 @@ public class GoogleComputeProvider
           Operation vmCreationOperation = compute.instances().insert(projectId, zone, instance).execute();
 
           vmCreationOperations.add(vmCreationOperation);
-        } catch (IOException e) {
+        }
+        catch (GoogleJsonResponseException e) {
+          if (hasError(e, 409, "alreadyExists")) {
+            preExistingVmCount++;
+          }
+          accumulator.addError(null, e.getMessage());
+        }
+        catch (IOException e) {
           accumulator.addError(null, e.getMessage());
         }
       }
@@ -376,7 +385,11 @@ public class GoogleComputeProvider
     // This is the status of the Operations we're referring to, not of the Instances.
     List<Operation> successfulOperations = pollPendingOperations(projectId, vmCreationOperations, DONE_STATE,
         compute, accumulator);
+
     int successfulOperationCount = successfulOperations.size();
+
+    // Requested instances that already exist are counted as a successful creation
+    successfulOperationCount += preExistingVmCount;
 
     if (successfulOperationCount < minCount) {
       LOG.info("Provisioned {} instances out of {}. minCount is {}. Tearing down provisioned instances.",
@@ -409,6 +422,20 @@ public class GoogleComputeProvider
         }
       }
     }
+  }
+
+  // Check if GoogleJsonResponseException has both the specified status code and error reason
+  private boolean hasError(GoogleJsonResponseException ex, int code, String reason) {
+    if (ex.getStatusCode() != code) {
+      return false;
+    }
+    List<GoogleJsonError.ErrorInfo> errors = ex.getDetails().getErrors();
+    for (GoogleJsonError.ErrorInfo error : errors) {
+      if (error.getReason().equals(reason)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Delete all persistent disks and instances.

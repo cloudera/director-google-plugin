@@ -144,6 +144,12 @@
                                 <exclude>META-INF/*.RSA</exclude>
                             </excludes>
                         </filter>
+                        <filter>
+                            <artifact>com.google.code.findbugs:jsr305</artifact>
+                            <excludes>
+                                <exclude>**/*.java</exclude>
+                            </excludes>
+                        </filter>
                     </filters>
                 </configuration>
                 <executions>

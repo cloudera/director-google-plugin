@@ -36,7 +36,10 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
       .addValidValues(
           "us-central1",
           "europe-west1",
-          "asia-east1")
+          "asia-east1",
+          "us-west1",
+          "us-east1",
+          "asia-northeast1")
       .build());
 
   /**

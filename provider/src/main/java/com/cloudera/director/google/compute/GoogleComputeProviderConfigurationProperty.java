@@ -34,9 +34,12 @@ public enum GoogleComputeProviderConfigurationProperty implements ConfigurationP
           "<a target='_blank' href='https://cloud.google.com/compute/docs/zones'>More Information</a>")
       .widget(ConfigurationProperty.Widget.OPENLIST)
       .addValidValues(
+          "us-west1",
           "us-central1",
+          "us-east1",
           "europe-west1",
-          "asia-east1")
+          "asia-east1",
+          "asia-northeast1")
       .build());
 
   /**

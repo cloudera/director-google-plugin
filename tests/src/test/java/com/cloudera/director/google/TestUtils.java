@@ -76,6 +76,8 @@ public class TestUtils {
         Configurations.CLOUD_SQL_REGIONS_ALIASES_SECTION + "europe-west1", "europe-west1");
     googleConfig.put(
         Configurations.CLOUD_SQL_REGIONS_ALIASES_SECTION + "asia-east1", "asia-east1");
+    googleConfig.put(Configurations.COMPUTE_POLLING_TIMEOUT_KEY, "180");
+    googleConfig.put(Configurations.COMPUTE_MAX_POLLING_INTERVAL_KEY, "8");
 
     return ConfigFactory.parseMap(googleConfig);
   }

@@ -55,4 +55,14 @@ public class Configurations {
    * The HOCON path prefix for Cloud SQL regions configuration.
    */
   public static final String CLOUD_SQL_REGIONS_ALIASES_SECTION = "google.cloudSQL.regions.toComputeRegion.";
+
+  /**
+   * The HOCON key for the polling timeout, in seconds, for pending compute operations.
+   */
+  public static final String COMPUTE_POLLING_TIMEOUT_KEY = "google.compute.pollingTimeoutSeconds";
+
+  /**
+   * The HOCON key for the maximum polling interval, in seconds, for pending compute operations.
+   */
+  public static final String COMPUTE_MAX_POLLING_INTERVAL_KEY = "google.compute.maxPollingIntervalSeconds";
 }

@@ -115,6 +115,7 @@ public class GoogleLauncherTest {
     printWriter.println("      rhel6 = \"https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150430\",");
     printWriter.println("      ubuntu = \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128\"");
     printWriter.println("    }");
+    printWriter.println("    pollingTimeoutSeconds = 300");
     printWriter.println("  }");
     printWriter.println("}");
     printWriter.close();
@@ -124,10 +125,12 @@ public class GoogleLauncherTest {
     // Verify that base config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20160526",
         launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "centos6"));
+    assertEquals(8, launcher.googleConfig.getInt(Configurations.COMPUTE_MAX_POLLING_INTERVAL_KEY));
 
     // Verify that overridden config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/rhel-cloud/global/images/rhel-6-v20150430",
         launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "rhel6"));
+    assertEquals(300, launcher.googleConfig.getInt(Configurations.COMPUTE_POLLING_TIMEOUT_KEY));
 
     // Verify that new config is reflected.
     assertEquals("https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1404-trusty-v20150128",

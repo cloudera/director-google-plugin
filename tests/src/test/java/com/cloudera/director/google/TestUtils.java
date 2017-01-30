@@ -69,6 +69,8 @@ public class TestUtils {
     googleConfig.put(
         Configurations.IMAGE_ALIASES_SECTION + "rhel6",
         buildImageUrl("rhel-cloud", "rhel-6-v20150526"));
+    googleConfig.put(Configurations.COMPUTE_POLLING_TIMEOUT_KEY, "180");
+    googleConfig.put(Configurations.COMPUTE_MAX_POLLING_INTERVAL_KEY, "8");
 
     return ConfigFactory.parseMap(googleConfig);
   }

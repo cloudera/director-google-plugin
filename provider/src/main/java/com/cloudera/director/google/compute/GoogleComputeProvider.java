@@ -356,7 +356,8 @@ public class GoogleComputeProvider
       instance.setTags(tags);
 
       // Wait for operations to reach DONE state before provisioning the instance.
-      List<Operation> successfulOperations = pollPendingOperations(projectId, diskCreationOperations, DONE_STATE, compute, accumulator);
+      List<Operation> successfulOperations = pollPendingOperations(projectId, diskCreationOperations, DONE_STATE,
+          compute, googleConfig, accumulator);
 
       // We need to ensure that any data disks that were successfully created are deleted in case of teardown.
       for (Operation successfulOperation : successfulOperations) {
@@ -384,7 +385,7 @@ public class GoogleComputeProvider
     // Wait for operations to reach DONE state before returning.
     // This is the status of the Operations we're referring to, not of the Instances.
     List<Operation> successfulOperations = pollPendingOperations(projectId, vmCreationOperations, DONE_STATE,
-        compute, accumulator);
+        compute, googleConfig, accumulator);
 
     int successfulOperationCount = successfulOperations.size();
 
@@ -511,7 +512,7 @@ public class GoogleComputeProvider
     }
 
     List<Operation> successfulTearDownOperations = pollPendingOperations(projectId, tearDownOperations, DONE_STATE,
-        compute, accumulator);
+        compute, googleConfig, accumulator);
     int tearDownOperationCount = tearDownOperations.size();
     int successfulTearDownOperationCount = successfulTearDownOperations.size();
 
@@ -683,7 +684,8 @@ public class GoogleComputeProvider
     // Wait for operations to reach RUNNING or DONE state before returning.
     // Quotas are verified prior to reaching the RUNNING state.
     // This is the status of the Operations we're referring to, not of the Instances.
-    pollPendingOperations(projectId, vmDeletionOperations, RUNNING_OR_DONE_STATES, compute, accumulator);
+    pollPendingOperations(projectId, vmDeletionOperations, RUNNING_OR_DONE_STATES, compute, googleConfig,
+        accumulator);
 
     if (accumulator.hasError()) {
       PluginExceptionDetails pluginExceptionDetails = new PluginExceptionDetails(accumulator.getConditionsByKey());
@@ -724,14 +726,15 @@ public class GoogleComputeProvider
   // All arguments are required and must be non-null.
   // Returns the number of operations that reached one of the acceptable states within the timeout period.
   private static List<Operation> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
-      List<String> acceptableStates, Compute compute, PluginExceptionConditionAccumulator accumulator)
+      List<String> acceptableStates, Compute compute, Config googleConfig,
+      PluginExceptionConditionAccumulator accumulator)
           throws InterruptedException {
     // Clone the list so we can prune it without modifying the original.
     List<Operation> pendingOperations = new ArrayList<Operation>(origPendingOperations);
 
     int totalTimePollingSeconds = 0;
-    int pollingTimeoutSeconds = 180;
-    int maxPollingIntervalSeconds = 8;
+    int pollingTimeoutSeconds = googleConfig.getInt(Configurations.COMPUTE_POLLING_TIMEOUT_KEY);
+    int maxPollingIntervalSeconds = googleConfig.getInt(Configurations.COMPUTE_MAX_POLLING_INTERVAL_KEY);
     boolean timeoutExceeded = false;
 
     // Fibonacci backoff in seconds, up to maxPollingIntervalSeconds interval.

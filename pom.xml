@@ -23,7 +23,7 @@
 
     <groupId>com.cloudera.director</groupId>
     <artifactId>google</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.5</version>
     <packaging>pom</packaging>
 
     <modules>

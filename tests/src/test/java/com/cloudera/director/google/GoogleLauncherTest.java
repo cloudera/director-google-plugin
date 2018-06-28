@@ -123,7 +123,7 @@ public class GoogleLauncherTest {
     launcher.initialize(configDir, null);
 
     // Verify that base config is reflected.
-    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20171025",
+    assertEquals("https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20180611",
         launcher.googleConfig.getString(Configurations.IMAGE_ALIASES_SECTION + "centos6"));
     assertEquals(8, launcher.googleConfig.getInt(Configurations.COMPUTE_MAX_POLLING_INTERVAL_KEY));
 

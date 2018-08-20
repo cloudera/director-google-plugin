@@ -1,18 +1,18 @@
-# Google Cloud Platform plugin for Cloudera Director
+# Google Cloud Platform plugin for Cloudera Altus Director
 [![Build Status](https://api.travis-ci.org/cloudera/director-google-plugin.svg)](https://travis-ci.org/cloudera/director-google-plugin)
 
-The Cloudera Director Google Plugin is an implementation of the [Cloudera Director Service Provider Interface](https://github.com/cloudera/director-spi) for the [Google Cloud Platform](https://cloud.google.com). It presently supports provisioning Google Compute Engine resources and will soon expand to include support for provisioning Google Cloud SQL resources.
+The Cloudera Altus Director Google Plugin is an implementation of the [Cloudera Altus Director Service Provider Interface](https://github.com/cloudera/director-spi) for the [Google Cloud Platform](https://cloud.google.com). It presently supports provisioning Google Compute Engine resources and will soon expand to include support for provisioning Google Cloud SQL resources.
 
-These instructions describe how to configure and exercise the Cloudera Director Google Plugin.
+These instructions describe how to configure and exercise the Cloudera Altus Director Google Plugin.
 
 Prior to using this plugin, you will need to have a Google Cloud Platform project and have obtained [Service Account](https://cloud.google.com/compute/docs/authentication#general) credentials for use in programmatically accessing it.
 
 ## Configure your Google Cloud Platform project
 Note: These instructions assume you have a Google Cloud Platform project with billing enabled.
 
-If you are running Cloudera Director on a Google Compute Engine VM instance within the Google Cloud Platform project that will contain your Cloudera clusters, you can have the plugin automatically retrieve credentials from the environment. You simply need to ensure that the instance was created with [Read-write access to Compute Engine methods](https://cloud.google.com/compute/docs/authentication) enabled.
+If you are running Cloudera Altus Director on a Google Compute Engine VM instance within the Google Cloud Platform project that will contain your Cloudera clusters, you can have the plugin automatically retrieve credentials from the environment. You simply need to ensure that the instance was created with [Read-write access to Compute Engine methods](https://cloud.google.com/compute/docs/authentication) enabled.
 
-If you are running Cloudera Director outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
+If you are running Cloudera Altus Director outside of Google Compute Engine, or in a different Google Cloud Platform project, you will need to obtain a JSON key:
 * Point your browser at your [Google Developers Console](https://console.developers.google.com/).
 * Navigate to: Projects->{your-project-name}->APIs & auth->APIs.
 * Ensure the following APIs are enabled:
@@ -27,7 +27,7 @@ If you are running Cloudera Director outside of Google Compute Engine, or in a d
 * Note the location of your newly-downloaded .json file.
 
 ## Prerequisites
-* You've either followed the instructions above to download a JSON key for use in authenticating to your Google Cloud Platform project, or you are running Cloudera Director on a Google Compute Engine VM instance within the same Google Cloud Platform project.
+* You've either followed the instructions above to download a json key for use in authenticating to your Google Cloud Platform project, or you are running Cloudera Altus Director on a Google Compute Engine VM instance within the same Google Cloud Platform project.
 * Maven is installed.
 
 ## Configure the Tests
@@ -93,8 +93,8 @@ To verify that your ssh key was properly set, you can retrieve the External IP o
 ssh $SSH_USER_NAME@$EXTERNAL_IP
 ```
 
-## Install the Plugin in Cloudera Director
-There are instructions on plugin installation in the Cloudera Director Service Provider Interface [documentation](https://github.com/cloudera/director-spi#installing-the-plugin).
+## Install the Plugin in Cloudera Altus Director
+There are instructions on plugin installation in the Cloudera Altus Director Service Provider Interface [documentation](https://github.com/cloudera/director-spi#installing-the-plugin).
 
 ## Copyright and License
 Copyright © 2015 Google. Licensed under the Apache License.

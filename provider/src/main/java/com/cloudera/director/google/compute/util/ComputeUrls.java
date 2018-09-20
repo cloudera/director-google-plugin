@@ -54,6 +54,10 @@ public class ComputeUrls {
     return buildGlobalUrl(projectId, "networks", networkName);
   }
 
+  public static String buildSubnetUrl(String projectId, String region, String subnetName){
+    return buildRegionalUrl(projectId, region, "subnetworks", subnetName);
+  }
+
   public static String buildZonalUrl(String projectId, String zone, String... resourcePathParts) {
     List<String> pathParts = Lists.newArrayList("zones", zone);
 

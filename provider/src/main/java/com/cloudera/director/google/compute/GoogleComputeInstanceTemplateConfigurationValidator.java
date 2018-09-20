@@ -23,6 +23,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SUBNETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
@@ -104,7 +105,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   @VisibleForTesting
   static final String INVALID_LOCAL_SSD_DATA_DISK_COUNT_MSG =
       "Data disk count when using local SSD drives must be between '%d' and '%d', inclusive. " +
-      "Current configuration: '%d'.";
+          "Current configuration: '%d'.";
 
   @VisibleForTesting
   static final String INVALID_DATA_DISK_SIZE_FORMAT_MSG = "Data disk size must be an integer: '%s'.";
@@ -128,6 +129,9 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   static final String NETWORK_NOT_FOUND_MSG = "Network '%s' not found for project '%s'.";
 
   @VisibleForTesting
+  static final String SUBNETWORK_NOT_FOUND_MSG = "Subnetwork '%s' not found for project '%s' in region '%s'.";
+
+  @VisibleForTesting
   static final String PREFIX_MISSING_MSG = "Instance name prefix must be provided.";
   @VisibleForTesting
   static final String INVALID_PREFIX_LENGTH_MSG = "Instance name prefix must be between 1 and 26 characters.";
@@ -146,7 +150,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
    * general, except that we allow a trailing dash to be used. This is allowed since we always append a dash and the
    * specified instance id to the prefix.
    *
-   *  @see <a href="https://developers.google.com/resources/api-libraries/documentation/compute/v1/java/latest/com/google/api/services/compute/model/Instance.html#setName(java.lang.String)" />
+   * @see <a href="https://developers.google.com/resources/api-libraries/documentation/compute/v1/java/latest/com/google/api/services/compute/model/Instance.html#setName(java.lang.String)" />
    */
   private final static Pattern instanceNamePrefixPattern = Pattern.compile("[a-z][-a-z0-9]*");
 
@@ -172,6 +176,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
     checkDataDiskSize(configuration, accumulator, localizationContext);
     checkMachineType(configuration, accumulator, localizationContext);
     checkNetwork(configuration, accumulator, localizationContext);
+    checkSubnetwork(configuration, accumulator, localizationContext);
     checkPrefix(configuration, accumulator, localizationContext);
   }
 
@@ -481,6 +486,35 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
           addError(accumulator, NETWORK_NAME, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, projectId);
+        } else {
+          throw new TransientProviderException(e);
+        }
+      } catch (IOException e) {
+        throw new TransientProviderException(e);
+      }
+    }
+  }
+
+  public void checkSubnetwork(Configured configuration,
+      PluginExceptionConditionAccumulator accumulator,
+      LocalizationContext localizationContext) {
+
+    String subnetworkName = configuration.getConfigurationValue(SUBNETWORK_NAME, localizationContext);
+
+    if (subnetworkName != null) {
+      LOG.info(">> Querying subnetwork '{}'", subnetworkName);
+
+      GoogleCredentials credentials = provider.getCredentials();
+      Compute compute = credentials.getCompute();
+      String projectId = credentials.getProjectId();
+
+      String regionName = provider.getConfigurationValue(REGION, localizationContext);
+
+      try {
+        compute.subnetworks().get(projectId, regionName, subnetworkName).execute();
+      } catch (GoogleJsonResponseException e) {
+        if (e.getStatusCode() == 404) {
+          addError(accumulator, NETWORK_NAME, localizationContext, null, SUBNETWORK_NOT_FOUND_MSG, subnetworkName, projectId, regionName);
         } else {
           throw new TransientProviderException(e);
         }

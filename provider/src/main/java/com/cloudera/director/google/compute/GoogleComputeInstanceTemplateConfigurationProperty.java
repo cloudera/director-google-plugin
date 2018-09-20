@@ -63,6 +63,15 @@ public enum GoogleComputeInstanceTemplateConfigurationProperty implements Config
       .required(false)
       .build()),
 
+  SUBNETWORK_NAME(new SimpleConfigurationPropertyBuilder()
+      .configKey("subnetworkName")
+      .name("Subnetwork Name")
+      .defaultDescription("The subnetwork identifier.<br />" +
+              "<a target='_blank' href='https://cloud.google.com/compute/docs/networking#networks'>More Information</a>")
+      .defaultValue(null)
+      .required(false)
+      .build()),
+
   ZONE(new SimpleConfigurationPropertyBuilder()
       .configKey("zone")
       .name("Zone")

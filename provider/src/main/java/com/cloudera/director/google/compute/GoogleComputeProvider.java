@@ -24,6 +24,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SUBNETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.USE_PREEMPTIBLE_INSTANCES;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
@@ -292,6 +293,7 @@ public class GoogleComputeProvider
 
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
+      String subnetName = template.getConfigurationValue(SUBNETWORK_NAME, templateLocalizationContext);
       String networkUrl = Urls.buildNetworkUrl(projectId, networkName);
 
       // Compose the network interface.
@@ -302,6 +304,12 @@ public class GoogleComputeProvider
       accessConfig.setType(accessConfigType);
       NetworkInterface networkInterface = new NetworkInterface();
       networkInterface.setNetwork(networkUrl);
+
+      if (subnetName != null) {
+        String region = template.getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION, templateLocalizationContext);
+        networkInterface.setSubnetwork(Urls.buildSubnetUrl(projectId, region, subnetName));
+      }
+
       networkInterface.setAccessConfigs(Arrays.asList(new AccessConfig[]{accessConfig}));
 
       // Compose the machine type url.
@@ -369,14 +377,12 @@ public class GoogleComputeProvider
           Operation vmCreationOperation = compute.instances().insert(projectId, zone, instance).execute();
 
           vmCreationOperations.add(vmCreationOperation);
-        }
-        catch (GoogleJsonResponseException e) {
+        } catch (GoogleJsonResponseException e) {
           if (hasError(e, 409, "alreadyExists")) {
             preExistingVmCount++;
           }
           accumulator.addError(null, e.getMessage());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
           accumulator.addError(null, e.getMessage());
         }
       }
@@ -727,8 +733,7 @@ public class GoogleComputeProvider
   // Returns the number of operations that reached one of the acceptable states within the timeout period.
   private static List<Operation> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
       List<String> acceptableStates, Compute compute, Config googleConfig,
-      PluginExceptionConditionAccumulator accumulator)
-          throws InterruptedException {
+      PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
     // Clone the list so we can prune it without modifying the original.
     List<Operation> pendingOperations = new ArrayList<Operation>(origPendingOperations);
 

@@ -30,4 +30,5 @@
         <module>provider</module>
         <module>tests</module>
     </modules>
+
 </project>

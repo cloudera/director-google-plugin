@@ -16,14 +16,17 @@
 
 package com.cloudera.director.google.compute;
 
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ASSIGN_EXTERNAL_IPS;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.BOOT_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_COUNT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_SIZE_GB;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.INSTANCE_TAGS;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.LOCAL_SSD_INTERFACE_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_PROJECT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SUBNETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.USE_PREEMPTIBLE_INSTANCES;
@@ -123,7 +126,7 @@ public class GoogleComputeProvider
   private final ConfigurationValidator resourceTemplateConfigurationValidator;
 
   public GoogleComputeProvider(Configured configuration, GoogleCredentials credentials,
-      Config applicationProperties, Config googleConfig, LocalizationContext cloudLocalizationContext) {
+                               Config applicationProperties, Config googleConfig, LocalizationContext cloudLocalizationContext) {
     super(configuration, METADATA, cloudLocalizationContext);
 
     this.credentials = credentials;
@@ -177,7 +180,7 @@ public class GoogleComputeProvider
 
   @Override
   public void allocate(GoogleComputeInstanceTemplate template,
-      Collection<String> instanceIds, int minCount) throws InterruptedException {
+                       Collection<String> instanceIds, int minCount) throws InterruptedException {
 
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
@@ -298,23 +301,39 @@ public class GoogleComputeProvider
       // Compose the network url.
       String networkName = template.getConfigurationValue(NETWORK_NAME, templateLocalizationContext);
       String subnetName = template.getConfigurationValue(SUBNETWORK_NAME, templateLocalizationContext);
-      String networkUrl = ComputeUrls.buildNetworkUrl(projectId, networkName);
+      String networkProject = template.getConfigurationValue(NETWORK_PROJECT, templateLocalizationContext);
 
-      // Compose the network interface.
-      String accessConfigName = "External NAT";
-      final String accessConfigType = "ONE_TO_ONE_NAT";
-      AccessConfig accessConfig = new AccessConfig();
-      accessConfig.setName(accessConfigName);
-      accessConfig.setType(accessConfigType);
+      if (networkProject == null) {
+        networkProject = projectId;
+      }
+
+
       NetworkInterface networkInterface = new NetworkInterface();
-      networkInterface.setNetwork(networkUrl);
 
       if (subnetName != null) {
         String region = template.getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION, templateLocalizationContext);
-        networkInterface.setSubnetwork(ComputeUrls.buildSubnetUrl(projectId, region, subnetName));
+        String subnetwork = ComputeUrls.buildSubnetUrl(networkProject, region, subnetName);
+        networkInterface.setSubnetwork(subnetwork);
+      }
+      //  only specify network if the subnetwork isn't set
+      else if (!networkName.equals("default")) {
+        String networkUrl = ComputeUrls.buildNetworkUrl(networkProject, networkName);
+        networkInterface.setNetwork(networkUrl);
       }
 
-      networkInterface.setAccessConfigs(Arrays.asList(accessConfig));
+      //  disable external IP addresses.  egress
+      String assignExternalIPs = template.getConfigurationValue(ASSIGN_EXTERNAL_IPS, templateLocalizationContext);
+      if(Boolean.parseBoolean(assignExternalIPs)) {
+
+        // Compose the network interface.
+        String accessConfigName = "External NAT";
+        final String accessConfigType = "ONE_TO_ONE_NAT";
+        AccessConfig accessConfig = new AccessConfig();
+        accessConfig.setName(accessConfigName);
+        accessConfig.setType(accessConfigType);
+
+        networkInterface.setAccessConfigs(Arrays.asList(accessConfig));
+      }
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);
@@ -333,8 +352,8 @@ public class GoogleComputeProvider
       } else {
         LOG.info(
             "SSH credentials not set on instance '{}'. " +
-            "More information on configuring SSH keys can be found here: " +
-            "https://cloud.google.com/compute/docs/console#sshkeys",
+                "More information on configuring SSH keys can be found here: " +
+                "https://cloud.google.com/compute/docs/console#sshkeys",
             decoratedInstanceName);
       }
 
@@ -358,13 +377,25 @@ public class GoogleComputeProvider
       instance.setNetworkInterfaces(Arrays.asList(networkInterface));
       instance.setScheduling(scheduling);
 
+
       // Compose the tags for the instance, including a tag identifying the plugin and version used to create it.
       // This is not the same as the template 'tags' which are propagated as instance metadata.
       Tags tags = new Tags();
       String applicationNameVersionTag = Names.buildApplicationNameVersionTag(applicationProperties);
       // Massage it into a form acceptable for use as a tag (only allows lowercase letters, numbers and hyphens).
       applicationNameVersionTag = applicationNameVersionTag.toLowerCase().replaceAll("\\.|/", "-");
-      tags.setItems(Lists.newArrayList(applicationNameVersionTag));
+
+      ArrayList<String> allTags = Lists.newArrayList();
+
+      String userTags = template.getConfigurationValue(INSTANCE_TAGS, templateLocalizationContext);
+      if (userTags != null) {
+        //  TODO I can't figure out a way to get a list out of the template for these properties
+        allTags.addAll(Lists.newArrayList(userTags.split(",")));
+      }
+
+      allTags.add(applicationNameVersionTag);
+
+      tags.setItems(allTags);
       instance.setTags(tags);
 
       // Wait for operations to reach DONE state before provisioning the instance.
@@ -451,8 +482,8 @@ public class GoogleComputeProvider
 
   // Delete all persistent disks and instances.
   private void tearDownResources(String projectId, List<Operation> vmCreationOperations,
-      List<Operation> diskCreationOperations, Compute compute,
-      PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
+                                 List<Operation> diskCreationOperations, Compute compute,
+                                 PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
 
     // Use this map to allow for pruning the set of persistent disks that must be deleted.
     // Disks already attached to an instance will be automatically deleted when the instance is deleted.
@@ -608,7 +639,7 @@ public class GoogleComputeProvider
 
   @Override
   public Map<String, InstanceState> getInstanceState(GoogleComputeInstanceTemplate template,
-      Collection<String> instanceIds) {
+                                                     Collection<String> instanceIds) {
     LocalizationContext providerLocalizationContext = getLocalizationContext();
     LocalizationContext templateLocalizationContext =
         SimpleResourceTemplate.getTemplateLocalizationContext(providerLocalizationContext);
@@ -652,7 +683,7 @@ public class GoogleComputeProvider
 
   @Override
   public void delete(GoogleComputeInstanceTemplate template,
-      Collection<String> instanceIds) throws InterruptedException {
+                     Collection<String> instanceIds) throws InterruptedException {
 
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
@@ -712,7 +743,7 @@ public class GoogleComputeProvider
   }
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
-      LocalizationContext templateLocalizationContext) {
+                                             LocalizationContext templateLocalizationContext) {
     return template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext) + "-" + currentId;
   }
 
@@ -736,8 +767,8 @@ public class GoogleComputeProvider
   // All arguments are required and must be non-null.
   // Returns the number of operations that reached one of the acceptable states within the timeout period.
   private static List<Operation> pollPendingOperations(String projectId, List<Operation> origPendingOperations,
-      List<String> acceptableStates, Compute compute, Config googleConfig,
-      PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
+                                                       List<String> acceptableStates, Compute compute, Config googleConfig,
+                                                       PluginExceptionConditionAccumulator accumulator) throws InterruptedException {
     // Clone the list so we can prune it without modifying the original.
     List<Operation> pendingOperations = new ArrayList<Operation>(origPendingOperations);
 
@@ -833,7 +864,7 @@ public class GoogleComputeProvider
   }
 
   private boolean isPrefixValid(GoogleComputeInstanceTemplate template,
-      LocalizationContext templateLocalizationContext) {
+                                LocalizationContext templateLocalizationContext) {
     PluginExceptionConditionAccumulator accumulator = new PluginExceptionConditionAccumulator();
 
     GoogleComputeInstanceTemplateConfigurationValidator.checkPrefix(template, accumulator, templateLocalizationContext);

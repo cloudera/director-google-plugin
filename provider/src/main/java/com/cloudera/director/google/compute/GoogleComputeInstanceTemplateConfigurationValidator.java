@@ -23,6 +23,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.DATA_DISK_TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.IMAGE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
+import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_PROJECT;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.SUBNETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
@@ -474,7 +475,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
 
     String networkName = configuration.getConfigurationValue(NETWORK_NAME, localizationContext);
 
-    if (networkName != null) {
+    if (networkName != null && !networkName.equals("default")) {
       LOG.info(">> Querying network '{}'", networkName);
 
       GoogleCredentials credentials = provider.getCredentials();
@@ -500,6 +501,8 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LocalizationContext localizationContext) {
 
     String subnetworkName = configuration.getConfigurationValue(SUBNETWORK_NAME, localizationContext);
+    String networkProject = configuration.getConfigurationValue(NETWORK_PROJECT, localizationContext);
+
 
     if (subnetworkName != null) {
       LOG.info(">> Querying subnetwork '{}'", subnetworkName);
@@ -508,13 +511,17 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
 
+      if (networkProject == null) {
+        networkProject = projectId;
+      }
+
       String regionName = provider.getConfigurationValue(REGION, localizationContext);
 
       try {
-        compute.subnetworks().get(projectId, regionName, subnetworkName).execute();
+        compute.subnetworks().get(networkProject, regionName, subnetworkName).execute();
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          addError(accumulator, NETWORK_NAME, localizationContext, null, SUBNETWORK_NOT_FOUND_MSG, subnetworkName, projectId, regionName);
+          addError(accumulator, NETWORK_NAME, localizationContext, null, SUBNETWORK_NOT_FOUND_MSG, subnetworkName, networkProject, regionName);
         } else {
           throw new TransientProviderException(e);
         }

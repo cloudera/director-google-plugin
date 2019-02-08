@@ -306,11 +306,12 @@ public class GoogleComputeProvider
       networkInterface.setNetwork(networkUrl);
 
       if (subnetName != null) {
-        String region = template.getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION, templateLocalizationContext);
-        networkInterface.setSubnetwork(Urls.buildSubnetUrl(projectId, region, subnetName));
+        String region = getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION,
+            providerLocalizationContext);
+        networkInterface.setSubnetwork(ComputeUrls.buildSubnetUrl(projectId, region, subnetName));
       }
 
-      networkInterface.setAccessConfigs(Arrays.asList(new AccessConfig[]{accessConfig}));
+      networkInterface.setAccessConfigs(Arrays.asList(accessConfig));
 
       // Compose the machine type url.
       String machineTypeName = template.getConfigurationValue(TYPE, templateLocalizationContext);

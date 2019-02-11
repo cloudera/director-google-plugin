@@ -311,7 +311,7 @@ public class GoogleComputeProvider
       NetworkInterface networkInterface = new NetworkInterface();
 
       if (subnetName != null) {
-        String region = template.getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION, templateLocalizationContext);
+        String region = template.getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION, providerLocalizationContext);
         String subnetwork = ComputeUrls.buildSubnetUrl(networkProject, region, subnetName);
         networkInterface.setSubnetwork(subnetwork);
       }

@@ -73,7 +73,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
   @VisibleForTesting
   static final int MIN_LOCAL_SSD_COUNT = 0;
   @VisibleForTesting
-  static final int MAX_LOCAL_SSD_COUNT = 4;
+  static final int MAX_LOCAL_SSD_COUNT = 8;
 
   @VisibleForTesting
   static final String ZONE_NOT_FOUND_MSG = "Zone '%s' not found for project '%s'.";

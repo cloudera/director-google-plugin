@@ -308,7 +308,7 @@ public class GoogleComputeProvider
       if (subnetName != null) {
         String region = getConfigurationValue(GoogleComputeProviderConfigurationProperty.REGION,
             providerLocalizationContext);
-        networkInterface.setSubnetwork(ComputeUrls.buildSubnetUrl(projectId, region, subnetName));
+        networkInterface.setSubnetwork(Urls.buildSubnetUrl(projectId, region, subnetName));
       }
 
       networkInterface.setAccessConfigs(Arrays.asList(accessConfig));

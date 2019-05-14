@@ -121,7 +121,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidatorTest {
   private static final String BOOT_DISK_SIZE_TOO_SMALL = "5";
   private static final String DATA_DISK_COUNT_VALUE = "2";
   private static final String DATA_DISK_COUNT_TOO_FEW = "-1";
-  private static final String DATA_DISK_COUNT_LOCAL_SSD_TOO_MANY = "5";
+  private static final String DATA_DISK_COUNT_LOCAL_SSD_TOO_MANY = "9";
   private static final String DATA_DISK_COUNT_MALFORMED = "three";
   private static final String DATA_DISK_TYPE_LOCAL_SSD = "LocalSSD";
   private static final String DATA_DISK_SIZE = "250";

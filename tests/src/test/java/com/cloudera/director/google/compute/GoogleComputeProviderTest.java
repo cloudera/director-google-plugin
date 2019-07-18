@@ -24,6 +24,7 @@ import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplate
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.NETWORK_NAME;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.TYPE;
 import static com.cloudera.director.google.compute.GoogleComputeInstanceTemplateConfigurationProperty.ZONE;
+import static com.cloudera.director.google.compute.GoogleComputeProvider.shrinkId;
 import static com.cloudera.director.google.compute.GoogleComputeProviderConfigurationProperty.REGION;
 import static com.cloudera.director.spi.v1.model.InstanceTemplate.InstanceTemplateConfigurationPropertyToken.INSTANCE_NAME_PREFIX;
 import static junit.framework.Assert.fail;
@@ -232,7 +233,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
@@ -289,7 +290,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
@@ -345,7 +346,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
@@ -400,7 +401,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
@@ -416,7 +417,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
@@ -531,7 +532,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for successful instance insertion operation.
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert1 = mockComputeInstancesInsert(computeInstances);
@@ -547,7 +548,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation.
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     Operation vmCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", instanceUrl2);
     ongoingInsertionStub.thenReturn(vmCreationOperation2);
@@ -629,11 +630,11 @@ public class GoogleComputeProviderTest {
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
 
     // Configure stub for successful disk insertion operation.
-    String diskName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName + "-pd-0";
+    String diskName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName) + "-pd-0";
     String diskUrl = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
@@ -707,14 +708,14 @@ public class GoogleComputeProviderTest {
     GoogleComputeInstanceTemplate template = computeProvider.createResourceTemplate("template-1",
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
 
     // Configure stub for first successful disk insertion operation.
-    String diskName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1 + "-pd-0";
+    String diskName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1) + "-pd-0";
     String diskUrl1 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName1);
     Compute.Disks computeDisks = mockComputeToDisks();
     Compute.Disks.Insert computeDisksInsert = mockComputeDisksInsert(computeDisks);
@@ -729,7 +730,7 @@ public class GoogleComputeProviderTest {
         new OperationAnswer(diskCreationOperation1, new String[]{"PENDING", "RUNNING", "DONE"}));
 
     // Configure stub for second successful disk insertion operation.
-    String diskName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2 + "-pd-0";
+    String diskName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2) + "-pd-0";
     String diskUrl2 = Urls.buildDiskUrl(PROJECT_ID, ZONE_NAME, diskName2);
     Operation diskCreationOperation2 = buildInitialOperation(ZONE_NAME, "insert", diskUrl2);
     ongoingDiskStub.thenReturn(diskCreationOperation2);
@@ -898,7 +899,7 @@ public class GoogleComputeProviderTest {
 
     // Configure stub for unsuccessful instance insertion operation of instance that already exists.
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     Compute.Instances computeInstances = mockComputeToInstances();
     Compute.Instances.Insert computeInstancesInsert = mockComputeInstancesInsert(computeInstances);
@@ -954,9 +955,9 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for first successful instance retrieval.
@@ -1045,9 +1046,9 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance retrieval.
@@ -1131,9 +1132,9 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for first successful instance retrieval.
@@ -1174,9 +1175,9 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for first successful instance retrieval.
@@ -1248,10 +1249,10 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     String instanceUrl2 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
@@ -1299,10 +1300,10 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName1 = UUID.randomUUID().toString();
-    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName1;
+    String decoratedInstanceName1 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName1);
     String instanceUrl1 = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName1);
     String instanceName2 = UUID.randomUUID().toString();
-    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName2;
+    String decoratedInstanceName2 = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName2);
     List<String> instanceIds = Lists.newArrayList(instanceName1, instanceName2);
 
     // Configure stub for successful instance deletion operation.
@@ -1366,7 +1367,7 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     List<String> instanceIds = Lists.newArrayList(instanceName);
 
@@ -1404,7 +1405,7 @@ public class GoogleComputeProviderTest {
         new SimpleConfiguration(templateConfig), new HashMap<String, String>());
 
     String instanceName = UUID.randomUUID().toString();
-    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + instanceName;
+    String decoratedInstanceName = INSTANCE_NAME_PREFIX.unwrap().getDefaultValue() + "-" + shrinkId(instanceName);
     String instanceUrl = TestUtils.buildInstanceUrl(PROJECT_ID, ZONE_NAME, decoratedInstanceName);
     List<String> instanceIds = Lists.newArrayList(instanceName);
 

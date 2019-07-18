@@ -70,6 +70,8 @@ import com.google.api.services.compute.model.NetworkInterface;
 import com.google.api.services.compute.model.Operation;
 import com.google.api.services.compute.model.Scheduling;
 import com.google.api.services.compute.model.Tags;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.BaseEncoding;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
@@ -77,12 +79,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class GoogleComputeProvider
     extends AbstractComputeProvider<GoogleComputeInstance, GoogleComputeInstanceTemplate> {
@@ -710,7 +715,23 @@ public class GoogleComputeProvider
 
   private static String decorateInstanceName(GoogleComputeInstanceTemplate template, String currentId,
       LocalizationContext templateLocalizationContext) {
-    return template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext) + "-" + currentId;
+    return template.getConfigurationValue(INSTANCE_NAME_PREFIX, templateLocalizationContext) + "-" + shrinkId(currentId);
+  }
+
+  private static final BaseEncoding uuidShrinker = BaseEncoding.base32().lowerCase().omitPadding();
+
+  @VisibleForTesting
+  static String shrinkId(String idString) {
+    try {
+      UUID uuid = UUID.fromString(idString);
+      ByteBuffer buff = ByteBuffer.wrap(new byte[16]);
+      buff.putLong(uuid.getMostSignificantBits());
+      buff.putLong(uuid.getLeastSignificantBits());
+      return uuidShrinker.encode(buff.array());
+    } catch (IllegalArgumentException e) {
+      // It should be a UUID, but in case it isn't
+      return idString;
+    }
   }
 
   private static InstanceStatus convertGCEInstanceStatusToDirectorInstanceStatus(String gceInstanceStatus) {

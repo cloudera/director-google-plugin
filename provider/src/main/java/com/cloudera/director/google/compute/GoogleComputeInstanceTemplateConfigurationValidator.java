@@ -474,6 +474,7 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       LocalizationContext localizationContext) {
 
     String networkName = configuration.getConfigurationValue(NETWORK_NAME, localizationContext);
+    String networkProject = configuration.getConfigurationValue(NETWORK_PROJECT, localizationContext);
 
     if (networkName != null) {
       LOG.info(">> Querying network '{}'", networkName);
@@ -481,12 +482,16 @@ public class GoogleComputeInstanceTemplateConfigurationValidator implements Conf
       GoogleCredentials credentials = provider.getCredentials();
       Compute compute = credentials.getCompute();
       String projectId = credentials.getProjectId();
+      
+      if (networkProject == null) {
+        networkProject = projectId;
+      }
 
       try {
-        compute.networks().get(projectId, networkName).execute();
+        compute.networks().get(networkProject, networkName).execute();
       } catch (GoogleJsonResponseException e) {
         if (e.getStatusCode() == 404) {
-          addError(accumulator, NETWORK_NAME, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, projectId);
+          addError(accumulator, NETWORK_NAME, localizationContext, null, NETWORK_NOT_FOUND_MSG, networkName, networkProject);
         } else {
           throw new TransientProviderException(e);
         }
